@@ -4,8 +4,14 @@
   "private": true,
   "description": "Organizador leve para escola de futvolei",
   "scripts": {
-    "start": "npx serve .",
-    "check": "node --check app.js"
+    "start": "node --no-warnings server/index.js",
+    "dev": "node --no-warnings --watch server/index.js",
+    "static": "npx serve .",
+    "check": "node --check app.js && node --check server/db.js && node --check server/index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
   },
   "devDependencies": {
     "serve": "^14.2.4"

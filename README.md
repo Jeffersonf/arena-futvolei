@@ -9,13 +9,23 @@ MVP leve para escola de futvolei, feito em HTML, CSS e JavaScript puro.
 - Agenda de aulas
 - Presenca por aula
 - Dashboard do dia com pendencias
-- Dados salvos no `localStorage`
+- Backend Node/SQLite inspirado no FinClinica
+- Backup/importacao em JSON
+- Fallback local com `localStorage` ao abrir o HTML direto
 
 ## Como abrir
 
-Abra `index.html` no navegador, ou rode:
+Servidor completo:
 
 ```bash
 npm install
 npm start
 ```
+
+Depois acesse:
+
+```text
+http://localhost:3020
+```
+
+Tambem da para abrir `index.html` diretamente no navegador para usar em modo local.

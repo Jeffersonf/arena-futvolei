@@ -131,6 +131,10 @@ button {
   color: var(--accent);
 }
 
+.danger-soft {
+  color: var(--bad);
+}
+
 .ghost-btn {
   margin-top: auto;
   color: var(--muted);
@@ -172,6 +176,14 @@ button {
   justify-content: space-between;
   gap: 18px;
   margin-bottom: 22px;
+}
+
+.top-actions,
+.data-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 h1,
@@ -505,6 +517,11 @@ select[multiple] {
 
   .topbar {
     display: grid;
+  }
+
+  .top-actions,
+  .data-actions {
+    justify-content: flex-start;
   }
 
   .kpi-grid,

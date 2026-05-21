@@ -21,10 +21,17 @@
         <button class="nav-item" data-page="students">Alunos</button>
         <button class="nav-item" data-page="classes">Aulas</button>
         <button class="nav-item" data-page="payments">Mensalidades</button>
+        <button class="nav-item" data-page="plans">Planos</button>
+        <button class="nav-item" data-page="waitlist">Espera</button>
+        <button class="nav-item" data-page="data">Dados</button>
       </nav>
       <div class="side-card">
         <span>Atalho do dia</span>
         <strong>Abra a aula, marque presenca e veja pendencias.</strong>
+      </div>
+      <div class="side-card">
+        <span>Modo</span>
+        <strong id="modeStatus">Carregando...</strong>
       </div>
       <button class="ghost-btn" id="themeBtn" type="button">Alternar tema</button>
     </aside>
@@ -35,7 +42,10 @@
           <p class="eyebrow">gestao simples</p>
           <h1>Organizador da escola de futvolei</h1>
         </div>
-        <button class="primary-btn" type="button" data-open-student>+ Novo aluno</button>
+        <div class="top-actions">
+          <button class="soft-btn" type="button" data-refresh>Atualizar</button>
+          <button class="primary-btn" type="button" data-open-student>+ Novo aluno</button>
+        </div>
       </header>
 
       <section class="page active" id="page-dashboard">
@@ -101,6 +111,49 @@
           <div class="list" id="paymentList"></div>
         </div>
       </section>
+
+      <section class="page" id="page-plans">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <span>oferta</span>
+              <h2>Planos e tipos de aula</h2>
+            </div>
+            <button class="soft-btn" type="button" data-open-plan>+ Plano</button>
+          </div>
+          <div class="student-grid" id="planGrid"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-waitlist">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <span>demanda</span>
+              <h2>Lista de espera</h2>
+            </div>
+            <button class="soft-btn" type="button" data-open-waitlist>+ Interessado</button>
+          </div>
+          <div class="list" id="waitlistList"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-data">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <span>sistema</span>
+              <h2>Dados e backup</h2>
+            </div>
+          </div>
+          <div class="data-actions">
+            <button class="soft-btn" type="button" data-backup>Baixar backup JSON</button>
+            <button class="soft-btn" type="button" data-server-backup>Criar backup no servidor</button>
+            <button class="soft-btn danger-soft" type="button" data-reset-local>Reset local</button>
+          </div>
+          <div class="list" id="dataSummary"></div>
+        </div>
+      </section>
     </main>
 
     <div class="modal-wrap" id="studentModal" aria-hidden="true">
@@ -110,22 +163,26 @@
         <input type="hidden" id="studentId" />
         <label>Nome<input id="studentName" required placeholder="Ex: Ana Souza" /></label>
         <label>Telefone<input id="studentPhone" placeholder="(15) 99999-9999" /></label>
+        <label>Email<input id="studentEmail" type="email" placeholder="aluno@email.com" /></label>
         <div class="form-row">
           <label>Plano
-            <select id="studentPlan">
-              <option value="1x semana">1x semana</option>
-              <option value="2x semana">2x semana</option>
-              <option value="livre">Livre</option>
-              <option value="avulso">Avulso</option>
-            </select>
+            <select id="studentPlan"></select>
           </label>
           <label>Mensalidade<input id="studentFee" type="number" min="0" step="0.01" placeholder="180" /></label>
         </div>
+        <label>Nivel
+          <select id="studentLevel">
+            <option value="Iniciante">Iniciante</option>
+            <option value="Intermediario">Intermediario</option>
+            <option value="Avancado">Avancado</option>
+            <option value="Kids">Kids</option>
+          </select>
+        </label>
         <label>Status
           <select id="studentStatus">
-            <option value="active">Ativo</option>
-            <option value="trial">Experimental</option>
-            <option value="paused">Pausado</option>
+            <option value="Ativo">Ativo</option>
+            <option value="Experimental">Experimental</option>
+            <option value="Pausado">Pausado</option>
           </select>
         </label>
         <label>Observacao<input id="studentNote" placeholder="Restricoes, objetivo, responsavel..." /></label>
@@ -144,6 +201,17 @@
         </div>
         <label>Turma<input id="classGroup" placeholder="Ex: Iniciantes, Intermediario, Kids" /></label>
         <label>Professor<input id="classCoach" placeholder="Nome do professor" /></label>
+        <div class="form-row">
+          <label>Capacidade<input id="classCapacity" type="number" min="1" step="1" placeholder="8" /></label>
+          <label>Status
+            <select id="classStatus">
+              <option value="Marcada">Marcada</option>
+              <option value="Confirmada">Confirmada</option>
+              <option value="Finalizada">Finalizada</option>
+              <option value="Cancelada">Cancelada</option>
+            </select>
+          </label>
+        </div>
         <label>Alunos da aula<select id="classStudents" multiple></select></label>
         <button class="primary-btn" type="submit">Salvar aula</button>
       </form>
@@ -156,6 +224,33 @@
         <p class="muted" id="attendanceTitle"></p>
         <div class="check-list" id="attendanceList"></div>
       </section>
+    </div>
+
+    <div class="modal-wrap" id="planModal" aria-hidden="true">
+      <form class="modal" id="planForm">
+        <button class="close" type="button" data-close="planModal">x</button>
+        <h2>Plano</h2>
+        <input type="hidden" id="planId" />
+        <label>Nome<input id="planName" required placeholder="Ex: 2x semana" /></label>
+        <div class="form-row">
+          <label>Preco<input id="planPrice" type="number" min="0" step="0.01" placeholder="220" /></label>
+          <label>Aulas por semana<input id="planClasses" type="number" min="0" step="1" placeholder="2" /></label>
+        </div>
+        <label>Descricao<input id="planDescription" placeholder="O que inclui..." /></label>
+        <button class="primary-btn" type="submit">Salvar plano</button>
+      </form>
+    </div>
+
+    <div class="modal-wrap" id="waitlistModal" aria-hidden="true">
+      <form class="modal" id="waitlistForm">
+        <button class="close" type="button" data-close="waitlistModal">x</button>
+        <h2>Lista de espera</h2>
+        <label>Nome<input id="waitName" required placeholder="Ex: Carla Mendes" /></label>
+        <label>Telefone<input id="waitPhone" placeholder="(15) 99999-9999" /></label>
+        <label>Preferencia<input id="waitPreference" placeholder="Noite, kids, iniciante..." /></label>
+        <label>Observacao<input id="waitNote" placeholder="Detalhes do contato" /></label>
+        <button class="primary-btn" type="submit">Salvar interessado</button>
+      </form>
     </div>
 
     <div class="toast" id="toast"></div>

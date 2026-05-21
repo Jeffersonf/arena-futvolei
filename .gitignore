@@ -1,5 +1,9 @@
 node_modules/
 dist/
 .env
+arena.db
+arena.db-shm
+arena.db-wal
+backups/
 .DS_Store
 Thumbs.db
