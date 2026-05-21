@@ -1,0 +1,13 @@
+{
+  "name": "arena-futvolei",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Organizador leve para escola de futvolei",
+  "scripts": {
+    "start": "npx serve .",
+    "check": "node --check app.js"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
+  }
+}

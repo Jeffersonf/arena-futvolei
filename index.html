@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#07130f" />
+    <title>Arena Futvolei</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">fv</span>
+        <div>
+          <strong>Arena Futvolei</strong>
+          <small>organizador da escola</small>
+        </div>
+      </div>
+      <nav class="nav" aria-label="Menu principal">
+        <button class="nav-item active" data-page="dashboard">Inicio</button>
+        <button class="nav-item" data-page="students">Alunos</button>
+        <button class="nav-item" data-page="classes">Aulas</button>
+        <button class="nav-item" data-page="payments">Mensalidades</button>
+      </nav>
+      <div class="side-card">
+        <span>Atalho do dia</span>
+        <strong>Abra a aula, marque presenca e veja pendencias.</strong>
+      </div>
+      <button class="ghost-btn" id="themeBtn" type="button">Alternar tema</button>
+    </aside>
+
+    <main class="app">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">gestao simples</p>
+          <h1>Organizador da escola de futvolei</h1>
+        </div>
+        <button class="primary-btn" type="button" data-open-student>+ Novo aluno</button>
+      </header>
+
+      <section class="page active" id="page-dashboard">
+        <div class="kpi-grid" id="kpiGrid"></div>
+        <div class="two-col">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <span>hoje</span>
+                <h2>Aulas do dia</h2>
+              </div>
+              <button class="soft-btn" type="button" data-open-class>+ Aula</button>
+            </div>
+            <div class="list" id="todayClasses"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <span>atenção</span>
+                <h2>Pendencias</h2>
+              </div>
+            </div>
+            <div class="list" id="pendingList"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="page" id="page-students">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <span>cadastro</span>
+              <h2>Alunos</h2>
+            </div>
+            <button class="soft-btn" type="button" data-open-student>+ Novo aluno</button>
+          </div>
+          <input class="search" id="studentSearch" placeholder="Buscar aluno, telefone ou plano..." />
+          <div class="student-grid" id="studentGrid"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-classes">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <span>agenda</span>
+              <h2>Aulas</h2>
+            </div>
+            <button class="soft-btn" type="button" data-open-class>+ Nova aula</button>
+          </div>
+          <div class="list" id="classList"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-payments">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <span>financeiro leve</span>
+              <h2>Mensalidades</h2>
+            </div>
+          </div>
+          <div class="list" id="paymentList"></div>
+        </div>
+      </section>
+    </main>
+
+    <div class="modal-wrap" id="studentModal" aria-hidden="true">
+      <form class="modal" id="studentForm">
+        <button class="close" type="button" data-close="studentModal">x</button>
+        <h2>Aluno</h2>
+        <input type="hidden" id="studentId" />
+        <label>Nome<input id="studentName" required placeholder="Ex: Ana Souza" /></label>
+        <label>Telefone<input id="studentPhone" placeholder="(15) 99999-9999" /></label>
+        <div class="form-row">
+          <label>Plano
+            <select id="studentPlan">
+              <option value="1x semana">1x semana</option>
+              <option value="2x semana">2x semana</option>
+              <option value="livre">Livre</option>
+              <option value="avulso">Avulso</option>
+            </select>
+          </label>
+          <label>Mensalidade<input id="studentFee" type="number" min="0" step="0.01" placeholder="180" /></label>
+        </div>
+        <label>Status
+          <select id="studentStatus">
+            <option value="active">Ativo</option>
+            <option value="trial">Experimental</option>
+            <option value="paused">Pausado</option>
+          </select>
+        </label>
+        <label>Observacao<input id="studentNote" placeholder="Restricoes, objetivo, responsavel..." /></label>
+        <button class="primary-btn" type="submit">Salvar aluno</button>
+      </form>
+    </div>
+
+    <div class="modal-wrap" id="classModal" aria-hidden="true">
+      <form class="modal" id="classForm">
+        <button class="close" type="button" data-close="classModal">x</button>
+        <h2>Aula</h2>
+        <input type="hidden" id="classId" />
+        <div class="form-row">
+          <label>Data<input id="classDate" type="date" required /></label>
+          <label>Horario<input id="classTime" type="time" required /></label>
+        </div>
+        <label>Turma<input id="classGroup" placeholder="Ex: Iniciantes, Intermediario, Kids" /></label>
+        <label>Professor<input id="classCoach" placeholder="Nome do professor" /></label>
+        <label>Alunos da aula<select id="classStudents" multiple></select></label>
+        <button class="primary-btn" type="submit">Salvar aula</button>
+      </form>
+    </div>
+
+    <div class="modal-wrap" id="attendanceModal" aria-hidden="true">
+      <section class="modal">
+        <button class="close" type="button" data-close="attendanceModal">x</button>
+        <h2>Presencas</h2>
+        <p class="muted" id="attendanceTitle"></p>
+        <div class="check-list" id="attendanceList"></div>
+      </section>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
