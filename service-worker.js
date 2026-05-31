@@ -1,10 +1,10 @@
-const CACHE_NAME = 'team-lucao-v2';
+const CACHE_NAME = 'team-lucao-v3';
 const ASSETS = [
   './',
-  './index.html',
-  './styles.css',
-  './app.js',
-  './manifest.webmanifest',
+  './index.html?v=20260531',
+  './styles.css?v=20260531',
+  './app.js?v=20260531',
+  './manifest.webmanifest?v=20260531',
   './assets/team-lucao-logo.png'
 ];
 
@@ -25,10 +25,10 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   if (new URL(request.url).pathname.startsWith('/api/')) return;
   event.respondWith(
-    caches.match(request).then((cached) => cached || fetch(request).then((response) => {
+    fetch(request).then((response) => {
       const copy = response.clone();
       caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
       return response;
-    }))
+    }).catch(() => caches.match(request))
   );
 });

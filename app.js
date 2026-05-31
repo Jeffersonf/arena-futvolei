@@ -1241,7 +1241,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260531', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {
