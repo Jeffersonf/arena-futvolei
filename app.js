@@ -109,7 +109,8 @@ function showLogin(show = true) {
 async function unlockApp(pin) {
   const cleanPin = String(pin || '').trim();
   if (!cleanPin) throw new Error('Informe o PIN');
-  if (location.protocol !== 'file:') {
+  const hasServer = await detectServer();
+  if (hasServer) {
     await api('/api/login', { method: 'POST', body: JSON.stringify({ pin: cleanPin }), headers: { 'X-Admin-Pin': cleanPin } });
   } else if (cleanPin !== '1234') {
     throw new Error('PIN invalido');
@@ -1240,7 +1241,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {

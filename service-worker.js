@@ -1,11 +1,11 @@
-const CACHE_NAME = 'team-lucao-v1';
+const CACHE_NAME = 'team-lucao-v2';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/app.js',
-  '/manifest.webmanifest',
-  '/assets/team-lucao-logo.png'
+  './',
+  './index.html',
+  './styles.css',
+  './app.js',
+  './manifest.webmanifest',
+  './assets/team-lucao-logo.png'
 ];
 
 self.addEventListener('install', (event) => {
