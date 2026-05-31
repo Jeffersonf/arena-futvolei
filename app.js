@@ -28,47 +28,106 @@ const starter = {
 
 function demoState() {
   const today = todayISO();
-  const tomorrow = addDaysIso(today, 1);
-  const nextTwo = addDaysIso(today, 2);
-  const nextThree = addDaysIso(today, 3);
-  const lastMonth = addMonthsIso(today, -1);
   const plans = [
     { id: 'p1', nome: '1x semana', preco: 180, aulas_semana: 1, descricao: 'Uma aula fixa por semana', ativo: 1 },
     { id: 'p2', nome: '2x semana', preco: 260, aulas_semana: 2, descricao: 'Duas aulas fixas por semana', ativo: 1 },
     { id: 'p3', nome: 'Livre', preco: 340, aulas_semana: 4, descricao: 'Acesso amplo as turmas', ativo: 1 },
     { id: 'p4', nome: 'Avulso', preco: 70, aulas_semana: 0, descricao: 'Aula avulsa ou reposicao', ativo: 1 }
   ];
-  const students = [
-    { id: 's1', nome: 'Ana Souza', telefone: '(15) 99111-0001', email: '', plano_id: 'p2', plano_nome: '2x semana', mensalidade: 260, status: 'Ativo', nivel: 'Intermediario', observacao: 'Prefere turma da noite', pago_ate: addMonthsIso(today, 1) },
-    { id: 's2', nome: 'Bruno Lima', telefone: '(15) 99111-0002', email: '', plano_id: 'p1', plano_nome: '1x semana', mensalidade: 180, status: 'Ativo', nivel: 'Iniciante', observacao: 'Foco em fundamento', pago_ate: '' },
-    { id: 's3', nome: 'Carla Mendes', telefone: '(15) 99111-0003', email: '', plano_id: 'p2', plano_nome: '2x semana', mensalidade: 260, status: 'Ativo', nivel: 'Iniciante', observacao: 'Veio por indicacao', pago_ate: addMonthsIso(today, 1) },
-    { id: 's4', nome: 'Diego Alves', telefone: '(15) 99111-0004', email: '', plano_id: 'p3', plano_nome: 'Livre', mensalidade: 340, status: 'Ativo', nivel: 'Avancado', observacao: 'Treina para torneio', pago_ate: addMonthsIso(today, 1) },
-    { id: 's5', nome: 'Fernanda Rocha', telefone: '(15) 99111-0005', email: '', plano_id: 'p1', plano_nome: '1x semana', mensalidade: 180, status: 'Experimental', nivel: 'Iniciante', observacao: 'Aula experimental marcada', pago_ate: '' },
-    { id: 's6', nome: 'Gustavo Nunes', telefone: '(15) 99111-0006', email: '', plano_id: 'p2', plano_nome: '2x semana', mensalidade: 260, status: 'Ativo', nivel: 'Intermediario', observacao: '', pago_ate: lastMonth },
-    { id: 's7', nome: 'Helena Prado', telefone: '(15) 99111-0007', email: '', plano_id: 'p1', plano_nome: '1x semana', mensalidade: 180, status: 'Pausado', nivel: 'Kids', observacao: 'Retorna no proximo mes', pago_ate: '' },
-    { id: 's8', nome: 'Igor Martins', telefone: '(15) 99111-0008', email: '', plano_id: 'p4', plano_nome: 'Avulso', mensalidade: 70, status: 'Ativo', nivel: 'Intermediario', observacao: 'Costuma fazer avulso aos sabados', pago_ate: today }
+  const names = [
+    'Ana Souza', 'Bruno Lima', 'Carla Mendes', 'Diego Alves', 'Fernanda Rocha', 'Gustavo Nunes',
+    'Helena Prado', 'Igor Martins', 'Julia Campos', 'Rafael Costa', 'Marina Lopes', 'Thiago Ferreira',
+    'Larissa Pires', 'Caio Ribeiro', 'Bianca Moreira', 'Eduardo Santos', 'Patricia Almeida', 'Lucas Barros',
+    'Isabela Gomes', 'Mateus Carvalho', 'Renata Duarte', 'Felipe Martins', 'Camila Nogueira', 'Andre Lopes',
+    'Sofia Teixeira', 'Vitor Araujo', 'Leticia Freitas', 'Rodrigo Mello', 'Amanda Vieira', 'Pedro Henrique',
+    'Natalia Ramos', 'Joao Victor', 'Luana Castro', 'Marcelo Dias', 'Beatriz Fonseca', 'Henrique Reis',
+    'Priscila Moura', 'Daniel Batista', 'Laura Cunha', 'Murilo Rocha', 'Tatiane Cardoso', 'Ruan Oliveira',
+    'Melissa Correia', 'Alex Silva', 'Barbara Tavares', 'Cesar Augusto', 'Vivian Leal', 'Samuel Pinto'
   ];
-  const classes = [
-    { id: 'c1', data: today, horario: '18:30', turma: 'Iniciantes', professor: 'Lucao', capacidade: 8, status: 'Confirmada', aluno_ids: ['s2', 's3', 's5'], presencas: { s2: true, s3: true, s5: false } },
-    { id: 'c2', data: today, horario: '19:30', turma: 'Intermediario', professor: 'Lucao', capacidade: 8, status: 'Confirmada', aluno_ids: ['s1', 's6', 's8'], presencas: { s1: true, s6: false, s8: true } },
-    { id: 'c3', data: tomorrow, horario: '18:30', turma: 'Kids', professor: 'Lucao', capacidade: 6, status: 'Marcada', aluno_ids: ['s7'], presencas: {} },
-    { id: 'c4', data: nextTwo, horario: '19:00', turma: 'Avancado', professor: 'Lucao', capacidade: 8, status: 'Marcada', aluno_ids: ['s4', 's8'], presencas: {} },
-    { id: 'c5', data: nextThree, horario: '08:00', turma: 'Sabado livre', professor: 'Lucao', capacidade: 10, status: 'Marcada', aluno_ids: ['s1', 's3', 's4', 's6'], presencas: {} }
+  const levels = ['Iniciante', 'Intermediario', 'Avancado', 'Kids'];
+  const notes = ['Prefere turma da noite', 'Foco em fundamento', 'Veio por indicacao', 'Treina para torneio', 'Aula experimental marcada', '', 'Retorna no proximo mes', 'Costuma fazer avulso aos sabados'];
+  const students = names.map((name, index) => {
+    const plan = plans[index % plans.length];
+    const paused = index % 17 === 0;
+    const trial = index % 11 === 0;
+    const pending = index % 6 === 0 || trial;
+    return {
+      id: `s${index + 1}`,
+      nome: name,
+      telefone: `(15) 991${String(110000 + index).slice(1)}`,
+      email: '',
+      plano_id: plan.id,
+      plano_nome: plan.nome,
+      mensalidade: plan.preco,
+      status: paused ? 'Pausado' : trial ? 'Experimental' : 'Ativo',
+      nivel: levels[index % levels.length],
+      observacao: notes[index % notes.length],
+      pago_ate: paused || pending ? '' : addMonthsIso(today, 1)
+    };
+  });
+  const classTemplates = [
+    ['Iniciantes', '18:30', 8],
+    ['Intermediario', '19:30', 8],
+    ['Kids', '18:00', 6],
+    ['Avancado', '20:00', 8],
+    ['Sabado livre', '08:00', 10],
+    ['Experimental', '09:00', 8],
+    ['Feminino iniciante', '19:00', 8],
+    ['Treino competitivo', '20:30', 8]
   ];
+  const classes = Array.from({ length: 24 }, (_item, index) => {
+    const template = classTemplates[index % classTemplates.length];
+    const dayOffset = Math.floor(index / 3);
+    const enrolled = students
+      .filter((student, studentIndex) => student.status !== 'Pausado' && studentIndex % classTemplates.length === index % classTemplates.length)
+      .slice(0, template[2]);
+    if (enrolled.length < 3) {
+      enrolled.push(...students.filter((student) => student.status !== 'Pausado').slice(index % 10, (index % 10) + 4));
+    }
+    const alunoIds = [...new Set(enrolled.map((student) => student.id))].slice(0, template[2]);
+    const presencas = {};
+    alunoIds.forEach((id, presenceIndex) => {
+      if (dayOffset <= 1) presencas[id] = presenceIndex % 4 !== 0;
+    });
+    return {
+      id: `c${index + 1}`,
+      data: addDaysIso(today, dayOffset),
+      horario: template[1],
+      turma: template[0],
+      professor: index % 5 === 0 ? 'Professor convidado' : 'Lucao',
+      capacidade: template[2],
+      status: dayOffset === 0 ? 'Confirmada' : 'Marcada',
+      aluno_ids: alunoIds,
+      presencas
+    };
+  });
+  const payments = students.filter((student) => student.pago_ate).slice(0, 32).map((student, index) => ({
+    id: `pay${index + 1}`,
+    aluno_id: student.id,
+    aluno_nome: student.nome,
+    referencia: today.slice(0, 7),
+    valor: student.mensalidade,
+    vencimento: today,
+    pago_em: addDaysIso(today, -(index % 8)),
+    status: 'PAGO',
+    forma_pagamento: index % 3 === 0 ? 'Pix' : index % 3 === 1 ? 'Cartao' : 'Dinheiro'
+  }));
+  const waitNames = ['Julia Moraes', 'Rafael Brito', 'Marina Lins', 'Otavio Sales', 'Paula Azevedo', 'Nicolas Farias', 'Clara Matos', 'Leandro Paiva', 'Monique Torres', 'Davi Campos', 'Erica Reis', 'Fabio Nascimento'];
+  const waitlist = waitNames.map((name, index) => ({
+    id: `w${index + 1}`,
+    nome: name,
+    telefone: `(15) 992${String(220000 + index).slice(1)}`,
+    preferencia: ['Noite - iniciante', 'Sabado de manha', 'Kids', 'Experimental', 'Intermediario'][index % 5],
+    status: index % 5 === 0 ? 'Convertido' : index % 3 === 0 ? 'Contatado' : 'Novo',
+    observacao: ['Chamou pelo Instagram', 'Aguardando confirmar horario', 'Perguntou sobre valores', 'Indicacao de aluno'][index % 4],
+    data_cadastro: addDaysIso(today, -index)
+  }));
   return {
     students,
     plans,
     classes,
-    payments: [
-      { id: 'pay1', aluno_id: 's1', aluno_nome: 'Ana Souza', referencia: today.slice(0, 7), valor: 260, vencimento: today, pago_em: today, status: 'PAGO', forma_pagamento: 'Pix' },
-      { id: 'pay2', aluno_id: 's3', aluno_nome: 'Carla Mendes', referencia: today.slice(0, 7), valor: 260, vencimento: today, pago_em: today, status: 'PAGO', forma_pagamento: 'Pix' },
-      { id: 'pay3', aluno_id: 's4', aluno_nome: 'Diego Alves', referencia: today.slice(0, 7), valor: 340, vencimento: today, pago_em: today, status: 'PAGO', forma_pagamento: 'Cartao' }
-    ],
-    waitlist: [
-      { id: 'w1', nome: 'Julia Campos', telefone: '(15) 99222-0001', preferencia: 'Noite - iniciante', status: 'Novo', observacao: 'Chamou pelo Instagram', data_cadastro: today },
-      { id: 'w2', nome: 'Rafael Costa', telefone: '(15) 99222-0002', preferencia: 'Sabado de manha', status: 'Contatado', observacao: 'Aguardando confirmar horario', data_cadastro: today },
-      { id: 'w3', nome: 'Marina Lopes', telefone: '(15) 99222-0003', preferencia: 'Kids', status: 'Novo', observacao: 'Filha de 9 anos', data_cadastro: today }
-    ]
+    payments,
+    waitlist
   };
 }
 
@@ -78,9 +137,10 @@ let activeAttendanceClassId = '';
 
 function loadLocalState() {
   try {
-    return { ...structuredClone(starter), ...JSON.parse(localStorage.getItem(STORE_KEY)) };
+    const saved = JSON.parse(localStorage.getItem(STORE_KEY));
+    return saved ? { ...demoState(), ...saved } : demoState();
   } catch {
-    return structuredClone(starter);
+    return demoState();
   }
 }
 
@@ -1241,7 +1301,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260531', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260531-60', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {

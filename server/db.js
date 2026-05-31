@@ -332,10 +332,14 @@ function restoreState(payload, mode = 'merge') {
   const imported = {};
   db.exec('BEGIN');
   try {
+    if (mode === 'replace') {
+      ['logs', 'aula_alunos', 'pagamentos', 'aulas', 'alunos', 'lista_espera', 'disponibilidade', 'planos'].forEach((table) => {
+        if (tableExists(table)) run(`DELETE FROM ${table}`);
+      });
+    }
     for (const [table, tableRows] of Object.entries(payload.data)) {
       if (!DATA_TABLES.includes(table) || !Array.isArray(tableRows) || !tableExists(table)) continue;
       const columns = tableColumns(table);
-      if (mode === 'replace') run(`DELETE FROM ${table}`);
       imported[table] = 0;
       tableRows.forEach((item) => {
         const clean = columns.filter((col) => Object.prototype.hasOwnProperty.call(item, col));
