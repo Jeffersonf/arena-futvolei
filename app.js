@@ -18,7 +18,7 @@ const starter = {
     { id: 'p4', nome: 'Avulso', preco: 60, aulas_semana: 0, descricao: 'Aula avulsa', ativo: 1 }
   ],
   classes: [
-    { id: 'c1', data: todayISO(), horario: '18:30', turma: 'Iniciantes', professor: 'Jefferson', capacidade: 8, status: 'Marcada', aluno_ids: ['s1', 's2'], presencas: { s1: true, s2: false } }
+    { id: 'c1', data: todayISO(), horario: '18:30', turma: 'Iniciantes', professor: 'Jefferson', capacidade: 8, status: 'Marcada', aluno_ids: ['s1', 's2'], presencas: { s1: true, s2: false }, extra_presentes: [] }
   ],
   payments: [],
   waitlist: [
@@ -98,7 +98,8 @@ function demoState() {
       capacidade: template[2],
       status: dayOffset === 0 ? 'Confirmada' : 'Marcada',
       aluno_ids: alunoIds,
-      presencas
+      presencas,
+      extra_presentes: dayOffset === 0 && index % 6 === 0 ? [{ id: `e${index}`, nome: ['Visitante Rafael', 'Reposicao da Laura', 'Aula teste Felipe'][index % 3], criado_em: today }] : []
     };
   });
   const payments = students.filter((student) => student.pago_ate).slice(0, 32).map((student, index) => ({
@@ -228,6 +229,74 @@ function planById(id) {
 
 function isPaid(student) {
   return Boolean(student.pago_ate && student.pago_ate >= todayISO());
+}
+
+function classStudentIds(item = {}) {
+  return item.aluno_ids || (item.alunos || []).map((entry) => entry.aluno_id || entry.id);
+}
+
+function classStudents(item = {}) {
+  return (item.alunos || classStudentIds(item).map(studentById)).filter(Boolean);
+}
+
+function classExtras(item = {}) {
+  if (Array.isArray(item.extra_presentes)) return item.extra_presentes;
+  if (Array.isArray(item.extras)) return item.extras;
+  if (typeof item.extras === 'string') {
+    try {
+      const parsed = JSON.parse(item.extras || '[]');
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function weekBounds(dateIso = todayISO()) {
+  const date = new Date(`${dateIso}T12:00:00`);
+  const day = date.getDay();
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const start = new Date(date);
+  start.setDate(date.getDate() + diffToMonday);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  return {
+    start: start.toISOString().slice(0, 10),
+    end: end.toISOString().slice(0, 10)
+  };
+}
+
+function weeklyAttendanceCount(studentId, dateIso = todayISO()) {
+  const { start, end } = weekBounds(dateIso);
+  return state.classes.filter((item) => (
+    item.data >= start
+    && item.data <= end
+    && Boolean(item.presencas?.[studentId] || item.presencas?.[String(studentId)])
+  )).length;
+}
+
+function planWeeklyTarget(student = {}) {
+  const plan = planById(student.plano_id);
+  if (plan) return Number(plan.aulas_semana || 0);
+  const match = String(student.plano_nome || '').match(/(\d+)\s*x/i);
+  return match ? Number(match[1]) : 0;
+}
+
+function attendanceSummary(studentId) {
+  let enrolled = 0;
+  let present = 0;
+  const history = [];
+  state.classes.forEach((item) => {
+    const ids = classStudentIds(item).map(String);
+    if (!ids.includes(String(studentId))) return;
+    enrolled += 1;
+    const wasPresent = Boolean(item.presencas?.[studentId] || item.presencas?.[String(studentId)]);
+    if (wasPresent) present += 1;
+    history.push({ ...item, wasPresent });
+  });
+  const rate = enrolled ? Math.round((present / enrolled) * 100) : 0;
+  return { enrolled, present, rate, history: history.sort(sortClass) };
 }
 
 function formatDate(value) {
@@ -412,7 +481,52 @@ function openGlobalResult(action) {
 function renderClasses() {
   const date = document.getElementById('classDateFilter').value;
   const classes = [...state.classes].filter((item) => !date || item.data === date).sort(sortClass);
+  renderClassesTodayPlanner();
+  renderClassCalendar();
   document.getElementById('classList').innerHTML = classes.length ? classes.map(classRow).join('') : empty('Crie a primeira aula da agenda.');
+}
+
+function renderClassesTodayPlanner() {
+  const target = document.getElementById('classesTodayPlanner');
+  if (!target) return;
+  const classes = state.classes.filter((item) => item.data === todayISO()).sort(sortClass);
+  target.innerHTML = classes.length ? classes.map((item) => {
+    const enrolled = classStudents(item);
+    const extras = classExtras(item);
+    return `
+      <article class="today-class">
+        <div class="today-class-head">
+          <div>
+            <strong>${escapeHTML(item.horario)} - ${escapeHTML(item.turma || 'Turma')}</strong>
+            <span>${escapeHTML(item.professor || 'Professor nao informado')} - ${enrolled.length}/${item.capacidade || 8} previstos</span>
+          </div>
+          <button class="mini-btn" data-attendance="${item.id}">Presencas</button>
+        </div>
+        <div class="roster-list">
+          ${enrolled.map((student) => rosterPerson(student, item.data, Boolean(item.presencas?.[student.aluno_id || student.id] || student.presente))).join('')}
+          ${extras.map((extra) => `<span class="roster-person extra"><strong>${escapeHTML(extra.nome || extra)}</strong><small>fora da lista</small></span>`).join('')}
+        </div>
+      </article>
+    `;
+  }).join('') : empty('Nenhuma aula marcada para hoje.');
+}
+
+function renderClassCalendar() {
+  const target = document.getElementById('classCalendar');
+  if (!target) return;
+  const days = Array.from({ length: 7 }, (_item, index) => addDaysIso(todayISO(), index));
+  target.innerHTML = days.map((day) => {
+    const classes = state.classes.filter((item) => item.data === day && item.status !== 'Cancelada').sort(sortClass);
+    return `
+      <article class="calendar-day ${day === todayISO() ? 'today' : ''}">
+        <button type="button" data-class-day="${day}">
+          <strong>${formatDate(day).slice(0, 5)}</strong>
+          <span>${classes.length} aula(s)</span>
+        </button>
+        <div>${classes.slice(0, 3).map((item) => `<small>${escapeHTML(item.horario)} ${escapeHTML(item.turma || '')}</small>`).join('')}</div>
+      </article>
+    `;
+  }).join('');
 }
 
 function renderPayments() {
@@ -614,6 +728,77 @@ function classRow(item) {
   `;
 }
 
+function studentCard(student) {
+  const message = `Oi ${student.nome}, tudo bem? Aqui e do Team Lucao Futevolei.`;
+  const weekly = weeklyAttendanceCount(student.id);
+  const target = planWeeklyTarget(student);
+  return `
+    <article class="student-card">
+      <button class="link-title" type="button" data-report-student="${student.id}">${escapeHTML(student.nome)}</button>
+      <p class="meta">${escapeHTML(student.telefone || 'sem telefone')}</p>
+      <div class="pill-row">
+        <span class="pill">${escapeHTML(student.plano_nome || 'sem plano')}</span>
+        <span class="pill">${escapeHTML(student.nivel || 'Iniciante')}</span>
+        <span class="pill ${student.status === 'Ativo' ? 'ok' : student.status === 'Experimental' ? 'warn' : ''}">${escapeHTML(student.status || 'Ativo')}</span>
+        <span class="pill ${isPaid(student) ? 'ok' : 'bad'}">${isPaid(student) ? 'em dia' : 'pendente'}</span>
+        <span class="pill">${weekly}/${target || '-'} na semana</span>
+      </div>
+      ${student.observacao ? `<p class="meta">${escapeHTML(student.observacao)}</p>` : ''}
+      <div class="actions">
+        ${student.telefone ? `<a class="mini-btn" href="${whatsappUrl(student.telefone, message)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+        <button class="mini-btn" data-edit-student="${student.id}">Editar</button>
+        <button class="mini-btn" data-pay="${student.id}">Pago</button>
+        <button class="mini-btn danger-mini" data-delete-student="${student.id}">Remover</button>
+      </div>
+    </article>
+  `;
+}
+
+function classRow(item) {
+  const enrolled = classStudents(item);
+  const present = enrolled.filter((student) => item.presencas?.[student.aluno_id || student.id] || student.presente).length;
+  const extras = classExtras(item);
+  return `
+    <article class="row-card">
+      <div>
+        <h3>${formatDate(item.data)} as ${item.horario} - ${escapeHTML(item.turma || 'Turma')}</h3>
+        <p class="meta">${escapeHTML(item.professor || 'Professor nao informado')} - ${enrolled.length}/${item.capacidade || 8} aluno(s) previstos</p>
+        <div class="pill-row">
+          <span class="pill">${present}/${enrolled.length} presencas</span>
+          ${extras.length ? `<span class="pill warn">${extras.length} fora da lista</span>` : ''}
+          <span class="pill">${escapeHTML(item.status || 'Marcada')}</span>
+          ${item.data === todayISO() ? '<span class="pill ok">hoje</span>' : ''}
+        </div>
+        ${enrolled.length || extras.length ? `
+          <div class="roster-list class-roster">
+            ${enrolled.map((student) => rosterPerson(student, item.data, Boolean(item.presencas?.[student.aluno_id || student.id] || student.presente))).join('')}
+            ${extras.map((extra) => `<span class="roster-person extra"><strong>${escapeHTML(extra.nome || extra)}</strong><small>fora da lista</small></span>`).join('')}
+          </div>
+        ` : ''}
+      </div>
+      <div class="actions">
+        <button class="mini-btn" data-attendance="${item.id}">Presencas</button>
+        <button class="mini-btn" data-duplicate-class="${item.id}">Duplicar</button>
+        <button class="mini-btn" data-edit-class="${item.id}">Editar</button>
+        <button class="mini-btn danger-mini" data-delete-class="${item.id}">Remover</button>
+      </div>
+    </article>
+  `;
+}
+
+function rosterPerson(student, dateIso, present = false) {
+  const id = student.aluno_id || student.id;
+  const fullStudent = studentById(id) || student;
+  const count = weeklyAttendanceCount(id, dateIso);
+  const target = planWeeklyTarget(fullStudent);
+  return `
+    <span class="roster-person ${present ? 'present' : ''}">
+      <button type="button" data-report-student="${id}">${escapeHTML(student.nome)}</button>
+      <small>${count}/${target || '-'} na semana</small>
+    </span>
+  `;
+}
+
 function empty(text) {
   return `<div class="empty">${text}</div>`;
 }
@@ -654,6 +839,70 @@ function openStudent(id = '') {
   document.getElementById('studentStatus').value = student.status || 'Ativo';
   document.getElementById('studentNote').value = student.observacao || '';
   openModal('studentModal');
+}
+
+function openStudentReport(id) {
+  const student = studentById(id);
+  if (!student) return;
+  const summary = attendanceSummary(id);
+  const weekly = weeklyAttendanceCount(id);
+  const target = planWeeklyTarget(student);
+  const nextClasses = summary.history.filter((item) => item.data >= todayISO()).slice(0, 6);
+  const recentClasses = [...summary.history].filter((item) => item.data < todayISO()).reverse().slice(0, 6);
+  const payments = (state.payments || []).filter((item) => String(item.aluno_id) === String(id)).slice(0, 6);
+  document.getElementById('studentReport').innerHTML = `
+    <div class="report-hero">
+      <div>
+        <span class="section-label">Relatorio do aluno</span>
+        <h2>${escapeHTML(student.nome)}</h2>
+        <p class="meta">${escapeHTML(student.telefone || 'sem telefone')} - ${escapeHTML(student.plano_nome || 'sem plano')} - ${escapeHTML(student.nivel || 'sem nivel')}</p>
+      </div>
+      <div class="actions">
+        ${student.telefone ? `<a class="mini-btn" href="${whatsappUrl(student.telefone, `Oi ${student.nome}, tudo bem? Aqui e do Team Lucao Futevolei.`)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+        <button class="mini-btn" data-edit-student="${student.id}">Editar</button>
+        <button class="mini-btn" data-pay="${student.id}">Pago</button>
+      </div>
+    </div>
+    <div class="report-grid student-report-grid">
+      <article class="mini-stat"><span>Semana atual</span><strong>${weekly}/${target || '-'}</strong></article>
+      <article class="mini-stat"><span>Presencas</span><strong>${summary.present}/${summary.enrolled}</strong></article>
+      <article class="mini-stat"><span>Comparecimento</span><strong>${summary.rate}%</strong></article>
+      <article class="mini-stat"><span>Pagamento</span><strong>${isPaid(student) ? 'Em dia' : 'Pendente'}</strong></article>
+    </div>
+    ${student.observacao ? `<p class="report-note">${escapeHTML(student.observacao)}</p>` : ''}
+    <div class="two-col report-columns">
+      <section>
+        <div class="section-label">Proximas aulas previstas</div>
+        <div class="list">${nextClasses.length ? nextClasses.map((item) => reportClassLine(item)).join('') : empty('Nenhuma proxima aula vinculada.')}</div>
+      </section>
+      <section>
+        <div class="section-label">Historico recente</div>
+        <div class="list">${recentClasses.length ? recentClasses.map((item) => reportClassLine(item, true)).join('') : empty('Sem historico de aulas.')}</div>
+      </section>
+    </div>
+    <div class="section-label">Pagamentos recentes</div>
+    <div class="list">${payments.length ? payments.map((item) => `
+      <article class="row-card compact-row">
+        <div>
+          <h3>${money.format(Number(item.valor || 0))}</h3>
+          <p class="meta">${escapeHTML(item.referencia || '')} - ${formatDate(item.pago_em || item.vencimento)} - ${escapeHTML(item.forma_pagamento || 'manual')}</p>
+        </div>
+      </article>
+    `).join('') : empty('Sem pagamento registrado neste historico.')}</div>
+  `;
+  openModal('studentReportModal');
+}
+
+function reportClassLine(item, showPresence = false) {
+  return `
+    <article class="row-card compact-row">
+      <div>
+        <h3>${formatDate(item.data)} ${escapeHTML(item.horario)} - ${escapeHTML(item.turma || 'Turma')}</h3>
+        <p class="meta">${escapeHTML(item.professor || 'Professor nao informado')}</p>
+      </div>
+      ${showPresence ? `<div class="pill-row"><span class="pill ${item.wasPresent ? 'ok' : 'warn'}">${item.wasPresent ? 'presente' : 'faltou'}</span></div>` : ''}
+    </article>
+  `;
 }
 
 function openClass(id = '') {
@@ -788,7 +1037,8 @@ async function saveClass(event) {
     capacidade: Number(document.getElementById('classCapacity').value || 8),
     status: document.getElementById('classStatus').value,
     aluno_ids: alunoIds,
-    presencas
+    presencas,
+    extra_presentes: classExtras(previous)
   };
   if (apiMode) {
     await api(id ? `/api/classes/${id}` : '/api/classes', { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) });
@@ -875,11 +1125,75 @@ function openAttendance(classId) {
   openModal('attendanceModal');
 }
 
+function openAttendance(classId) {
+  const item = state.classes.find((entry) => String(entry.id) === String(classId));
+  if (!item) return;
+  activeAttendanceClassId = classId;
+  const ids = classStudentIds(item);
+  const extras = classExtras(item);
+  document.getElementById('attendanceTitle').textContent = `${formatDate(item.data)} as ${item.horario} - ${item.turma || 'Turma'}`;
+  document.getElementById('attendanceList').innerHTML = ids.map(studentById).filter(Boolean).map((student) => `
+    <div class="check-item">
+      <div>
+        <strong>${escapeHTML(student.nome)}</strong>
+        <p class="meta">${escapeHTML(student.plano_nome || 'sem plano')} - ${weeklyAttendanceCount(student.id, item.data)}/${planWeeklyTarget(student) || '-'} na semana</p>
+      </div>
+      <button class="mini-btn ${item.presencas?.[student.id] ? 'present' : ''}" data-toggle-attendance="${item.id}:${student.id}">
+        ${item.presencas?.[student.id] ? 'Presente' : 'Marcar'}
+      </button>
+    </div>
+  `).join('') || empty('Nenhum aluno vinculado a esta aula.');
+  document.getElementById('extraAttendanceList').innerHTML = extras.length ? extras.map((extra, index) => `
+    <article class="row-card compact-row">
+      <div>
+        <h3>${escapeHTML(extra.nome || extra)}</h3>
+        <p class="meta">Veio sem estar na lista prevista</p>
+      </div>
+      <button class="mini-btn danger-mini" data-remove-extra="${item.id}:${index}">Remover</button>
+    </article>
+  `).join('') : empty('Nenhum avulso marcado.');
+  openModal('attendanceModal');
+}
+
+async function saveClassItem(item) {
+  if (apiMode) {
+    await api(`/api/classes/${item.id}`, { method: 'PUT', body: JSON.stringify(item) });
+    await loadData();
+  } else {
+    saveLocalState();
+    render();
+  }
+}
+
+async function addExtraAttendance(event) {
+  event.preventDefault();
+  const item = state.classes.find((entry) => String(entry.id) === String(activeAttendanceClassId));
+  if (!item) return;
+  const input = document.getElementById('extraAttendanceName');
+  const name = input.value.trim();
+  if (!name) return;
+  item.extra_presentes = [...classExtras(item), { id: uid(), nome: name, criado_em: todayISO() }];
+  input.value = '';
+  await saveClassItem(item);
+  openAttendance(item.id);
+  toast('Avulso adicionado');
+}
+
+async function removeExtraAttendance(classId, index) {
+  const item = state.classes.find((entry) => String(entry.id) === String(classId));
+  if (!item) return;
+  item.extra_presentes = [...classExtras(item)];
+  item.extra_presentes.splice(Number(index), 1);
+  await saveClassItem(item);
+  openAttendance(classId);
+  toast('Avulso removido');
+}
+
 async function setClassAttendance(classId, present) {
   const item = state.classes.find((entry) => String(entry.id) === String(classId));
   if (!item) return;
   item.presencas = item.presencas || {};
-  (item.aluno_ids || []).forEach((studentId) => { item.presencas[studentId] = present; });
+  classStudentIds(item).forEach((studentId) => { item.presencas[studentId] = present; });
   if (apiMode) {
     await api(`/api/classes/${classId}/attendance`, { method: 'PUT', body: JSON.stringify({ attendance: item.presencas }) });
     await loadData();
@@ -972,8 +1286,9 @@ async function duplicateClass(id) {
     professor: item.professor,
     capacidade: item.capacidade,
     status: 'Marcada',
-    aluno_ids: item.aluno_ids || [],
-    presencas: {}
+    aluno_ids: classStudentIds(item),
+    presencas: {},
+    extra_presentes: []
   };
   if (apiMode) {
     await api('/api/classes', { method: 'POST', body: JSON.stringify(next) });
@@ -1091,11 +1406,11 @@ function exportCsv(kind) {
     },
     classes: {
       filename: `team-lucao-aulas-${todayISO()}.csv`,
-      headers: ['data', 'horario', 'turma', 'professor', 'capacidade', 'status', 'alunos', 'presencas'],
+      headers: ['data', 'horario', 'turma', 'professor', 'capacidade', 'status', 'alunos', 'presencas', 'fora_da_lista'],
       rows: state.classes.map((item) => {
         const enrolled = (item.alunos || (item.aluno_ids || []).map(studentById)).filter(Boolean);
         const present = enrolled.filter((student) => item.presencas?.[student.aluno_id || student.id] || student.presente).length;
-        return [item.data, item.horario, item.turma, item.professor, item.capacidade, item.status, enrolled.length, present];
+        return [item.data, item.horario, item.turma, item.professor, item.capacidade, item.status, enrolled.length, present, classExtras(item).length];
       })
     },
     waitlist: {
@@ -1162,6 +1477,7 @@ function serverDemoPayload(next) {
         professor: item.professor,
         capacidade: item.capacidade,
         status: item.status,
+        extras: JSON.stringify(classExtras(item)),
         observacao: ''
       })),
       aula_alunos: next.classes.flatMap((item) => (item.aluno_ids || []).map((studentIdValue, index) => ({
@@ -1243,6 +1559,7 @@ function bindEvents() {
   document.getElementById('classForm').addEventListener('submit', (event) => saveClass(event).catch((err) => toast(err.message)));
   document.getElementById('planForm').addEventListener('submit', (event) => savePlan(event).catch((err) => toast(err.message)));
   document.getElementById('waitlistForm').addEventListener('submit', (event) => saveWaitlist(event).catch((err) => toast(err.message)));
+  document.getElementById('extraAttendanceForm').addEventListener('submit', (event) => addExtraAttendance(event).catch((err) => toast(err.message)));
   document.getElementById('markAllPresent').addEventListener('click', () => setClassAttendance(activeAttendanceClassId, true).catch((err) => toast(err.message)));
   document.getElementById('clearAttendance').addEventListener('click', () => setClassAttendance(activeAttendanceClassId, false).catch((err) => toast(err.message)));
   document.getElementById('studentSearch').addEventListener('input', renderStudents);
@@ -1273,8 +1590,9 @@ function bindEvents() {
     showLogin(true);
   });
   document.body.addEventListener('click', (event) => {
-    const target = event.target.closest('[data-edit-student],[data-delete-student],[data-edit-class],[data-delete-class],[data-duplicate-class],[data-edit-plan],[data-delete-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-edit-wait],[data-delete-wait],[data-wait-status],[data-convert-wait]');
+    const target = event.target.closest('[data-report-student],[data-edit-student],[data-delete-student],[data-edit-class],[data-delete-class],[data-duplicate-class],[data-edit-plan],[data-delete-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-edit-wait],[data-delete-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day]');
     if (!target) return;
+    if (target.dataset.reportStudent) openStudentReport(target.dataset.reportStudent);
     if (target.dataset.editStudent) openStudent(target.dataset.editStudent);
     if (target.dataset.deleteStudent) deleteStudent(target.dataset.deleteStudent).catch((err) => toast(err.message));
     if (target.dataset.editClass) openClass(target.dataset.editClass);
@@ -1286,6 +1604,14 @@ function bindEvents() {
     if (target.dataset.toggleAttendance) {
       const [classId, studentId] = target.dataset.toggleAttendance.split(':');
       toggleAttendance(classId, studentId).catch((err) => toast(err.message));
+    }
+    if (target.dataset.removeExtra) {
+      const [classId, index] = target.dataset.removeExtra.split(':');
+      removeExtraAttendance(classId, index).catch((err) => toast(err.message));
+    }
+    if (target.dataset.classDay) {
+      document.getElementById('classDateFilter').value = target.dataset.classDay;
+      renderClasses();
     }
     if (target.dataset.pay) markPaid(target.dataset.pay).catch((err) => toast(err.message));
     if (target.dataset.editWait) openWaitItem(target.dataset.editWait);
@@ -1301,7 +1627,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260531-60', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260531-operacao', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {

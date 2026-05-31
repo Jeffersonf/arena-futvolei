@@ -117,6 +117,7 @@ function ensureSchema() {
       capacidade INTEGER DEFAULT 8,
       status TEXT DEFAULT 'Marcada',
       valor_avulso REAL DEFAULT 0,
+      extras TEXT DEFAULT '[]',
       observacao TEXT DEFAULT '',
       UNIQUE(data, horario, turma)
     );
@@ -172,6 +173,11 @@ function ensureSchema() {
   const waitlistColumns = tableColumns('lista_espera');
   if (!waitlistColumns.includes('status')) {
     run("ALTER TABLE lista_espera ADD COLUMN status TEXT DEFAULT 'Novo'");
+  }
+
+  const classColumns = tableColumns('aulas');
+  if (!classColumns.includes('extras')) {
+    run("ALTER TABLE aulas ADD COLUMN extras TEXT DEFAULT '[]'");
   }
 
   const plans = scalar('SELECT COUNT(*) AS total FROM planos');

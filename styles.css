@@ -519,6 +519,23 @@ h2 {
   font-size: 18px;
 }
 
+.link-title {
+  display: block;
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 850;
+  text-align: left;
+}
+
+.link-title:hover,
+.roster-person button:hover {
+  color: var(--accent);
+}
+
 .search,
 .filters input,
 .filters select {
@@ -579,6 +596,133 @@ h2 {
 
 .section-label {
   margin: 10px 0 2px;
+}
+
+.today-planner,
+.class-calendar {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.today-planner {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.today-class,
+.calendar-day {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+  background: var(--panel2);
+}
+
+.today-class-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.today-class-head strong,
+.today-class-head span {
+  display: block;
+}
+
+.today-class-head span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.class-calendar {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.calendar-day {
+  padding: 0;
+  overflow: hidden;
+}
+
+.calendar-day.today {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--line));
+}
+
+.calendar-day button {
+  width: 100%;
+  min-height: 58px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  padding: 9px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+}
+
+.calendar-day strong,
+.calendar-day span,
+.calendar-day small {
+  display: block;
+}
+
+.calendar-day span,
+.calendar-day small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.calendar-day div {
+  display: grid;
+  gap: 4px;
+  padding: 8px 9px;
+}
+
+.roster-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.roster-person {
+  display: grid;
+  min-width: 132px;
+  gap: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 7px 9px;
+  background: var(--soft);
+}
+
+.roster-person.present {
+  border-color: color-mix(in srgb, #2ecc71 45%, var(--line));
+}
+
+.roster-person.extra {
+  border-color: color-mix(in srgb, var(--warn) 45%, var(--line));
+}
+
+.roster-person button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 850;
+  text-align: left;
+}
+
+.roster-person strong {
+  font-size: 12px;
+}
+
+.roster-person small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.class-roster {
+  max-width: 920px;
 }
 
 .compact-row {
@@ -642,6 +786,10 @@ h2 {
   box-shadow: var(--shadow);
 }
 
+.wide-modal {
+  width: min(920px, 100%);
+}
+
 .modal h2 {
   margin-bottom: 16px;
 }
@@ -701,6 +849,34 @@ select[multiple] {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 14px;
+}
+
+.extra-attendance {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.report-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.student-report-grid {
+  margin-top: 12px;
+}
+
+.report-note {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin: 12px 0;
+  color: var(--muted);
+  background: var(--panel);
 }
 
 .check-item {
@@ -771,6 +947,20 @@ select[multiple] {
 
   .topbar,
   .two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .today-planner,
+  .class-calendar {
+    grid-template-columns: 1fr;
+  }
+
+  .report-hero,
+  .today-class-head {
+    display: grid;
+  }
+
+  .extra-attendance {
     grid-template-columns: 1fr;
   }
 

@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="theme-color" content="#080808" />
     <title>Team Lucão Futevôlei</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260531-60" />
-    <link rel="stylesheet" href="styles.css?v=20260531-60" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260531-operacao" />
+    <link rel="stylesheet" href="styles.css?v=20260531-operacao" />
   </head>
   <body>
     <div class="login-wall" id="loginWall" aria-hidden="true">
@@ -135,6 +135,11 @@
             </div>
             <button class="soft-btn" type="button" data-open-class>+ Nova aula</button>
           </div>
+          <div class="section-label">Hoje</div>
+          <div class="today-planner" id="classesTodayPlanner"></div>
+          <div class="section-label">Calendario previsto</div>
+          <div class="class-calendar" id="classCalendar"></div>
+          <div class="section-label">Aulas previstas</div>
           <div class="filters">
             <input id="classDateFilter" type="date" aria-label="Filtrar aulas por data" />
             <button class="soft-btn" type="button" data-clear-class-filter>Ver todas</button>
@@ -303,6 +308,13 @@
       </form>
     </div>
 
+    <div class="modal-wrap" id="studentReportModal" aria-hidden="true">
+      <section class="modal wide-modal">
+        <button class="close" type="button" data-close="studentReportModal">x</button>
+        <div id="studentReport"></div>
+      </section>
+    </div>
+
     <div class="modal-wrap" id="classModal" aria-hidden="true">
       <form class="modal" id="classForm">
         <button class="close" type="button" data-close="classModal">x</button>
@@ -339,7 +351,13 @@
           <button class="soft-btn" type="button" id="markAllPresent">Todos presentes</button>
           <button class="soft-btn" type="button" id="clearAttendance">Limpar presença</button>
         </div>
+        <form class="extra-attendance" id="extraAttendanceForm">
+          <input id="extraAttendanceName" placeholder="Nome de quem veio sem estar na aula" />
+          <button class="soft-btn" type="submit">Adicionar avulso</button>
+        </form>
         <div class="check-list" id="attendanceList"></div>
+        <div class="section-label">Avulsos / fora da lista</div>
+        <div class="list" id="extraAttendanceList"></div>
       </section>
     </div>
 
@@ -379,6 +397,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="app.js?v=20260531-60"></script>
+    <script src="app.js?v=20260531-operacao"></script>
   </body>
 </html>

@@ -98,6 +98,7 @@ function normalizeStudentPayload(body = {}) {
 
 function normalizeClassPayload(body = {}) {
   const plan = body.plano_id ? row('SELECT * FROM planos WHERE id=?', [body.plano_id]) : null;
+  const extras = body.extra_presentes ?? body.extras ?? [];
   return {
     data: String(body.data || body.date || today()).slice(0, 10),
     horario: String(body.horario || body.time || '18:30').slice(0, 5),
@@ -108,6 +109,7 @@ function normalizeClassPayload(body = {}) {
     capacidade: Number(body.capacidade || body.capacity || 8),
     status: String(body.status || 'Marcada'),
     valor_avulso: moneyNumber(body.valor_avulso),
+    extras: typeof extras === 'string' ? extras : JSON.stringify(extras),
     observacao: String(body.observacao || body.note || '')
   };
 }
@@ -124,8 +126,18 @@ function classWithStudents(item) {
     ...item,
     alunos: students,
     aluno_ids: students.map((student) => student.aluno_id),
+    extra_presentes: parseJsonList(item.extras),
     presencas: students.reduce((acc, student) => ({ ...acc, [student.aluno_id]: Number(student.presente || 0) === 1 }), {})
   };
+}
+
+function parseJsonList(value) {
+  try {
+    const parsed = JSON.parse(value || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 function upsertClassStudents(classId, studentIds = [], attendance = {}) {
