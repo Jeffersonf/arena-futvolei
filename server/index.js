@@ -23,6 +23,7 @@ const app = express();
 const PORT = Number(process.env.PORT || 3020);
 const ROOT_DIR = path.resolve(__dirname, '..');
 const BACKUPS_DIR = path.join(ROOT_DIR, 'backups');
+const ADMIN_PIN = String(process.env.ADMIN_PIN || '1234');
 
 app.use(cors());
 app.use(express.json({ limit: '8mb' }));
@@ -68,6 +69,16 @@ function createBackup(prefix = 'backup_manual') {
   fs.writeFileSync(path.join(BACKUPS_DIR, filename), JSON.stringify(snapshot, null, 2), 'utf8');
   return { filename, snapshot };
 }
+
+function requirePin(req, res, next) {
+  if (!req.path.startsWith('/api/')) return next();
+  if (req.path === '/api/login') return next();
+  const pin = String(req.get('x-admin-pin') || '');
+  if (pin !== ADMIN_PIN) return res.status(401).json({ ok: false, error: 'PIN invalido' });
+  return next();
+}
+
+app.use(requirePin);
 
 function normalizeStudentPayload(body = {}) {
   const plan = body.plano_id ? row('SELECT * FROM planos WHERE id=?', [body.plano_id]) : null;
@@ -130,6 +141,10 @@ function upsertClassStudents(classId, studentIds = [], attendance = {}) {
 
 app.get('/', (_req, res) => res.sendFile(path.join(ROOT_DIR, 'index.html')));
 app.get('/health', (_req, res) => res.json(publicState(stateSnapshot({ includeLogs: false }))));
+app.post('/api/login', (req, res) => {
+  if (String(req.body.pin || '') !== ADMIN_PIN) return jsonError(res, new Error('PIN invalido'), 401);
+  return res.json({ ok: true });
+});
 app.get('/api/state', (_req, res) => res.json({ ok: true, state: stateSnapshot({ includeLogs: true }) }));
 app.post('/api/sync', (_req, res) => res.json({ ok: true, state: stateSnapshot({ includeLogs: true }) }));
 app.get('/api/backup.json', (_req, res) => res.json(stateSnapshot({ includeLogs: true })));
@@ -188,7 +203,7 @@ app.get('/api/students', (req, res) => {
 
 app.get('/api/students/:id', (req, res) => {
   const student = row('SELECT * FROM alunos WHERE id=?', [req.params.id]);
-  if (!student) return jsonError(res, new Error('Aluno nao encontrado'), 404);
+  if (!student) return jsonError(res, new Error('Aluno não encontrado'), 404);
   return res.json({ ok: true, item: student });
 });
 
@@ -225,7 +240,7 @@ app.delete('/api/students/:id', (req, res) => {
 app.post('/api/students/:id/pay', (req, res) => {
   try {
     const student = row('SELECT * FROM alunos WHERE id=?', [req.params.id]);
-    if (!student) throw new Error('Aluno nao encontrado');
+    if (!student) throw new Error('Aluno não encontrado');
     const paidUntil = addMonthsIso(student.pago_ate && student.pago_ate >= today() ? student.pago_ate : today(), 1);
     const value = moneyNumber(req.body.valor ?? student.mensalidade);
     run('UPDATE alunos SET pago_ate=? WHERE id=?', [paidUntil, student.id]);
@@ -239,7 +254,7 @@ app.post('/api/students/:id/pay', (req, res) => {
       req.body.forma_pagamento || 'manual',
       req.body.observacao || 'Mensalidade marcada pelo painel'
     ]);
-    logAction('Pagamento', `${student.nome} pago ate ${paidUntil}.`);
+    logAction('Pagamento', `${student.nome} pago até ${paidUntil}.`);
     res.json({ ok: true, paidUntil, item: row('SELECT * FROM alunos WHERE id=?', [student.id]) });
   } catch (err) {
     jsonError(res, err);
@@ -291,12 +306,12 @@ app.delete('/api/classes/:id', (req, res) => {
 app.put('/api/classes/:id/attendance', (req, res) => {
   try {
     const classItem = row('SELECT * FROM aulas WHERE id=?', [req.params.id]);
-    if (!classItem) throw new Error('Aula nao encontrada');
+    if (!classItem) throw new Error('Aula não encontrada');
     const attendance = req.body.attendance || req.body.presencas || {};
     Object.entries(attendance).forEach(([studentId, present]) => {
       run('UPDATE aula_alunos SET presente=? WHERE aula_id=? AND aluno_id=?', [present ? 1 : 0, req.params.id, studentId]);
     });
-    logAction('Presenca', `Presencas atualizadas na aula ${req.params.id}.`);
+    logAction('Presença', `Presenças atualizadas na aula ${req.params.id}.`);
     res.json({ ok: true, item: classWithStudents(classItem) });
   } catch (err) {
     jsonError(res, err);
@@ -323,12 +338,30 @@ app.post('/api/waitlist', (req, res) => {
       nome: String(req.body.nome || req.body.name || '').trim(),
       telefone: String(req.body.telefone || req.body.phone || '').trim(),
       preferencia: String(req.body.preferencia || '').trim(),
+      status: String(req.body.status || 'Novo').trim(),
       observacao: String(req.body.observacao || '').trim(),
       data_cadastro: today()
     };
     if (!payload.nome) throw new Error('Informe o nome');
     const result = insertRow('lista_espera', payload);
     res.json({ ...result, item: row('SELECT * FROM lista_espera WHERE id=?', [result.id]) });
+  } catch (err) {
+    jsonError(res, err);
+  }
+});
+
+app.put('/api/waitlist/:id', (req, res) => {
+  try {
+    const payload = {
+      nome: String(req.body.nome || '').trim(),
+      telefone: String(req.body.telefone || '').trim(),
+      preferencia: String(req.body.preferencia || '').trim(),
+      status: String(req.body.status || 'Novo').trim(),
+      observacao: String(req.body.observacao || '').trim()
+    };
+    if (!payload.nome) throw new Error('Informe o nome');
+    updateRow('lista_espera', req.params.id, payload);
+    res.json({ ok: true, item: row('SELECT * FROM lista_espera WHERE id=?', [req.params.id]) });
   } catch (err) {
     jsonError(res, err);
   }
@@ -397,5 +430,5 @@ app.delete('/api/tables/:table/:id', (req, res) => {
 app.get('/api/db/download', (_req, res) => res.download(DB_PATH));
 
 app.listen(PORT, () => {
-  console.log(`Arena Futvolei rodando em http://localhost:${PORT}`);
+  console.log(`Team Lucão Futevôlei rodando em http://localhost:${PORT}`);
 });

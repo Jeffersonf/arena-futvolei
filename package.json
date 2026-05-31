@@ -2,7 +2,7 @@
   "name": "arena-futvolei",
   "version": "0.1.0",
   "private": true,
-  "description": "Organizador leve para escola de futvolei",
+  "description": "Organizador leve para escola de futevolei",
   "scripts": {
     "start": "node --no-warnings server/index.js",
     "dev": "node --no-warnings --watch server/index.js",

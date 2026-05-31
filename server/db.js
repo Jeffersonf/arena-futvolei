@@ -4,7 +4,7 @@ const { DatabaseSync } = require('node:sqlite');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const DB_PATH = process.env.DB_PATH || path.join(ROOT_DIR, 'arena.db');
-const APP_ID = 'ArenaFutvolei.AdminState';
+const APP_ID = 'TeamLucaoFutevolei.AdminState';
 const APP_VERSION = 1;
 
 const DATA_TABLES = [
@@ -63,7 +63,7 @@ function tableColumns(table) {
 
 function normalizeTable(table) {
   if (!DATA_TABLES.includes(table) || !tableExists(table)) {
-    const err = new Error('Tabela nao permitida');
+    const err = new Error('Tabela não permitida');
     err.status = 404;
     throw err;
   }
@@ -156,6 +156,7 @@ function ensureSchema() {
       nome TEXT NOT NULL,
       telefone TEXT,
       preferencia TEXT,
+      status TEXT DEFAULT 'Novo',
       observacao TEXT,
       data_cadastro TEXT DEFAULT (date('now'))
     );
@@ -168,10 +169,15 @@ function ensureSchema() {
     );
   `);
 
+  const waitlistColumns = tableColumns('lista_espera');
+  if (!waitlistColumns.includes('status')) {
+    run("ALTER TABLE lista_espera ADD COLUMN status TEXT DEFAULT 'Novo'");
+  }
+
   const plans = scalar('SELECT COUNT(*) AS total FROM planos');
   if (!plans) {
     run('INSERT INTO planos (nome, preco, aulas_semana, descricao) VALUES (?, ?, ?, ?)', ['1x semana', 160, 1, 'Plano inicial']);
-    run('INSERT INTO planos (nome, preco, aulas_semana, descricao) VALUES (?, ?, ?, ?)', ['2x semana', 220, 2, 'Mais ritmo e evolucao']);
+    run('INSERT INTO planos (nome, preco, aulas_semana, descricao) VALUES (?, ?, ?, ?)', ['2x semana', 220, 2, 'Mais ritmo e evolução']);
     run('INSERT INTO planos (nome, preco, aulas_semana, descricao) VALUES (?, ?, ?, ?)', ['Livre', 300, 4, 'Acesso amplo as turmas']);
     run('INSERT INTO planos (nome, preco, aulas_semana, descricao) VALUES (?, ?, ?, ?)', ['Avulso', 60, 0, 'Aula avulsa']);
   }
@@ -185,7 +191,7 @@ function ensureSchema() {
     const planOne = row('SELECT * FROM planos WHERE nome=?', ['2x semana']);
     const planTwo = row('SELECT * FROM planos WHERE nome=?', ['1x semana']);
     run('INSERT INTO alunos (nome, telefone, plano_id, plano_nome, mensalidade, status, nivel, observacao, pago_ate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-      'Ana Souza', '(15) 99999-0001', planOne.id, planOne.nome, planOne.preco, 'Ativo', 'Intermediario', 'Prefere turma da noite', todayIso()
+      'Ana Souza', '(15) 99999-0001', planOne.id, planOne.nome, planOne.preco, 'Ativo', 'Intermediário', 'Prefere turma da noite', todayIso()
     ]);
     run('INSERT INTO alunos (nome, telefone, plano_id, plano_nome, mensalidade, status, nivel, observacao) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [
       'Bruno Lima', '(15) 99999-0002', planTwo.id, planTwo.nome, planTwo.preco, 'Experimental', 'Iniciante', 'Aula experimental'
@@ -195,7 +201,7 @@ function ensureSchema() {
   const classes = scalar('SELECT COUNT(*) AS total FROM aulas');
   if (!classes) {
     const result = run('INSERT INTO aulas (data, horario, turma, professor, capacidade, status, observacao) VALUES (?, ?, ?, ?, ?, ?, ?)', [
-      todayIso(), '18:30', 'Iniciantes', 'Jefferson', 8, 'Marcada', 'Treino tecnico'
+      todayIso(), '18:30', 'Iniciantes', 'Jefferson', 8, 'Marcada', 'Treino técnico'
     ]);
     const classId = Number(result.lastInsertRowid);
     rows('SELECT id FROM alunos ORDER BY id LIMIT 2').forEach((student, index) => {
@@ -240,7 +246,7 @@ function stateSnapshot({ includeLogs = true } = {}) {
     app: APP_ID,
     version: APP_VERSION,
     exported_at: nowIso(),
-    source: { runtime: 'node-express', db_type: 'sqlite', business: 'Arena Futvolei' },
+    source: { runtime: 'node-express', db_type: 'sqlite', business: 'Team Lucão Futevôlei' },
     stats,
     counts,
     last_activity: includeLogs ? row('SELECT * FROM logs ORDER BY id DESC LIMIT 1') : null,
