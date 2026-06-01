@@ -13,15 +13,17 @@
 - Confirmar que aparecem alunos, aulas, mensalidades e espera.
 - Testar uma busca de aluno.
 - Abrir uma aula de hoje.
+- Copiar a lista da aula.
 - Abrir o relatorio de um aluno pelo nome.
+- Abrir presencas e copiar o resumo da aula.
 - Conferir se o WhatsApp abre no aparelho.
 
 ## Roteiro curto
 
 1. Dashboard: "Aqui voce abre o dia e ve o que precisa resolver."
-2. Aulas de hoje: "Aqui estao horarios, previstos, presenca, avulsos e status da aula."
+2. Aulas de hoje: "Aqui estao horarios, previstos, presenca, avulsos, lista copiavel e status da aula."
 3. Relatorio do aluno: "Clicou no nome, aparece plano, frequencia, proximas aulas e pagamentos."
-4. Mensalidades: "Filtra o mes, ve pendentes e copia cobranca."
+4. Mensalidades: "Filtra o mes, ve pendentes, copia cobranca e marca o mes pago."
 5. Espera: "Quem chamou no WhatsApp fica aqui ate virar aluno."
 6. Backup: "Os dados nao ficam soltos em papel ou conversa."
 

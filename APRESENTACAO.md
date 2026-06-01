@@ -41,6 +41,8 @@ Um painel simples para tirar a escola do improviso: menos planilha solta, menos 
 - Agenda de aulas com visao de hoje e calendario previsto.
 - Presenca por aula, todos presentes e avulsos.
 - Status rapido de aula: confirmar, finalizar, cancelar e reabrir.
+- Copia rapida da lista da aula e do resumo de presenca.
+- Pagamento marcado no mes filtrado da mensalidade.
 - Lista de espera com funil: novo, contatado, experimental, convertido e perdido.
 - Acoes rapidas por WhatsApp.
 - Backup/importacao JSON.

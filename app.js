@@ -5,6 +5,7 @@ const PIN_KEY = 'tlf_admin_pin';
 const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const currentMonth = () => todayISO().slice(0, 7);
+const selectedPaymentMonth = () => document.getElementById('paymentMonth')?.value || currentMonth();
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
 const starter = {
@@ -541,6 +542,7 @@ function renderClassesTodayPlanner() {
           <div class="actions">
             <span class="pill">${escapeHTML(item.status || 'Marcada')}</span>
             <a class="mini-btn" href="${whatsappShareUrl(classShareText(item))}" target="_blank" rel="noopener">WhatsApp</a>
+            <button class="mini-btn" data-copy-class="${item.id}">Copiar lista</button>
             <button class="mini-btn" data-attendance="${item.id}">Presencas</button>
             ${classStatusActions(item)}
           </div>
@@ -800,6 +802,7 @@ function classRow(item) {
       </div>
       <div class="actions">
         <a class="mini-btn" href="${whatsappShareUrl(classShareText(item))}" target="_blank" rel="noopener">WhatsApp</a>
+        <button class="mini-btn" data-copy-class="${item.id}">Copiar lista</button>
         <button class="mini-btn" data-attendance="${item.id}">Presencas</button>
         ${classStatusActions(item)}
         <button class="mini-btn" data-duplicate-class="${item.id}">Duplicar</button>
@@ -992,37 +995,91 @@ function openWaitItem(id) {
   openModal('waitlistModal');
 }
 
-function pendingChargeText() {
-  const pending = state.students.filter((student) => student.status !== 'Pausado' && !isPaid(student));
-  if (!pending.length) return 'Sem mensalidades pendentes no momento.';
+async function copyText(text, message = 'Texto copiado') {
+  if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+  toast(message);
+}
+
+function pendingChargeText(month = selectedPaymentMonth()) {
+  const pending = state.students.filter((student) => student.status !== 'Pausado' && !isPaidForMonth(student, month));
+  if (!pending.length) return `Sem mensalidades pendentes em ${month}.`;
   return pending.map((student) => (
-    `${student.nome} - ${student.telefone || 'sem telefone'} - ${money.format(Number(student.mensalidade || 0))}`
+    `${student.nome} - ${student.telefone || 'sem telefone'} - ${money.format(Number(student.mensalidade || 0))} - ref. ${month} - vence dia ${dueDay(student)}`
   )).join('\n');
 }
 
-function studentChargeText(student) {
-  return `Oi ${student.nome}, tudo bem? Passando para lembrar da mensalidade do Team Lucao Futevolei no valor de ${money.format(Number(student.mensalidade || 0))}. Vencimento todo dia ${dueDay(student)}.`;
+function studentChargeText(student, month = selectedPaymentMonth()) {
+  return `Oi ${student.nome}, tudo bem? Passando para lembrar da mensalidade do Team Lucao Futevolei referente a ${month}, no valor de ${money.format(Number(student.mensalidade || 0))}. Vencimento todo dia ${dueDay(student)}.`;
 }
 
 async function copyPendingCharges() {
   const text = pendingChargeText();
-  if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+  await copyText(text, 'Lista de cobranca copiada');
   setPage('payments');
-  toast('Lista de cobranca copiada');
 }
 
 async function copyStudentCharge(studentId) {
   const student = studentById(studentId);
   if (!student) return;
   const text = studentChargeText(student);
-  if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
-  toast('Cobranca copiada');
+  await copyText(text, 'Cobranca copiada');
 }
 
 function classShareText(item) {
   const enrolled = classStudents(item);
   const names = enrolled.length ? enrolled.map((student, index) => `${index + 1}. ${student.nome}`).join('\n') : 'Sem alunos previstos.';
   return `Aula Team Lucao Futevolei\n${formatDate(item.data)} as ${item.horario} - ${item.turma || 'Turma'}\nProfessor: ${item.professor || 'nao informado'}\n\nPrevistos:\n${names}`;
+}
+
+function classRosterText(item) {
+  const enrolled = classStudents(item);
+  const extras = classExtras(item);
+  const lines = enrolled.map((student, index) => {
+    const id = student.aluno_id || student.id;
+    const fullStudent = studentById(id) || student;
+    return `${index + 1}. ${student.nome} - ${weeklyAttendanceCount(id, item.data)}/${planWeeklyTarget(fullStudent) || '-'} na semana`;
+  });
+  const extraLines = extras.map((extra, index) => `Avulso ${index + 1}: ${extra.nome || extra}`);
+  return [
+    'Lista da aula - Team Lucao Futevolei',
+    `${formatDate(item.data)} as ${item.horario} - ${item.turma || 'Turma'}`,
+    `Professor: ${item.professor || 'nao informado'}`,
+    '',
+    'Previstos:',
+    lines.length ? lines.join('\n') : 'Sem alunos previstos.',
+    extraLines.length ? `\nFora da lista:\n${extraLines.join('\n')}` : ''
+  ].filter(Boolean).join('\n');
+}
+
+async function copyClassRoster(classId) {
+  const item = state.classes.find((entry) => String(entry.id) === String(classId));
+  if (!item) return;
+  await copyText(classRosterText(item), 'Lista da aula copiada');
+}
+
+function attendanceSummaryText(item) {
+  const enrolled = classStudents(item);
+  const present = enrolled.filter((student) => item.presencas?.[student.aluno_id || student.id] || student.presente);
+  const presentIds = new Set(present.map((student) => String(student.aluno_id || student.id)));
+  const absent = enrolled.filter((student) => !presentIds.has(String(student.aluno_id || student.id)));
+  const extras = classExtras(item);
+  return [
+    'Resumo de presenca - Team Lucao Futevolei',
+    `${formatDate(item.data)} as ${item.horario} - ${item.turma || 'Turma'}`,
+    '',
+    `Presentes (${present.length}):`,
+    present.length ? present.map((student) => `- ${student.nome}`).join('\n') : '- nenhum marcado',
+    '',
+    `Faltaram (${absent.length}):`,
+    absent.length ? absent.map((student) => `- ${student.nome}`).join('\n') : '- ninguem',
+    extras.length ? `\nFora da lista (${extras.length}):\n${extras.map((extra) => `- ${extra.nome || extra}`).join('\n')}` : ''
+  ].filter(Boolean).join('\n');
+}
+
+async function copyAttendanceSummary(classId = activeAttendanceClassId) {
+  const item = state.classes.find((entry) => String(entry.id) === String(classId));
+  if (!item) return;
+  await copyText(attendanceSummaryText(item), 'Resumo de presenca copiado');
 }
 
 function whatsappShareUrl(text) {
@@ -1291,18 +1348,21 @@ async function toggleAttendance(classId, studentId) {
 async function markPaid(studentId) {
   const student = studentById(studentId);
   if (!student) return;
+  const month = selectedPaymentMonth();
+  const paidUntil = dueDateForMonth(student, month);
   if (apiMode) {
-    await api(`/api/students/${studentId}/pay`, { method: 'POST', body: JSON.stringify({}) });
+    await api(`/api/students/${studentId}/pay`, { method: 'POST', body: JSON.stringify({ referencia: month, vencimento: paidUntil }) });
     await loadData();
   } else {
-    student.pago_ate = addMonthsIso(student.pago_ate && student.pago_ate >= todayISO() ? student.pago_ate : todayISO(), 1);
+    student.pago_ate = student.pago_ate && student.pago_ate > paidUntil ? student.pago_ate : paidUntil;
     state.payments = state.payments || [];
     state.payments.unshift({
       id: uid(),
       aluno_id: student.id,
       aluno_nome: student.nome,
-      referencia: student.pago_ate.slice(0, 7),
+      referencia: month,
       valor: Number(student.mensalidade || 0),
+      vencimento: paidUntil,
       pago_em: todayISO(),
       status: 'PAGO',
       forma_pagamento: 'manual'
@@ -1633,6 +1693,7 @@ function bindEvents() {
   document.getElementById('extraAttendanceForm').addEventListener('submit', (event) => addExtraAttendance(event).catch((err) => toast(err.message)));
   document.getElementById('markAllPresent').addEventListener('click', () => setClassAttendance(activeAttendanceClassId, true).catch((err) => toast(err.message)));
   document.getElementById('clearAttendance').addEventListener('click', () => setClassAttendance(activeAttendanceClassId, false).catch((err) => toast(err.message)));
+  document.getElementById('copyAttendance').addEventListener('click', () => copyAttendanceSummary().catch((err) => toast(err.message)));
   document.getElementById('studentSearch').addEventListener('input', renderStudents);
   document.getElementById('globalSearch').addEventListener('input', renderGlobalResults);
   document.getElementById('globalResults').addEventListener('click', (event) => {
@@ -1664,7 +1725,7 @@ function bindEvents() {
     showLogin(true);
   });
   document.body.addEventListener('click', (event) => {
-    const target = event.target.closest('[data-report-student],[data-edit-student],[data-delete-student],[data-edit-class],[data-delete-class],[data-duplicate-class],[data-class-status],[data-edit-plan],[data-delete-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-copy-charge],[data-edit-wait],[data-delete-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day]');
+    const target = event.target.closest('[data-report-student],[data-edit-student],[data-delete-student],[data-edit-class],[data-delete-class],[data-duplicate-class],[data-class-status],[data-copy-class],[data-edit-plan],[data-delete-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-copy-charge],[data-edit-wait],[data-delete-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day]');
     if (!target) return;
     if (target.dataset.reportStudent) openStudentReport(target.dataset.reportStudent);
     if (target.dataset.editStudent) openStudent(target.dataset.editStudent);
@@ -1676,6 +1737,7 @@ function bindEvents() {
       const [id, status] = target.dataset.classStatus.split(':');
       updateClassStatus(id, status).catch((err) => toast(err.message));
     }
+    if (target.dataset.copyClass) copyClassRoster(target.dataset.copyClass).catch((err) => toast(err.message));
     if (target.dataset.editPlan) openPlan(target.dataset.editPlan);
     if (target.dataset.deletePlan) deletePlan(target.dataset.deletePlan).catch((err) => toast(err.message));
     if (target.dataset.attendance) openAttendance(target.dataset.attendance);
@@ -1706,7 +1768,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260601-demo-final', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260601-operacao', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {

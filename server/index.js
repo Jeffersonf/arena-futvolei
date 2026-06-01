@@ -55,6 +55,13 @@ function currentMonth() {
   return new Date().toISOString().slice(0, 7);
 }
 
+function dueDateForMonth(student = {}, month = currentMonth()) {
+  const [year, monthNumber] = String(month || currentMonth()).slice(0, 7).split('-').map(Number);
+  const lastDay = new Date(year, monthNumber, 0).getDate();
+  const dueDay = Math.min(31, Math.max(1, Number(student.dia_vencimento || 10) || 10));
+  return `${year}-${String(monthNumber).padStart(2, '0')}-${String(Math.min(dueDay, lastDay)).padStart(2, '0')}`;
+}
+
 function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
@@ -331,14 +338,16 @@ app.post('/api/students/:id/pay', (req, res) => {
   try {
     const student = row('SELECT * FROM alunos WHERE id=?', [req.params.id]);
     if (!student) throw new Error('Aluno não encontrado');
-    const paidUntil = addMonthsIso(student.pago_ate && student.pago_ate >= today() ? student.pago_ate : today(), 1);
+    const reference = String(req.body.referencia || '').slice(0, 7) || currentMonth();
+    const monthDueDate = String(req.body.vencimento || dueDateForMonth(student, reference)).slice(0, 10);
+    const paidUntil = student.pago_ate && student.pago_ate > monthDueDate ? student.pago_ate : monthDueDate;
     const value = moneyNumber(req.body.valor ?? student.mensalidade);
     run('UPDATE alunos SET pago_ate=? WHERE id=?', [paidUntil, student.id]);
     run('INSERT INTO pagamentos (aluno_id, referencia, valor, vencimento, pago_em, status, forma_pagamento, observacao) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [
       student.id,
-      paidUntil.slice(0, 7),
+      reference,
       value,
-      paidUntil,
+      monthDueDate,
       today(),
       'PAGO',
       req.body.forma_pagamento || 'manual',

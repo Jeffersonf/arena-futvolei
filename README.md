@@ -10,6 +10,7 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Presenca por aula
 - Relatorio individual ao clicar no nome do aluno
 - Aulas de hoje com previstos, avulsos e status rapido
+- Copia rapida da lista da aula e do resumo de presenca
 - Dashboard do dia com pendencias
 - Filtros de alunos e aulas
 - Acoes rapidas no dashboard
@@ -17,6 +18,7 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Presenca em massa por aula
 - Contato rapido por WhatsApp
 - Historico recente de pagamentos
+- Mensalidade marcada no mes filtrado
 - Lista de espera com conversao para aluno
 - Backup/importacao em JSON
 - Exportacao CSV de alunos, aulas, pagamentos e espera
