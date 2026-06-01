@@ -9,8 +9,8 @@
     <meta name="apple-mobile-web-app-title" content="TLF Gestao" />
     <title>Team Lucão Futevôlei</title>
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260601-iphone" />
-    <link rel="stylesheet" href="styles.css?v=20260601-iphone" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260601-piloto" />
+    <link rel="stylesheet" href="styles.css?v=20260601-piloto" />
   </head>
   <body>
     <div class="login-wall" id="loginWall" aria-hidden="true">
@@ -201,7 +201,9 @@
               <option value="">Todos os interessados</option>
               <option value="Novo">Novos</option>
               <option value="Contatado">Contatados</option>
+              <option value="Experimental marcado">Experimentais marcados</option>
               <option value="Convertido">Convertidos</option>
+              <option value="Perdido">Perdidos</option>
             </select>
           </div>
           <div class="list" id="waitlistList"></div>
@@ -301,6 +303,7 @@
           </label>
           <label>Mensalidade<input id="studentFee" type="number" min="0" step="0.01" placeholder="180" /></label>
         </div>
+        <label>Dia de vencimento<input id="studentDueDay" type="number" min="1" max="31" step="1" placeholder="10" /></label>
         <label>Nível
           <select id="studentLevel">
             <option value="Iniciante">Iniciante</option>
@@ -351,6 +354,7 @@
           </label>
         </div>
         <label>Alunos da aula<select id="classStudents" multiple></select></label>
+        <label>Repetir por semanas<input id="classRepeatWeeks" type="number" min="1" max="12" step="1" value="1" /></label>
         <button class="primary-btn" type="submit">Salvar aula</button>
       </form>
     </div>
@@ -401,7 +405,9 @@
           <select id="waitStatus">
             <option value="Novo">Novo</option>
             <option value="Contatado">Contatado</option>
+            <option value="Experimental marcado">Experimental marcado</option>
             <option value="Convertido">Convertido</option>
+            <option value="Perdido">Perdido</option>
           </select>
         </label>
         <label>Observação<input id="waitNote" placeholder="Detalhes do contato" /></label>
@@ -410,6 +416,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="app.js?v=20260601-iphone"></script>
+    <script src="app.js?v=20260601-piloto"></script>
   </body>
 </html>

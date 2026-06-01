@@ -89,6 +89,7 @@ function normalizeStudentPayload(body = {}) {
     plano_id: plan?.id || body.plano_id || null,
     plano_nome: plan?.nome || body.plano_nome || body.plan || '',
     mensalidade: moneyNumber(plan?.preco ?? body.mensalidade ?? body.fee),
+    dia_vencimento: Math.min(31, Math.max(1, Number(body.dia_vencimento || body.vencimento_dia || body.dueDay || 10) || 10)),
     status: String(body.status || 'Ativo'),
     nivel: String(body.nivel || body.level || 'Iniciante'),
     observacao: String(body.observacao || body.note || ''),

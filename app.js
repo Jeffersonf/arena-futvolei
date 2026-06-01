@@ -59,6 +59,7 @@ function demoState() {
       plano_id: plan.id,
       plano_nome: plan.nome,
       mensalidade: plan.preco,
+      dia_vencimento: (index % 4) * 5 + 5,
       status: paused ? 'Pausado' : trial ? 'Experimental' : 'Ativo',
       nivel: levels[index % levels.length],
       observacao: notes[index % notes.length],
@@ -229,6 +230,16 @@ function planById(id) {
 
 function isPaid(student) {
   return Boolean(student.pago_ate && student.pago_ate >= todayISO());
+}
+
+function dueDay(student = {}) {
+  return Math.min(31, Math.max(1, Number(student.dia_vencimento || student.vencimento_dia || 10) || 10));
+}
+
+function dueDateForMonth(student = {}, month = todayISO().slice(0, 7)) {
+  const [year, monthNumber] = month.split('-').map(Number);
+  const lastDay = new Date(year, monthNumber, 0).getDate();
+  return `${month}-${String(Math.min(dueDay(student), lastDay)).padStart(2, '0')}`;
 }
 
 function classStudentIds(item = {}) {
@@ -561,7 +572,10 @@ function renderPayments() {
       <div>
         <button class="link-title compact-title" type="button" data-report-student="${student.id}">${escapeHTML(student.nome)}</button>
         <p class="meta">${money.format(Number(student.mensalidade || 0))} - pago até ${student.pago_ate ? formatDate(student.pago_ate) : 'sem registro'}</p>
-        <div class="pill-row"><span class="pill ${isPaid(student) ? 'ok' : 'bad'}">${isPaid(student) ? 'em dia' : 'pendente'}</span></div>
+        <div class="pill-row">
+          <span class="pill ${isPaid(student) ? 'ok' : 'bad'}">${isPaid(student) ? 'em dia' : 'pendente'}</span>
+          <span class="pill">vence dia ${dueDay(student)}</span>
+        </div>
       </div>
       <div class="actions">
         ${student.telefone ? `<a class="mini-btn" href="${whatsappUrl(student.telefone, `Oi ${student.nome}, tudo bem? Passando para lembrar da mensalidade do Team Lucão Futevôlei.`)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
@@ -607,7 +621,7 @@ function renderWaitlist() {
         <h3>${escapeHTML(item.nome)}</h3>
         <p class="meta">${escapeHTML(item.telefone || 'sem telefone')} - ${escapeHTML(item.preferencia || 'sem preferencia')}</p>
         <div class="pill-row">
-          <span class="pill ${item.status === 'Convertido' ? 'ok' : item.status === 'Contatado' ? 'warn' : ''}">${escapeHTML(item.status || 'Novo')}</span>
+          <span class="pill ${item.status === 'Convertido' ? 'ok' : item.status === 'Contatado' || item.status === 'Experimental marcado' ? 'warn' : item.status === 'Perdido' ? 'bad' : ''}">${escapeHTML(item.status || 'Novo')}</span>
           ${item.data_cadastro ? `<span class="pill">${formatDate(item.data_cadastro)}</span>` : ''}
         </div>
         ${item.observacao ? `<p class="meta">${escapeHTML(item.observacao)}</p>` : ''}
@@ -615,8 +629,10 @@ function renderWaitlist() {
       <div class="actions">
         ${item.telefone ? `<a class="mini-btn" href="${whatsappUrl(item.telefone, `Oi ${item.nome}, tudo bem? Aqui é do Team Lucão Futevôlei. Ainda tem interesse em começar as aulas?`)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
         <button class="mini-btn" data-wait-status="${item.id}:Contatado">Contatado</button>
+        <button class="mini-btn" data-wait-status="${item.id}:Experimental marcado">Experimental</button>
         <button class="mini-btn" data-edit-wait="${item.id}">Editar</button>
         <button class="mini-btn" data-convert-wait="${item.id}">Virar aluno</button>
+        <button class="mini-btn danger-mini" data-wait-status="${item.id}:Perdido">Perdido</button>
         <button class="mini-btn" data-delete-wait="${item.id}">Remover</button>
       </div>
     </article>
@@ -856,6 +872,7 @@ function openStudent(id = '') {
   document.getElementById('studentEmail').value = student.email || '';
   renderPlanOptions(student.plano_id || '');
   document.getElementById('studentFee').value = student.mensalidade || '';
+  document.getElementById('studentDueDay').value = student.dia_vencimento || student.vencimento_dia || 10;
   document.getElementById('studentLevel').value = student.nivel || 'Iniciante';
   document.getElementById('studentStatus').value = student.status || 'Ativo';
   document.getElementById('studentNote').value = student.observacao || '';
@@ -935,6 +952,8 @@ function openClass(id = '') {
   document.getElementById('classCoach').value = item.professor || '';
   document.getElementById('classCapacity').value = item.capacidade || 8;
   document.getElementById('classStatus').value = item.status || 'Marcada';
+  document.getElementById('classRepeatWeeks').value = item.id ? 1 : 4;
+  document.getElementById('classRepeatWeeks').disabled = Boolean(item.id);
   fillClassStudents(item.aluno_ids || []);
   openModal('classModal');
 }
@@ -980,7 +999,7 @@ function pendingChargeText() {
 }
 
 function studentChargeText(student) {
-  return `Oi ${student.nome}, tudo bem? Passando para lembrar da mensalidade do Team Lucao Futevolei no valor de ${money.format(Number(student.mensalidade || 0))}.`;
+  return `Oi ${student.nome}, tudo bem? Passando para lembrar da mensalidade do Team Lucao Futevolei no valor de ${money.format(Number(student.mensalidade || 0))}. Vencimento todo dia ${dueDay(student)}.`;
 }
 
 async function copyPendingCharges() {
@@ -1045,6 +1064,7 @@ async function saveStudent(event) {
     plano_id: plan?.id || null,
     plano_nome: plan?.nome || '',
     mensalidade: Number(document.getElementById('studentFee').value || plan?.preco || 0),
+    dia_vencimento: dueDay({ dia_vencimento: document.getElementById('studentDueDay').value }),
     status: document.getElementById('studentStatus').value,
     nivel: document.getElementById('studentLevel').value,
     observacao: document.getElementById('studentNote').value.trim(),
@@ -1083,19 +1103,34 @@ async function saveClass(event) {
     presencas,
     extra_presentes: classExtras(previous)
   };
+  const repeatWeeks = id ? 1 : Math.min(12, Math.max(1, Number(document.getElementById('classRepeatWeeks').value || 1)));
+  const classPayloads = Array.from({ length: repeatWeeks }, (_item, index) => ({
+    ...payload,
+    data: addDaysIso(payload.data, index * 7),
+    presencas: index === 0 ? payload.presencas : {},
+    extra_presentes: index === 0 ? payload.extra_presentes : []
+  }));
   if (apiMode) {
-    await api(id ? `/api/classes/${id}` : '/api/classes', { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) });
+    if (id) await api(`/api/classes/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+    else {
+      for (const item of classPayloads) {
+        await api('/api/classes', { method: 'POST', body: JSON.stringify(item) });
+      }
+    }
     await loadData();
   } else {
-    const next = { ...payload, id: id || uid() };
-    const index = state.classes.findIndex((item) => String(item.id) === String(next.id));
-    if (index >= 0) state.classes[index] = next;
-    else state.classes.push(next);
+    if (id) {
+      const next = { ...payload, id };
+      const index = state.classes.findIndex((item) => String(item.id) === String(next.id));
+      if (index >= 0) state.classes[index] = next;
+    } else {
+      classPayloads.forEach((item) => state.classes.push({ ...item, id: uid() }));
+    }
     saveLocalState();
     render();
   }
   closeModal('classModal');
-  toast('Aula salva');
+  toast(repeatWeeks > 1 ? `${repeatWeeks} aulas criadas` : 'Aula salva');
 }
 
 async function savePlan(event) {
@@ -1510,6 +1545,7 @@ function serverDemoPayload(next) {
       alunos: next.students.map((student) => ({
         ...student,
         id: studentId(student.id),
+        dia_vencimento: dueDay(student),
         plano_id: student.plano_id ? studentId(student.plano_id) : null
       })),
       aulas: next.classes.map((item) => ({
@@ -1674,7 +1710,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260601-iphone', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260601-piloto', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {

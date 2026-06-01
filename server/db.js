@@ -89,6 +89,7 @@ function ensureSchema() {
       plano_id INTEGER,
       plano_nome TEXT,
       mensalidade REAL DEFAULT 0,
+      dia_vencimento INTEGER DEFAULT 10,
       status TEXT DEFAULT 'Ativo',
       nivel TEXT DEFAULT 'Iniciante',
       observacao TEXT DEFAULT '',
@@ -173,6 +174,11 @@ function ensureSchema() {
   const waitlistColumns = tableColumns('lista_espera');
   if (!waitlistColumns.includes('status')) {
     run("ALTER TABLE lista_espera ADD COLUMN status TEXT DEFAULT 'Novo'");
+  }
+
+  const studentColumns = tableColumns('alunos');
+  if (!studentColumns.includes('dia_vencimento')) {
+    run('ALTER TABLE alunos ADD COLUMN dia_vencimento INTEGER DEFAULT 10');
   }
 
   const classColumns = tableColumns('aulas');
