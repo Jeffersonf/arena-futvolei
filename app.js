@@ -736,54 +736,6 @@ function renderDataSummary() {
 }
 
 function studentCard(student) {
-  const message = `Oi ${student.nome}, tudo bem? Aqui é do Team Lucão Futevôlei.`;
-  return `
-    <article class="student-card">
-      <h3>${escapeHTML(student.nome)}</h3>
-      <p class="meta">${escapeHTML(student.telefone || 'sem telefone')}</p>
-      <div class="pill-row">
-        <span class="pill">${escapeHTML(student.plano_nome || 'sem plano')}</span>
-        <span class="pill">${escapeHTML(student.nivel || 'Iniciante')}</span>
-        <span class="pill ${student.status === 'Ativo' ? 'ok' : student.status === 'Experimental' ? 'warn' : ''}">${escapeHTML(student.status || 'Ativo')}</span>
-        <span class="pill ${isPaid(student) ? 'ok' : 'bad'}">${isPaid(student) ? 'em dia' : 'pendente'}</span>
-      </div>
-      ${student.observacao ? `<p class="meta">${escapeHTML(student.observacao)}</p>` : ''}
-      <div class="actions">
-        ${student.telefone ? `<a class="mini-btn" href="${whatsappUrl(student.telefone, message)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
-        <button class="mini-btn" data-edit-student="${student.id}">Editar</button>
-        <button class="mini-btn" data-pay="${student.id}">Pago</button>
-        <button class="mini-btn danger-mini" data-delete-student="${student.id}">Remover</button>
-      </div>
-    </article>
-  `;
-}
-
-function classRow(item) {
-  const studentIds = item.aluno_ids || [];
-  const enrolled = (item.alunos || studentIds.map(studentById)).filter(Boolean);
-  const present = enrolled.filter((student) => item.presencas?.[student.aluno_id || student.id] || student.presente).length;
-  return `
-    <article class="row-card">
-      <div>
-        <h3>${formatDate(item.data)} às ${item.horario} - ${escapeHTML(item.turma || 'Turma')}</h3>
-        <p class="meta">${escapeHTML(item.professor || 'Professor não informado')} - ${enrolled.length}/${item.capacidade || 8} aluno(s)</p>
-        <div class="pill-row">
-          <span class="pill">${present}/${enrolled.length} presenças</span>
-          <span class="pill">${escapeHTML(item.status || 'Marcada')}</span>
-          ${item.data === todayISO() ? '<span class="pill ok">hoje</span>' : ''}
-        </div>
-      </div>
-      <div class="actions">
-        <button class="mini-btn" data-attendance="${item.id}">Presenças</button>
-        <button class="mini-btn" data-duplicate-class="${item.id}">Duplicar</button>
-        <button class="mini-btn" data-edit-class="${item.id}">Editar</button>
-        <button class="mini-btn danger-mini" data-delete-class="${item.id}">Remover</button>
-      </div>
-    </article>
-  `;
-}
-
-function studentCard(student) {
   const message = `Oi ${student.nome}, tudo bem? Aqui e do Team Lucao Futevolei.`;
   const weekly = weeklyAttendanceCount(student.id);
   const target = planWeeklyTarget(student);
@@ -1200,26 +1152,6 @@ async function saveWaitlist(event) {
   }
   closeModal('waitlistModal');
   toast('Interessado salvo');
-}
-
-function openAttendance(classId) {
-  const item = state.classes.find((entry) => String(entry.id) === String(classId));
-  if (!item) return;
-  activeAttendanceClassId = classId;
-  const ids = item.aluno_ids || [];
-  document.getElementById('attendanceTitle').textContent = `${formatDate(item.data)} às ${item.horario} - ${item.turma || 'Turma'}`;
-  document.getElementById('attendanceList').innerHTML = ids.map(studentById).filter(Boolean).map((student) => `
-    <div class="check-item">
-      <div>
-        <strong>${escapeHTML(student.nome)}</strong>
-        <p class="meta">${escapeHTML(student.plano_nome || 'sem plano')}</p>
-      </div>
-      <button class="mini-btn ${item.presencas?.[student.id] ? 'present' : ''}" data-toggle-attendance="${item.id}:${student.id}">
-        ${item.presencas?.[student.id] ? 'Presente' : 'Marcar'}
-      </button>
-    </div>
-  `).join('') || empty('Nenhum aluno vinculado a esta aula.');
-  openModal('attendanceModal');
 }
 
 function openAttendance(classId) {
@@ -1731,7 +1663,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260601-financeiro', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260601-limpeza', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {
