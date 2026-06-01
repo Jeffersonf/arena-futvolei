@@ -1,0 +1,49 @@
+# Checklist da demo - Team Lucao Futevolei
+
+## Link e acesso
+
+- URL: `https://jeffersonf.github.io/arena-futvolei/`
+- PIN: `1234`
+- Melhor teste rapido: abrir no iPhone, entrar, tocar em `Dados` e carregar a demo ficticia se os dados estiverem vazios.
+
+## Antes de mostrar
+
+- Abrir o link no iPhone.
+- Entrar com o PIN.
+- Confirmar que aparecem alunos, aulas, mensalidades e espera.
+- Testar uma busca de aluno.
+- Abrir uma aula de hoje.
+- Abrir o relatorio de um aluno pelo nome.
+- Conferir se o WhatsApp abre no aparelho.
+
+## Roteiro curto
+
+1. Dashboard: "Aqui voce abre o dia e ve o que precisa resolver."
+2. Aulas de hoje: "Aqui estao horarios, previstos, presenca, avulsos e status da aula."
+3. Relatorio do aluno: "Clicou no nome, aparece plano, frequencia, proximas aulas e pagamentos."
+4. Mensalidades: "Filtra o mes, ve pendentes e copia cobranca."
+5. Espera: "Quem chamou no WhatsApp fica aqui ate virar aluno."
+6. Backup: "Os dados nao ficam soltos em papel ou conversa."
+
+## Perguntas para ele
+
+- Quais planos existem e quanto custa cada um?
+- Cada aluno tem vencimento fixo ou data propria?
+- Como funciona reposicao?
+- Aula experimental e gratis, paga ou vira avulso?
+- Quais turmas existem hoje?
+- Quem alem dele precisa acessar?
+- Ele quer que o aluno agende sozinho agora ou isso fica para depois?
+
+## O que observar
+
+- Se ele entende a tela sem explicacao longa.
+- Onde ele naturalmente quer tocar primeiro.
+- Se a agenda de hoje bate com a rotina real.
+- Se cobranca por mes resolve ou precisa outro modelo.
+- Se lista de espera faz sentido para o WhatsApp dele.
+- Se usar no iPhone ficou rapido o suficiente.
+
+## Proximo passo depois da demo
+
+Coletar dados reais minimos: planos, alunos ativos, horarios fixos, mensalidades pendentes e interessados recentes. Com isso, transformar a demo em piloto real de uma semana.

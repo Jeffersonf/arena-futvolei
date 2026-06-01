@@ -8,6 +8,8 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Controle de planos e mensalidades
 - Agenda de aulas
 - Presenca por aula
+- Relatorio individual ao clicar no nome do aluno
+- Aulas de hoje com previstos, avulsos e status rapido
 - Dashboard do dia com pendencias
 - Filtros de alunos e aulas
 - Acoes rapidas no dashboard
@@ -20,6 +22,7 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Exportacao CSV de alunos, aulas, pagamentos e espera
 - Login simples por PIN no servidor
 - PWA instalavel no celular
+- Fluxo pensado para uso rapido no iPhone
 - Backend Node/SQLite inspirado no FinClinica
 - Fallback local com `localStorage` ao abrir o HTML direto
 
@@ -82,3 +85,5 @@ Todos os endpoints `/api/*`, exceto login, exigem header `X-Admin-Pin`.
 ## Apresentacao
 
 O roteiro para apresentar a ideia, explicar o valor no dia a dia e mostrar o roadmap esta em `APRESENTACAO.md`.
+
+O checklist pratico para ensaiar a demo esta em `CHECKLIST_DEMO.md`.

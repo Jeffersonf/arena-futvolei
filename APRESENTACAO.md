@@ -1,83 +1,169 @@
-# Apresentação - Team Lucão Futevôlei
+# Apresentacao - Team Lucao Futevolei
 
-## Proposta
+## Ideia central
 
-Um painel simples para centralizar a rotina da escola: alunos, aulas, presença, mensalidades, lista de espera e backup.
+Um painel simples para tirar a escola do improviso: menos planilha solta, menos mensagem perdida, mais controle de alunos, aulas, presencas, mensalidades e interessados.
 
-## Dor que resolve
+## Frase de venda
 
-- Evita aluno perdido em conversa de WhatsApp.
-- Mostra quem está pendente de pagamento.
-- Ajuda a controlar presença e lotação das turmas.
-- Organiza alunos ativos, experimentais e pausados.
-- Guarda um histórico básico para a gestão crescer com mais controle.
+"Isso aqui nao tenta mudar seu jeito de trabalhar. Ele junta em uma tela o que hoje fica espalhado entre memoria, WhatsApp, papel e planilha."
 
-## Roteiro de demonstração
+## Demonstracao em 5 minutos
 
-1. Abrir o dashboard e mostrar os números do dia.
-2. Entrar em Alunos e filtrar por status ou pagamento.
-3. Abrir um aluno, editar plano, nível e observações.
-4. Usar o botão de WhatsApp para contato rápido.
-5. Criar uma aula com horário, turma, professor e alunos.
-6. Abrir Presenças e marcar quem compareceu.
-7. Entrar em Mensalidades e marcar um mês como pago.
-8. Mostrar Lista de espera e converter interessado em aluno.
-9. Baixar/importar backup.
-10. Fechar com a tela Roadmap.
+1. Entrar pelo iPhone ou notebook com o PIN `1234`.
+2. Abrir o Dashboard e mostrar aulas de hoje, alunos ativos, pendencias e acoes rapidas.
+3. Ir em Aulas, abrir Hoje, mostrar horarios, previstos, avulsos, presencas e botoes de Confirmar/Finalizar/Cancelar.
+4. Clicar no nome de um aluno e mostrar o relatorio individual: plano, presencas, frequencia da semana, proximas aulas e pagamentos.
+5. Ir em Mensalidades, filtrar o mes, copiar cobranca e mostrar quem esta pendente.
+6. Ir em Espera, mostrar interessados, idade do contato, WhatsApp, Experimental e Virar aluno.
+7. Fechar em Dados/Backup e Roadmap, explicando que a primeira meta e validar o fluxo real dele.
 
 ## Como ajuda no dia a dia
 
-- O professor abre o painel e sabe o que precisa resolver.
-- A cobrança fica visível, sem depender de memória.
-- A agenda mostra turma, capacidade e presença.
-- Interessados entram na lista de espera até virarem alunos.
-- O backup reduz risco de perda de dados.
+- Abre o dia sabendo quais aulas existem e quem deve ir.
+- Marca presenca em poucos toques no celular.
+- Registra aluno avulso que apareceu fora da lista.
+- Evita esquecer interessado que chamou no WhatsApp.
+- Mostra quem esta devendo no mes certo.
+- Copia mensagem de cobranca sem reescrever tudo.
+- Mostra o historico basico de cada aluno ao clicar no nome.
+- Ajuda a controlar capacidade da turma.
+- Passa imagem mais profissional para a escola.
 
-## Roadmap
+## O que ja esta pronto
 
-### Fase 1 - Demo profissional
+- Demo online no GitHub Pages.
+- PIN simples para piloto.
+- Mais de 60 itens ficticios entre alunos, aulas, pagamentos e interessados.
+- Dashboard operacional.
+- Cadastro de alunos, planos e mensalidades.
+- Relatorio individual do aluno.
+- Agenda de aulas com visao de hoje e calendario previsto.
+- Presenca por aula, todos presentes e avulsos.
+- Status rapido de aula: confirmar, finalizar, cancelar e reabrir.
+- Lista de espera com funil: novo, contatado, experimental, convertido e perdido.
+- Acoes rapidas por WhatsApp.
+- Backup/importacao JSON.
+- Exportacao CSV.
+- PWA instalavel no celular.
+- Backend Node com SQLite para uso real.
+- Preparacao para deploy com Docker/Render.
+
+## O que falta confirmar com ele
+
+- Planos reais, valores e aulas por semana.
+- Se existe avulso, reposicao e aula experimental paga ou gratuita.
+- Niveis/turmas reais: iniciante, intermediario, kids, feminino, avancado, competitivo.
+- Professores e locais de aula.
+- Como ele cobra hoje: Pix, dinheiro, cartao, vencimento fixo ou por aluno.
+- Se ele quer que aluno agende sozinho agora ou se primeiro sera controle interno.
+- Quais dados ele realmente quer ver no relatorio do aluno.
+- Se o uso sera so no iPhone dele ou tambem em computador/secretaria.
+
+## Roadmap completo
+
+### Versao 0.1 - Demo de apresentacao
 
 Status: pronta.
 
-- Identidade visual do Team Lucão.
-- Dashboard.
-- Cadastro de alunos.
-- Aulas e presença.
-- Mensalidades.
-- Lista de espera.
-- Backup.
+- Marca Team Lucao.
+- Navegacao principal.
+- Dados ficticios realistas.
+- Dashboard, alunos, aulas, mensalidades, espera e backup.
+- GitHub Pages para abrir rapido.
 
-### Fase 2 - Piloto de operação
+### Versao 0.2 - Piloto rapido no iPhone
 
-Status: pronta para teste.
+Status: em andamento.
 
-- Filtros de alunos.
-- Filtro de aulas por data.
-- Contato por WhatsApp.
-- Exclusão de alunos, aulas e planos.
-- Resumo financeiro.
-- Histórico recente de pagamentos.
-- Importação de backup.
-- Tela de roadmap.
+- Fluxo de aula de hoje com poucos toques.
+- Relatorio individual ao clicar no aluno.
+- Indicador de frequencia semanal por plano.
+- Acoes de WhatsApp em aluno, aula e cobranca.
+- Lista de espera com urgencia de resposta.
+- Ajustes finos de tela pequena.
 
-### Fase 3 - Uso real online
+### Versao 0.3 - Operacao interna real
 
-Status: próximo passo.
+Objetivo: ele usar por uma semana com dados reais.
 
-- Login e senha.
-- Deploy online.
-- Backup automático.
-- Banco em servidor.
-- Ajuste final de celular.
-- Dados reais da escola.
+- Importar dados reais.
+- Ajustar planos e turmas reais.
+- Melhorar edicao/delecao de registros.
+- Separar experimental, reposicao e avulso.
+- Historico mensal de pagamentos mais forte.
+- Backup manual e restauracao testada.
+- Checklist semanal de rotina.
 
-### Fase 4 - Gestão inteligente
+### Versao 0.4 - Online com servidor
 
-Status: evolução.
+Objetivo: deixar acessivel por link seguro.
 
-- Relatório de presença por aluno.
-- Relatório de faturamento.
-- Alertas de mensalidade vencida.
-- Agenda semanal/mensal.
-- Exportação para Excel ou PDF.
-- Área do aluno ou PWA instalável.
+- Deploy do backend Node/SQLite.
+- Banco persistente.
+- PIN forte via `ADMIN_PIN`.
+- Backup automatico diario.
+- Logs basicos.
+- URL propria para ele acessar do iPhone.
+
+### Versao 0.5 - Financeiro de verdade
+
+Objetivo: parar de perder cobranca.
+
+- Mensalidade por mes de referencia.
+- Vencimento por aluno.
+- Pagamentos parciais/descontos.
+- Metodo de pagamento.
+- Lista de inadimplentes.
+- Mensagem de cobranca por WhatsApp.
+- Exportacao mensal para planilha.
+
+### Versao 0.6 - Agenda profissional
+
+Objetivo: controlar capacidade e previsao.
+
+- Agenda semanal e mensal.
+- Aulas recorrentes mais completas.
+- Reposicao vinculada ao aluno.
+- Cancelamento por chuva/feriado.
+- Capacidade por turma.
+- Filtro por professor, nivel e horario.
+
+### Versao 0.7 - Relatorios de gestao
+
+Objetivo: saber se a escola esta crescendo.
+
+- Faturamento previsto e recebido.
+- Alunos ativos, pausados e experimentais.
+- Conversao da lista de espera.
+- Frequencia por aluno.
+- Turmas mais cheias.
+- Alertas de alunos sumidos.
+
+### Versao 1.0 - Produto de uso diario
+
+Objetivo: sistema estavel da escola.
+
+- Login melhor.
+- Backup automatico.
+- Acesso mobile confiavel.
+- Dados reais organizados.
+- Relatorios essenciais.
+- Manual simples de uso.
+- Rotina semanal validada com o Lucao.
+
+### Versao 1.5 - Experiencia premium
+
+Objetivo: diferenciar a escola.
+
+- Area do aluno.
+- Confirmacao de presenca.
+- Agendamento pelo aluno.
+- Notificacoes.
+- Pix/checkout.
+- PWA instalavel com icone.
+- Exportacao PDF.
+
+## Pergunta final da reuniao
+
+"Isso encaixa no seu jeito de trabalhar ou sua rotina de aulas e cobranca acontece de outro jeito?"

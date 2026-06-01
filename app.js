@@ -337,6 +337,13 @@ function addDaysIso(dateIso, days = 7) {
   return date.toISOString().slice(0, 10);
 }
 
+function daysBetween(dateIso, endIso = todayISO()) {
+  if (!dateIso) return 0;
+  const start = new Date(`${dateIso}T12:00:00`);
+  const end = new Date(`${endIso}T12:00:00`);
+  return Math.max(0, Math.floor((end - start) / 86400000));
+}
+
 function phoneDigits(value) {
   return String(value || '').replace(/\D/g, '');
 }
@@ -531,8 +538,12 @@ function renderClassesTodayPlanner() {
             <strong>${escapeHTML(item.horario)} - ${escapeHTML(item.turma || 'Turma')}</strong>
             <span>${escapeHTML(item.professor || 'Professor nao informado')} - ${enrolled.length}/${item.capacidade || 8} previstos</span>
           </div>
-          <a class="mini-btn" href="${whatsappShareUrl(classShareText(item))}" target="_blank" rel="noopener">WhatsApp</a>
-          <button class="mini-btn" data-attendance="${item.id}">Presencas</button>
+          <div class="actions">
+            <span class="pill">${escapeHTML(item.status || 'Marcada')}</span>
+            <a class="mini-btn" href="${whatsappShareUrl(classShareText(item))}" target="_blank" rel="noopener">WhatsApp</a>
+            <button class="mini-btn" data-attendance="${item.id}">Presencas</button>
+            ${classStatusActions(item)}
+          </div>
         </div>
         <div class="roster-list">
           ${enrolled.map((student) => rosterPerson(student, item.data, Boolean(item.presencas?.[student.aluno_id || student.id] || student.presente))).join('')}
@@ -574,12 +585,10 @@ function renderPayments() {
   const filter = document.getElementById('paymentStatusFilter')?.value || '';
   document.getElementById('financeSummary').innerHTML = `
     <article class="mini-stat"><span>Recebido no mês</span><strong>${money.format(paidThisMonth)}</strong></article>
-    <article class="mini-stat"><span>Pendências</span><strong>${pending.length}</strong></article>
-    <article class="mini-stat"><span>Previsão pendente</span><strong>${money.format(pending.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0))}</strong></article>
-  `;
-  document.getElementById('financeSummary').insertAdjacentHTML('beforeend', `
     <article class="mini-stat"><span>Previsao do mes</span><strong>${money.format(expected)}</strong></article>
-  `);
+    <article class="mini-stat"><span>Pendências</span><strong>${pending.length}</strong></article>
+    <article class="mini-stat"><span>A receber</span><strong>${money.format(pending.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0))}</strong></article>
+  `;
   const visibleStudents = state.students.filter((student) => {
     const haystack = `${student.nome} ${student.telefone} ${student.plano_nome}`.toLowerCase();
     const matchesQuery = !query || haystack.includes(query);
@@ -634,7 +643,10 @@ function renderPlans() {
 function renderWaitlist() {
   const status = document.getElementById('waitStatusFilter').value;
   const items = state.waitlist.filter((item) => !status || (item.status || 'Novo') === status);
-  document.getElementById('waitlistList').innerHTML = items.length ? items.map((item) => `
+  document.getElementById('waitlistList').innerHTML = items.length ? items.map((item) => {
+    const age = daysBetween(item.data_cadastro || todayISO());
+    const needsReply = (item.status || 'Novo') === 'Novo' && age >= 2;
+    return `
     <article class="row-card">
       <div>
         <h3>${escapeHTML(item.nome)}</h3>
@@ -642,6 +654,8 @@ function renderWaitlist() {
         <div class="pill-row">
           <span class="pill ${item.status === 'Convertido' ? 'ok' : item.status === 'Contatado' || item.status === 'Experimental marcado' ? 'warn' : item.status === 'Perdido' ? 'bad' : ''}">${escapeHTML(item.status || 'Novo')}</span>
           ${item.data_cadastro ? `<span class="pill">${formatDate(item.data_cadastro)}</span>` : ''}
+          <span class="pill ${needsReply ? 'bad' : age ? 'warn' : ''}">${age || 0} dia(s)</span>
+          ${needsReply ? '<span class="pill bad">responder hoje</span>' : ''}
         </div>
         ${item.observacao ? `<p class="meta">${escapeHTML(item.observacao)}</p>` : ''}
       </div>
@@ -655,7 +669,8 @@ function renderWaitlist() {
         <button class="mini-btn" data-delete-wait="${item.id}">Remover</button>
       </div>
     </article>
-  `).join('') : empty('Sem interessados em espera.');
+  `;
+  }).join('') : empty('Sem interessados em espera.');
 }
 
 function renderReports() {
@@ -786,11 +801,27 @@ function classRow(item) {
       <div class="actions">
         <a class="mini-btn" href="${whatsappShareUrl(classShareText(item))}" target="_blank" rel="noopener">WhatsApp</a>
         <button class="mini-btn" data-attendance="${item.id}">Presencas</button>
+        ${classStatusActions(item)}
         <button class="mini-btn" data-duplicate-class="${item.id}">Duplicar</button>
         <button class="mini-btn" data-edit-class="${item.id}">Editar</button>
         <button class="mini-btn danger-mini" data-delete-class="${item.id}">Remover</button>
       </div>
     </article>
+  `;
+}
+
+function classStatusActions(item) {
+  const id = escapeHTML(item.id);
+  if (item.status === 'Finalizada') {
+    return `<button class="mini-btn" data-class-status="${id}:Marcada">Reabrir</button>`;
+  }
+  if (item.status === 'Cancelada') {
+    return `<button class="mini-btn" data-class-status="${id}:Marcada">Reativar</button>`;
+  }
+  return `
+    ${item.status === 'Confirmada' ? '' : `<button class="mini-btn" data-class-status="${id}:Confirmada">Confirmar</button>`}
+    <button class="mini-btn" data-class-status="${id}:Finalizada">Finalizar</button>
+    <button class="mini-btn danger-mini" data-class-status="${id}:Cancelada">Cancelar</button>
   `;
 }
 
@@ -1192,6 +1223,14 @@ async function saveClassItem(item) {
     saveLocalState();
     render();
   }
+}
+
+async function updateClassStatus(id, status) {
+  const item = state.classes.find((entry) => String(entry.id) === String(id));
+  if (!item) return;
+  item.status = status;
+  await saveClassItem(item);
+  toast(`Aula ${status.toLowerCase()}`);
 }
 
 async function addExtraAttendance(event) {
@@ -1625,7 +1664,7 @@ function bindEvents() {
     showLogin(true);
   });
   document.body.addEventListener('click', (event) => {
-    const target = event.target.closest('[data-report-student],[data-edit-student],[data-delete-student],[data-edit-class],[data-delete-class],[data-duplicate-class],[data-edit-plan],[data-delete-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-copy-charge],[data-edit-wait],[data-delete-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day]');
+    const target = event.target.closest('[data-report-student],[data-edit-student],[data-delete-student],[data-edit-class],[data-delete-class],[data-duplicate-class],[data-class-status],[data-edit-plan],[data-delete-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-copy-charge],[data-edit-wait],[data-delete-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day]');
     if (!target) return;
     if (target.dataset.reportStudent) openStudentReport(target.dataset.reportStudent);
     if (target.dataset.editStudent) openStudent(target.dataset.editStudent);
@@ -1633,6 +1672,10 @@ function bindEvents() {
     if (target.dataset.editClass) openClass(target.dataset.editClass);
     if (target.dataset.deleteClass) deleteClass(target.dataset.deleteClass).catch((err) => toast(err.message));
     if (target.dataset.duplicateClass) duplicateClass(target.dataset.duplicateClass).catch((err) => toast(err.message));
+    if (target.dataset.classStatus) {
+      const [id, status] = target.dataset.classStatus.split(':');
+      updateClassStatus(id, status).catch((err) => toast(err.message));
+    }
     if (target.dataset.editPlan) openPlan(target.dataset.editPlan);
     if (target.dataset.deletePlan) deletePlan(target.dataset.deletePlan).catch((err) => toast(err.message));
     if (target.dataset.attendance) openAttendance(target.dataset.attendance);
@@ -1663,7 +1706,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260601-limpeza', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260601-demo-final', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {
