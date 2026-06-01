@@ -9,8 +9,8 @@
     <meta name="apple-mobile-web-app-title" content="TLF Gestao" />
     <title>Team Lucão Futevôlei</title>
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260601-piloto" />
-    <link rel="stylesheet" href="styles.css?v=20260601-piloto" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260601-financeiro" />
+    <link rel="stylesheet" href="styles.css?v=20260601-financeiro" />
   </head>
   <body>
     <div class="login-wall" id="loginWall" aria-hidden="true">
@@ -162,6 +162,7 @@
           </div>
           <div class="finance-summary" id="financeSummary"></div>
           <div class="filters">
+            <input id="paymentMonth" type="month" aria-label="Mes de referencia" />
             <input id="paymentSearch" placeholder="Buscar aluno ou telefone..." />
             <select id="paymentStatusFilter" aria-label="Filtrar mensalidades">
               <option value="">Todos</option>
@@ -416,6 +417,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="app.js?v=20260601-piloto"></script>
+    <script src="app.js?v=20260601-financeiro"></script>
   </body>
 </html>

@@ -4,6 +4,7 @@ const STORE_KEY = 'fv_school_state_v2';
 const PIN_KEY = 'tlf_admin_pin';
 const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const todayISO = () => new Date().toISOString().slice(0, 10);
+const currentMonth = () => todayISO().slice(0, 7);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
 const starter = {
@@ -232,6 +233,14 @@ function isPaid(student) {
   return Boolean(student.pago_ate && student.pago_ate >= todayISO());
 }
 
+function isPaidForMonth(student, month = currentMonth()) {
+  return Boolean(student.pago_ate && String(student.pago_ate).slice(0, 7) >= month);
+}
+
+function paymentMonth(item = {}) {
+  return String(item.referencia || item.pago_em || item.vencimento || '').slice(0, 7);
+}
+
 function dueDay(student = {}) {
   return Math.min(31, Math.max(1, Number(student.dia_vencimento || student.vencimento_dia || 10) || 10));
 }
@@ -392,7 +401,8 @@ function nextClass() {
 }
 
 function renderQuickActions() {
-  const pending = state.students.filter((student) => student.status !== 'Pausado' && !isPaid(student));
+  const activeStudents = state.students.filter((student) => student.status !== 'Pausado');
+  const pending = activeStudents.filter((student) => !isPaidForMonth(student, currentMonth()));
   const next = nextClass();
   const actions = [
     ['Cobrar pendentes', `${pending.length} aluno(s)`, 'quick-pending'],
@@ -552,8 +562,14 @@ function renderClassCalendar() {
 }
 
 function renderPayments() {
-  const paidThisMonth = (state.payments || []).reduce((sum, item) => sum + Number(item.valor || 0), 0);
-  const pending = state.students.filter((student) => student.status !== 'Pausado' && !isPaid(student));
+  const monthInput = document.getElementById('paymentMonth');
+  if (monthInput && !monthInput.value) monthInput.value = currentMonth();
+  const month = monthInput?.value || currentMonth();
+  const monthPayments = (state.payments || []).filter((item) => paymentMonth(item) === month);
+  const paidThisMonth = monthPayments.reduce((sum, item) => sum + Number(item.valor || 0), 0);
+  const activeStudents = state.students.filter((student) => student.status !== 'Pausado');
+  const pending = activeStudents.filter((student) => !isPaidForMonth(student, month));
+  const expected = activeStudents.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0);
   const query = document.getElementById('paymentSearch')?.value.trim().toLowerCase() || '';
   const filter = document.getElementById('paymentStatusFilter')?.value || '';
   document.getElementById('financeSummary').innerHTML = `
@@ -561,19 +577,22 @@ function renderPayments() {
     <article class="mini-stat"><span>Pendências</span><strong>${pending.length}</strong></article>
     <article class="mini-stat"><span>Previsão pendente</span><strong>${money.format(pending.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0))}</strong></article>
   `;
+  document.getElementById('financeSummary').insertAdjacentHTML('beforeend', `
+    <article class="mini-stat"><span>Previsao do mes</span><strong>${money.format(expected)}</strong></article>
+  `);
   const visibleStudents = state.students.filter((student) => {
     const haystack = `${student.nome} ${student.telefone} ${student.plano_nome}`.toLowerCase();
     const matchesQuery = !query || haystack.includes(query);
-    const matchesFilter = !filter || (filter === 'paid' ? isPaid(student) : !isPaid(student));
+    const matchesFilter = !filter || (filter === 'paid' ? isPaidForMonth(student, month) : !isPaidForMonth(student, month));
     return matchesQuery && matchesFilter;
-  }).sort((a, b) => Number(isPaid(a)) - Number(isPaid(b)) || a.nome.localeCompare(b.nome));
+  }).sort((a, b) => Number(isPaidForMonth(a, month)) - Number(isPaidForMonth(b, month)) || a.nome.localeCompare(b.nome));
   const rows = visibleStudents.map((student) => `
     <article class="row-card">
       <div>
         <button class="link-title compact-title" type="button" data-report-student="${student.id}">${escapeHTML(student.nome)}</button>
         <p class="meta">${money.format(Number(student.mensalidade || 0))} - pago até ${student.pago_ate ? formatDate(student.pago_ate) : 'sem registro'}</p>
         <div class="pill-row">
-          <span class="pill ${isPaid(student) ? 'ok' : 'bad'}">${isPaid(student) ? 'em dia' : 'pendente'}</span>
+          <span class="pill ${isPaidForMonth(student, month) ? 'ok' : 'bad'}">${isPaidForMonth(student, month) ? 'em dia' : 'pendente'}</span>
           <span class="pill">vence dia ${dueDay(student)}</span>
         </div>
       </div>
@@ -584,7 +603,7 @@ function renderPayments() {
       </div>
     </article>
   `);
-  const history = (state.payments || []).slice(0, 8).map((item) => `
+  const history = monthPayments.slice(0, 8).map((item) => `
     <article class="row-card compact-row">
       <div>
         <h3>${escapeHTML(item.aluno_nome || 'Pagamento')}</h3>
@@ -893,7 +912,7 @@ function openStudentReport(id) {
       <div>
         <span class="section-label">Relatorio do aluno</span>
         <h2>${escapeHTML(student.nome)}</h2>
-        <p class="meta">${escapeHTML(student.telefone || 'sem telefone')} - ${escapeHTML(student.plano_nome || 'sem plano')} - ${escapeHTML(student.nivel || 'sem nivel')}</p>
+        <p class="meta">${escapeHTML(student.telefone || 'sem telefone')} - ${escapeHTML(student.plano_nome || 'sem plano')} - vence dia ${dueDay(student)} - ${escapeHTML(student.nivel || 'sem nivel')}</p>
       </div>
       <div class="actions">
         ${student.telefone ? `<a class="mini-btn" href="${whatsappUrl(student.telefone, `Oi ${student.nome}, tudo bem? Aqui e do Team Lucao Futevolei.`)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
@@ -1456,13 +1475,14 @@ function exportCsv(kind) {
   const configs = {
     students: {
       filename: `team-lucao-alunos-${todayISO()}.csv`,
-      headers: ['nome', 'telefone', 'email', 'plano', 'mensalidade', 'status', 'nivel', 'pago_ate', 'observacao'],
+      headers: ['nome', 'telefone', 'email', 'plano', 'mensalidade', 'dia_vencimento', 'status', 'nivel', 'pago_ate', 'observacao'],
       rows: state.students.map((student) => [
         student.nome,
         student.telefone,
         student.email,
         student.plano_nome,
         student.mensalidade,
+        dueDay(student),
         student.status,
         student.nivel,
         student.pago_ate,
@@ -1650,6 +1670,7 @@ function bindEvents() {
   });
   document.getElementById('studentStatusFilter').addEventListener('change', renderStudents);
   document.getElementById('studentPaymentFilter').addEventListener('change', renderStudents);
+  document.getElementById('paymentMonth').addEventListener('change', renderPayments);
   document.getElementById('paymentSearch').addEventListener('input', renderPayments);
   document.getElementById('paymentStatusFilter').addEventListener('change', renderPayments);
   document.getElementById('classDateFilter').addEventListener('change', renderClasses);
@@ -1710,7 +1731,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260601-piloto', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260601-financeiro', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {
