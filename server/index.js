@@ -24,6 +24,9 @@ const PORT = Number(process.env.PORT || 3020);
 const ROOT_DIR = path.resolve(__dirname, '..');
 const BACKUPS_DIR = path.join(ROOT_DIR, 'backups');
 const ADMIN_PIN = String(process.env.ADMIN_PIN || '1234');
+const AUTO_BACKUP_ON_START = String(process.env.AUTO_BACKUP_ON_START || 'true') !== 'false';
+const AUTO_BACKUP_INTERVAL_HOURS = Number(process.env.AUTO_BACKUP_INTERVAL_HOURS || 0);
+const BACKUP_RETENTION = Math.max(1, Number(process.env.BACKUP_RETENTION || 30));
 
 app.use(cors());
 app.use(express.json({ limit: '8mb' }));
@@ -67,7 +70,53 @@ function createBackup(prefix = 'backup_manual') {
   const filename = `${prefix}_${backupStamp()}.json`;
   const snapshot = stateSnapshot({ includeLogs: true });
   fs.writeFileSync(path.join(BACKUPS_DIR, filename), JSON.stringify(snapshot, null, 2), 'utf8');
+  pruneBackups();
   return { filename, snapshot };
+}
+
+function listBackups() {
+  ensureDir(BACKUPS_DIR);
+  return fs.readdirSync(BACKUPS_DIR)
+    .filter((filename) => filename.endsWith('.json') && filename.startsWith('backup_'))
+    .map((filename) => {
+      const fullPath = path.join(BACKUPS_DIR, filename);
+      const stat = fs.statSync(fullPath);
+      return {
+        filename,
+        size: stat.size,
+        created_at: stat.mtime.toISOString()
+      };
+    })
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+}
+
+function pruneBackups() {
+  const backups = listBackups();
+  backups.slice(BACKUP_RETENTION).forEach((backup) => {
+    fs.unlinkSync(path.join(BACKUPS_DIR, backup.filename));
+  });
+}
+
+function scheduleAutomaticBackups() {
+  if (AUTO_BACKUP_ON_START) {
+    try {
+      const backup = createBackup('backup_startup');
+      console.log(`Backup inicial criado: ${backup.filename}`);
+    } catch (err) {
+      console.warn(`Falha ao criar backup inicial: ${err.message}`);
+    }
+  }
+  if (AUTO_BACKUP_INTERVAL_HOURS > 0) {
+    const ms = AUTO_BACKUP_INTERVAL_HOURS * 60 * 60 * 1000;
+    setInterval(() => {
+      try {
+        const backup = createBackup('backup_auto');
+        console.log(`Backup automatico criado: ${backup.filename}`);
+      } catch (err) {
+        console.warn(`Falha no backup automatico: ${err.message}`);
+      }
+    }, ms).unref();
+  }
 }
 
 function requirePin(req, res, next) {
@@ -165,7 +214,15 @@ app.get('/api/backup.json', (_req, res) => res.json(stateSnapshot({ includeLogs:
 app.post('/api/backups/create', (_req, res) => {
   try {
     const backup = createBackup();
-    res.json({ ok: true, filename: backup.filename });
+    res.json({ ok: true, filename: backup.filename, backups: listBackups() });
+  } catch (err) {
+    jsonError(res, err, 500);
+  }
+});
+
+app.get('/api/backups', (_req, res) => {
+  try {
+    res.json({ ok: true, retention: BACKUP_RETENTION, items: listBackups() });
   } catch (err) {
     jsonError(res, err, 500);
   }
@@ -443,5 +500,6 @@ app.delete('/api/tables/:table/:id', (req, res) => {
 app.get('/api/db/download', (_req, res) => res.download(DB_PATH));
 
 app.listen(PORT, () => {
+  scheduleAutomaticBackups();
   console.log(`Team Lucão Futevôlei rodando em http://localhost:${PORT}`);
 });

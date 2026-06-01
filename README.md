@@ -53,6 +53,30 @@ http://localhost:3020
 
 Tambem da para abrir `index.html` diretamente no navegador para usar em modo local.
 
+## Uso real online
+
+Para rodar como sistema de uso diario, use o servidor Node com SQLite persistente. Configure pelo menos:
+
+```bash
+ADMIN_PIN=troque-este-pin
+DB_PATH=/caminho/persistente/arena.db
+AUTO_BACKUP_ON_START=true
+AUTO_BACKUP_INTERVAL_HOURS=24
+BACKUP_RETENTION=30
+```
+
+Backups JSON ficam em `backups/`. O servidor cria um backup ao iniciar por padrao e, se `AUTO_BACKUP_INTERVAL_HOURS` for maior que zero, cria backups periodicos. A retencao padrao guarda os 30 backups mais recentes.
+
+Endpoints uteis no servidor:
+
+- `GET /health`: status publico.
+- `GET /api/backups`: lista backups.
+- `POST /api/backups/create`: cria backup manual.
+- `GET /api/backup.json`: baixa snapshot JSON.
+- `GET /api/db/download`: baixa o SQLite.
+
+Todos os endpoints `/api/*`, exceto login, exigem header `X-Admin-Pin`.
+
 ## Apresentacao
 
 O roteiro para apresentar a ideia, explicar o valor no dia a dia e mostrar o roadmap esta em `APRESENTACAO.md`.
