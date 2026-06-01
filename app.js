@@ -20,7 +20,7 @@ const starter = {
     { id: 'p4', nome: 'Avulso', preco: 60, aulas_semana: 0, descricao: 'Aula avulsa', ativo: 1 }
   ],
   classes: [
-    { id: 'c1', data: todayISO(), horario: '18:30', turma: 'Iniciantes', professor: 'Jefferson', capacidade: 8, status: 'Marcada', aluno_ids: ['s1', 's2'], presencas: { s1: true, s2: false }, extra_presentes: [] }
+    { id: 'c1', data: todayISO(), horario: '18:30', turma: 'Iniciantes', professor: 'Jefferson', tipo: 'Regular', capacidade: 8, status: 'Marcada', aluno_ids: ['s1', 's2'], presencas: { s1: true, s2: false }, extra_presentes: [] }
   ],
   payments: [],
   waitlist: [
@@ -98,11 +98,12 @@ function demoState() {
       horario: template[1],
       turma: template[0],
       professor: index % 5 === 0 ? 'Professor convidado' : 'Lucao',
+      tipo: index % 8 === 5 ? 'Experimental' : index % 8 === 4 ? 'Avulso' : 'Regular',
       capacidade: template[2],
       status: dayOffset === 0 ? 'Confirmada' : 'Marcada',
       aluno_ids: alunoIds,
       presencas,
-      extra_presentes: dayOffset === 0 && index % 6 === 0 ? [{ id: `e${index}`, nome: ['Visitante Rafael', 'Reposicao da Laura', 'Aula teste Felipe'][index % 3], criado_em: today }] : []
+      extra_presentes: dayOffset === 0 && index % 6 === 0 ? [{ id: `e${index}`, nome: ['Visitante Rafael', 'Reposicao da Laura', 'Aula teste Felipe'][index % 3], tipo: ['Visitante', 'Reposicao', 'Experimental'][index % 3], criado_em: today }] : []
     };
   });
   const payments = students.filter((student) => student.pago_ate).slice(0, 32).map((student, index) => ({
@@ -272,6 +273,14 @@ function classExtras(item = {}) {
     }
   }
   return [];
+}
+
+function classType(item = {}) {
+  return item.tipo || item.tipo_aula || item.type || 'Regular';
+}
+
+function extraType(extra = {}) {
+  return extra.tipo || extra.tipo_presenca || extra.type || 'Avulso';
 }
 
 function weekBounds(dateIso = todayISO()) {
@@ -540,6 +549,7 @@ function renderClassesTodayPlanner() {
             <span>${escapeHTML(item.professor || 'Professor nao informado')} - ${enrolled.length}/${item.capacidade || 8} previstos</span>
           </div>
           <div class="actions">
+            <span class="pill warn">${escapeHTML(classType(item))}</span>
             <span class="pill">${escapeHTML(item.status || 'Marcada')}</span>
             <a class="mini-btn" href="${whatsappShareUrl(classShareText(item))}" target="_blank" rel="noopener">WhatsApp</a>
             <button class="mini-btn" data-copy-class="${item.id}">Copiar lista</button>
@@ -549,7 +559,7 @@ function renderClassesTodayPlanner() {
         </div>
         <div class="roster-list">
           ${enrolled.map((student) => rosterPerson(student, item.data, Boolean(item.presencas?.[student.aluno_id || student.id] || student.presente))).join('')}
-          ${extras.map((extra) => `<span class="roster-person extra"><strong>${escapeHTML(extra.nome || extra)}</strong><small>fora da lista</small></span>`).join('')}
+          ${extras.map((extra) => `<span class="roster-person extra"><strong>${escapeHTML(extra.nome || extra)}</strong><small>${escapeHTML(extraType(extra))}</small></span>`).join('')}
         </div>
       </article>
     `;
@@ -790,13 +800,14 @@ function classRow(item) {
         <div class="pill-row">
           <span class="pill">${present}/${enrolled.length} presencas</span>
           ${extras.length ? `<span class="pill warn">${extras.length} fora da lista</span>` : ''}
+          <span class="pill warn">${escapeHTML(classType(item))}</span>
           <span class="pill">${escapeHTML(item.status || 'Marcada')}</span>
           ${item.data === todayISO() ? '<span class="pill ok">hoje</span>' : ''}
         </div>
         ${enrolled.length || extras.length ? `
           <div class="roster-list class-roster">
             ${enrolled.map((student) => rosterPerson(student, item.data, Boolean(item.presencas?.[student.aluno_id || student.id] || student.presente))).join('')}
-            ${extras.map((extra) => `<span class="roster-person extra"><strong>${escapeHTML(extra.nome || extra)}</strong><small>fora da lista</small></span>`).join('')}
+            ${extras.map((extra) => `<span class="roster-person extra"><strong>${escapeHTML(extra.nome || extra)}</strong><small>${escapeHTML(extraType(extra))}</small></span>`).join('')}
           </div>
         ` : ''}
       </div>
@@ -941,7 +952,7 @@ function reportClassLine(item, showPresence = false) {
     <article class="row-card compact-row">
       <div>
         <h3>${formatDate(item.data)} ${escapeHTML(item.horario)} - ${escapeHTML(item.turma || 'Turma')}</h3>
-        <p class="meta">${escapeHTML(item.professor || 'Professor nao informado')}</p>
+        <p class="meta">${escapeHTML(item.professor || 'Professor nao informado')} - ${escapeHTML(classType(item))}</p>
       </div>
       ${showPresence ? `<div class="pill-row"><span class="pill ${item.wasPresent ? 'ok' : 'warn'}">${item.wasPresent ? 'presente' : 'faltou'}</span></div>` : ''}
     </article>
@@ -955,6 +966,7 @@ function openClass(id = '') {
   document.getElementById('classTime').value = item.horario || '18:30';
   document.getElementById('classGroup').value = item.turma || '';
   document.getElementById('classCoach').value = item.professor || '';
+  document.getElementById('classType').value = classType(item);
   document.getElementById('classCapacity').value = item.capacidade || 8;
   document.getElementById('classStatus').value = item.status || 'Marcada';
   document.getElementById('classRepeatWeeks').value = item.id ? 1 : 4;
@@ -1028,7 +1040,7 @@ async function copyStudentCharge(studentId) {
 function classShareText(item) {
   const enrolled = classStudents(item);
   const names = enrolled.length ? enrolled.map((student, index) => `${index + 1}. ${student.nome}`).join('\n') : 'Sem alunos previstos.';
-  return `Aula Team Lucao Futevolei\n${formatDate(item.data)} as ${item.horario} - ${item.turma || 'Turma'}\nProfessor: ${item.professor || 'nao informado'}\n\nPrevistos:\n${names}`;
+  return `Aula Team Lucao Futevolei\n${formatDate(item.data)} as ${item.horario} - ${item.turma || 'Turma'} (${classType(item)})\nProfessor: ${item.professor || 'nao informado'}\n\nPrevistos:\n${names}`;
 }
 
 function classRosterText(item) {
@@ -1039,10 +1051,10 @@ function classRosterText(item) {
     const fullStudent = studentById(id) || student;
     return `${index + 1}. ${student.nome} - ${weeklyAttendanceCount(id, item.data)}/${planWeeklyTarget(fullStudent) || '-'} na semana`;
   });
-  const extraLines = extras.map((extra, index) => `Avulso ${index + 1}: ${extra.nome || extra}`);
+  const extraLines = extras.map((extra, index) => `${extraType(extra)} ${index + 1}: ${extra.nome || extra}`);
   return [
     'Lista da aula - Team Lucao Futevolei',
-    `${formatDate(item.data)} as ${item.horario} - ${item.turma || 'Turma'}`,
+    `${formatDate(item.data)} as ${item.horario} - ${item.turma || 'Turma'} (${classType(item)})`,
     `Professor: ${item.professor || 'nao informado'}`,
     '',
     'Previstos:',
@@ -1065,14 +1077,14 @@ function attendanceSummaryText(item) {
   const extras = classExtras(item);
   return [
     'Resumo de presenca - Team Lucao Futevolei',
-    `${formatDate(item.data)} as ${item.horario} - ${item.turma || 'Turma'}`,
+    `${formatDate(item.data)} as ${item.horario} - ${item.turma || 'Turma'} (${classType(item)})`,
     '',
     `Presentes (${present.length}):`,
     present.length ? present.map((student) => `- ${student.nome}`).join('\n') : '- nenhum marcado',
     '',
     `Faltaram (${absent.length}):`,
     absent.length ? absent.map((student) => `- ${student.nome}`).join('\n') : '- ninguem',
-    extras.length ? `\nFora da lista (${extras.length}):\n${extras.map((extra) => `- ${extra.nome || extra}`).join('\n')}` : ''
+    extras.length ? `\nFora da lista (${extras.length}):\n${extras.map((extra) => `- ${extra.nome || extra} (${extraType(extra)})`).join('\n')}` : ''
   ].filter(Boolean).join('\n');
 }
 
@@ -1156,6 +1168,7 @@ async function saveClass(event) {
     horario: document.getElementById('classTime').value,
     turma: document.getElementById('classGroup').value.trim(),
     professor: document.getElementById('classCoach').value.trim(),
+    tipo: document.getElementById('classType').value,
     capacidade: Number(document.getElementById('classCapacity').value || 8),
     status: document.getElementById('classStatus').value,
     aluno_ids: alunoIds,
@@ -1248,7 +1261,7 @@ function openAttendance(classId) {
   activeAttendanceClassId = classId;
   const ids = classStudentIds(item);
   const extras = classExtras(item);
-  document.getElementById('attendanceTitle').textContent = `${formatDate(item.data)} as ${item.horario} - ${item.turma || 'Turma'}`;
+  document.getElementById('attendanceTitle').textContent = `${formatDate(item.data)} as ${item.horario} - ${item.turma || 'Turma'} (${classType(item)})`;
   document.getElementById('attendanceList').innerHTML = ids.map(studentById).filter(Boolean).map((student) => `
     <div class="check-item">
       <div>
@@ -1264,7 +1277,7 @@ function openAttendance(classId) {
     <article class="row-card compact-row">
       <div>
         <h3>${escapeHTML(extra.nome || extra)}</h3>
-        <p class="meta">Veio sem estar na lista prevista</p>
+        <p class="meta">${escapeHTML(extraType(extra))} - fora da lista prevista</p>
       </div>
       <button class="mini-btn danger-mini" data-remove-extra="${item.id}:${index}">Remover</button>
     </article>
@@ -1297,8 +1310,10 @@ async function addExtraAttendance(event) {
   const input = document.getElementById('extraAttendanceName');
   const name = input.value.trim();
   if (!name) return;
-  item.extra_presentes = [...classExtras(item), { id: uid(), nome: name, criado_em: todayISO() }];
+  const type = document.getElementById('extraAttendanceType').value || 'Avulso';
+  item.extra_presentes = [...classExtras(item), { id: uid(), nome: name, tipo: type, criado_em: todayISO() }];
   input.value = '';
+  document.getElementById('extraAttendanceType').value = 'Avulso';
   await saveClassItem(item);
   openAttendance(item.id);
   toast('Avulso adicionado');
@@ -1535,11 +1550,11 @@ function exportCsv(kind) {
     },
     classes: {
       filename: `team-lucao-aulas-${todayISO()}.csv`,
-      headers: ['data', 'horario', 'turma', 'professor', 'capacidade', 'status', 'alunos', 'presencas', 'fora_da_lista'],
+      headers: ['data', 'horario', 'turma', 'tipo', 'professor', 'capacidade', 'status', 'alunos', 'presencas', 'fora_da_lista'],
       rows: state.classes.map((item) => {
         const enrolled = (item.alunos || (item.aluno_ids || []).map(studentById)).filter(Boolean);
         const present = enrolled.filter((student) => item.presencas?.[student.aluno_id || student.id] || student.presente).length;
-        return [item.data, item.horario, item.turma, item.professor, item.capacidade, item.status, enrolled.length, present, classExtras(item).length];
+        return [item.data, item.horario, item.turma, classType(item), item.professor, item.capacidade, item.status, enrolled.length, present, classExtras(item).length];
       })
     },
     waitlist: {
@@ -1604,6 +1619,7 @@ function serverDemoPayload(next) {
         data: item.data,
         horario: item.horario,
         turma: item.turma,
+        tipo: classType(item),
         professor: item.professor,
         capacidade: item.capacidade,
         status: item.status,
@@ -1768,7 +1784,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260601-mobile', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260601-tipos', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {

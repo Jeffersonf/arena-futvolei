@@ -160,6 +160,7 @@ function normalizeClassPayload(body = {}) {
     data: String(body.data || body.date || today()).slice(0, 10),
     horario: String(body.horario || body.time || '18:30').slice(0, 5),
     turma: String(body.turma || body.group || '').trim(),
+    tipo: String(body.tipo || body.tipo_aula || body.type || 'Regular'),
     professor: String(body.professor || body.coach || '').trim(),
     plano_id: plan?.id || body.plano_id || null,
     plano_nome: plan?.nome || body.plano_nome || '',

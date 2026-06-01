@@ -17,6 +17,7 @@
 - Copiar a lista da aula.
 - Abrir o relatorio de um aluno pelo nome.
 - Abrir presencas e copiar o resumo da aula.
+- Adicionar alguem fora da lista como Avulso, Reposicao ou Experimental.
 - Conferir se o WhatsApp abre no aparelho.
 
 ## Roteiro curto

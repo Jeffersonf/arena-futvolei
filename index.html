@@ -9,8 +9,8 @@
     <meta name="apple-mobile-web-app-title" content="TLF Gestao" />
     <title>Team Lucão Futevôlei</title>
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260601-mobile" />
-    <link rel="stylesheet" href="styles.css?v=20260601-mobile" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260601-tipos" />
+    <link rel="stylesheet" href="styles.css?v=20260601-tipos" />
   </head>
   <body>
     <div class="login-wall" id="loginWall" aria-hidden="true">
@@ -349,7 +349,18 @@
         <label>Turma<input id="classGroup" placeholder="Ex: Iniciantes, Intermediário, Kids" /></label>
         <label>Professor<input id="classCoach" placeholder="Nome do professor" /></label>
         <div class="form-row">
+          <label>Tipo
+            <select id="classType">
+              <option value="Regular">Regular</option>
+              <option value="Experimental">Experimental</option>
+              <option value="Reposicao">Reposicao</option>
+              <option value="Avulso">Avulso</option>
+              <option value="Evento">Evento</option>
+            </select>
+          </label>
           <label>Capacidade<input id="classCapacity" type="number" min="1" step="1" placeholder="8" /></label>
+        </div>
+        <div class="form-row">
           <label>Status
             <select id="classStatus">
               <option value="Marcada">Marcada</option>
@@ -377,6 +388,12 @@
         </div>
         <form class="extra-attendance" id="extraAttendanceForm">
           <input id="extraAttendanceName" placeholder="Nome de quem veio sem estar na aula" />
+          <select id="extraAttendanceType" aria-label="Tipo de avulso">
+            <option value="Avulso">Avulso</option>
+            <option value="Reposicao">Reposicao</option>
+            <option value="Experimental">Experimental</option>
+            <option value="Visitante">Visitante</option>
+          </select>
           <button class="soft-btn" type="submit">Adicionar avulso</button>
         </form>
         <div class="check-list" id="attendanceList"></div>
@@ -423,6 +440,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="app.js?v=20260601-mobile"></script>
+    <script src="app.js?v=20260601-tipos"></script>
   </body>
 </html>

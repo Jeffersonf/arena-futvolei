@@ -112,6 +112,7 @@ function ensureSchema() {
       data TEXT NOT NULL,
       horario TEXT NOT NULL,
       turma TEXT DEFAULT '',
+      tipo TEXT DEFAULT 'Regular',
       professor TEXT DEFAULT '',
       plano_id INTEGER,
       plano_nome TEXT,
@@ -182,6 +183,9 @@ function ensureSchema() {
   }
 
   const classColumns = tableColumns('aulas');
+  if (!classColumns.includes('tipo')) {
+    run("ALTER TABLE aulas ADD COLUMN tipo TEXT DEFAULT 'Regular'");
+  }
   if (!classColumns.includes('extras')) {
     run("ALTER TABLE aulas ADD COLUMN extras TEXT DEFAULT '[]'");
   }
