@@ -10,6 +10,7 @@
 
 - Abrir o link no iPhone.
 - Entrar com o PIN.
+- Conferir se menu, botoes e modal de presenca ficam confortaveis no toque.
 - Confirmar que aparecem alunos, aulas, mensalidades e espera.
 - Testar uma busca de aluno.
 - Abrir uma aula de hoje.

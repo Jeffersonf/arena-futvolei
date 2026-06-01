@@ -42,6 +42,7 @@ body {
   margin: 0;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
   background:
     linear-gradient(90deg, color-mix(in srgb, var(--accent) 12%, transparent) 0 2px, transparent 2px 100%),
     linear-gradient(135deg, var(--bg), var(--bg2));
@@ -59,6 +60,14 @@ a {
 
 button {
   cursor: pointer;
+  touch-action: manipulation;
+}
+
+button,
+a,
+input,
+select {
+  -webkit-tap-highlight-color: transparent;
 }
 
 .login-wall {
@@ -67,7 +76,7 @@ button {
   z-index: 100;
   display: none;
   place-items: center;
-  padding: 18px;
+  padding: calc(14px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
   background:
     linear-gradient(90deg, color-mix(in srgb, var(--accent) 15%, transparent) 0 2px, transparent 2px 100%),
     linear-gradient(135deg, #080808, #171717);
@@ -78,7 +87,8 @@ button {
 }
 
 .login-box {
-  width: min(420px, 100%);
+  width: calc(100vw - 28px);
+  max-width: 420px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 22px;
@@ -90,6 +100,10 @@ button {
   width: 96px;
   height: 96px;
   margin: 0 auto 14px;
+}
+
+.login-box .muted {
+  overflow-wrap: anywhere;
 }
 
 .sidebar {
@@ -493,10 +507,10 @@ h2 {
 .mini-btn {
   display: inline-grid;
   place-items: center;
-  min-height: 32px;
+  min-height: 38px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 0 10px;
+  padding: 0 12px;
   background: var(--soft);
   color: var(--text);
   font-size: 12px;
@@ -808,7 +822,7 @@ h2 {
 .modal {
   position: relative;
   width: min(560px, 100%);
-  max-height: min(760px, calc(100vh - 36px));
+  max-height: min(760px, calc(100svh - 36px));
   overflow: auto;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -829,8 +843,8 @@ h2 {
   position: absolute;
   top: 12px;
   right: 12px;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--soft);
@@ -962,7 +976,7 @@ select[multiple] {
     z-index: 12;
     width: auto;
     min-height: 0;
-    padding: calc(10px + env(safe-area-inset-top)) 12px 10px;
+    padding: calc(8px + env(safe-area-inset-top)) 12px 10px;
     border-right: 0;
     border-bottom: 1px solid var(--line);
   }
@@ -973,22 +987,26 @@ select[multiple] {
   }
 
   .brand-mark {
-    width: 52px;
-    height: 52px;
+    width: 46px;
+    height: 46px;
   }
 
   .nav {
     display: flex;
     gap: 8px;
     overflow-x: auto;
-    padding-bottom: 4px;
+    padding: 0 2px 5px;
     scrollbar-width: none;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
   }
 
   .nav-item {
     flex: 0 0 auto;
+    min-height: 42px;
     text-align: center;
     white-space: nowrap;
+    scroll-snap-align: start;
   }
 
   .app {
@@ -1024,6 +1042,11 @@ select[multiple] {
     justify-content: flex-start;
   }
 
+  .top-actions > *,
+  .data-actions > * {
+    flex: 1 1 170px;
+  }
+
   .global-search {
     width: 100%;
   }
@@ -1039,12 +1062,25 @@ select[multiple] {
 }
 
 @media (max-width: 620px) {
+  .login-box {
+    width: calc(100vw - 28px);
+    max-width: 300px;
+    padding: 18px;
+  }
+
+  .login-logo {
+    width: 72px;
+    height: 72px;
+  }
+
   .app {
-    padding: 18px 16px;
+    padding: 14px 12px calc(18px + env(safe-area-inset-bottom));
   }
 
   .sidebar {
     gap: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
   }
 
   .side-card,
@@ -1053,28 +1089,129 @@ select[multiple] {
   }
 
   h1 {
-    max-width: calc(100vw - 32px);
-    font-size: 26px;
-    line-height: 1.05;
+    max-width: calc(100vw - 24px);
+    font-size: 23px;
+    line-height: 1.08;
+  }
+
+  h2 {
+    font-size: 20px;
+  }
+
+  .panel {
+    padding: 12px;
+  }
+
+  .panel-head {
+    display: grid;
+    gap: 10px;
   }
 
   .nav,
-  .kpi-grid,
-  .quick-actions,
   .student-grid,
   .filters,
-  .finance-summary,
   .roadmap-grid,
-  .report-grid,
   .form-row {
     grid-template-columns: 1fr;
   }
 
+  .kpi-grid,
+  .quick-actions,
+  .finance-summary,
+  .report-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kpi {
+    padding: 13px;
+  }
+
+  .kpi strong {
+    font-size: 26px;
+  }
+
+  .quick-action {
+    min-height: 66px;
+    padding: 10px;
+  }
+
   .row-card {
     grid-template-columns: 1fr;
+    padding: 12px;
   }
 
   .actions {
     justify-content: flex-start;
+    width: 100%;
+  }
+
+  .actions > .mini-btn,
+  .actions > a.mini-btn {
+    flex: 1 1 128px;
+  }
+
+  .mini-btn,
+  .soft-btn,
+  .primary-btn,
+  .file-btn {
+    min-height: 44px;
+  }
+
+  .today-class-head {
+    gap: 12px;
+  }
+
+  .today-class-head .actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .roster-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .roster-person {
+    min-width: 0;
+  }
+
+  .modal-wrap {
+    align-items: end;
+    padding: 8px;
+  }
+
+  .modal {
+    width: 100%;
+    max-height: calc(100svh - 16px - env(safe-area-inset-top));
+    padding: 18px 14px calc(18px + env(safe-area-inset-bottom));
+    border-radius: 8px 8px 0 0;
+  }
+
+  .check-item {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .check-item .mini-btn {
+    width: 100%;
+  }
+
+  .toast {
+    right: 10px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    left: 10px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 390px) {
+  .brand strong,
+  .brand small {
+    display: none;
+  }
+
+  .today-class-head .actions,
+  .roster-list {
+    grid-template-columns: 1fr;
   }
 }

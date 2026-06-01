@@ -25,6 +25,7 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Login simples por PIN no servidor
 - PWA instalavel no celular
 - Fluxo pensado para uso rapido no iPhone
+- Layout otimizado para navegador mobile
 - Backend Node/SQLite inspirado no FinClinica
 - Fallback local com `localStorage` ao abrir o HTML direto
 
