@@ -40,6 +40,7 @@
 body {
   min-height: 100vh;
   margin: 0;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   overflow-x: hidden;
   background:
     linear-gradient(90deg, color-mix(in srgb, var(--accent) 12%, transparent) 0 2px, transparent 2px 100%),
@@ -86,7 +87,9 @@ button {
 }
 
 .login-logo {
-  margin-bottom: 14px;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 14px;
 }
 
 .sidebar {
@@ -104,14 +107,16 @@ button {
 
 .brand {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  text-align: center;
 }
 
 .brand-mark {
   display: grid;
-  width: 58px;
-  height: 58px;
+  width: 74px;
+  height: 74px;
   place-items: center;
   border-radius: 8px;
   overflow: hidden;
@@ -122,10 +127,9 @@ button {
 }
 
 .brand-mark img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: scale(1.38);
+  width: 88%;
+  height: 88%;
+  object-fit: contain;
 }
 
 .brand strong,
@@ -152,7 +156,7 @@ button {
 .soft-btn,
 .primary-btn,
 .file-btn {
-  min-height: 40px;
+  min-height: 44px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 0 14px;
@@ -531,6 +535,10 @@ h2 {
   text-align: left;
 }
 
+.compact-title {
+  font-size: 16px;
+}
+
 .link-title:hover,
 .roster-person button:hover {
   color: var(--accent);
@@ -610,11 +618,34 @@ h2 {
 }
 
 .today-class,
-.calendar-day {
+.calendar-day,
+.today-summary {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 12px;
   background: var(--panel2);
+}
+
+.today-summary {
+  display: grid;
+  gap: 4px;
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
+}
+
+.today-summary span {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.today-summary strong {
+  font-size: 24px;
+}
+
+.today-summary small {
+  color: var(--muted);
 }
 
 .today-class-head {
@@ -818,13 +849,14 @@ label {
 input,
 select {
   width: 100%;
-  min-height: 42px;
+  min-height: 44px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 0 12px;
   background: var(--panel);
   color: var(--text);
   outline: none;
+  font-size: 16px;
 }
 
 select[multiple] {
@@ -925,24 +957,43 @@ select[multiple] {
 
 @media (max-width: 980px) {
   .sidebar {
-    position: static;
+    position: sticky;
+    top: 0;
+    z-index: 12;
     width: auto;
     min-height: 0;
+    padding: calc(10px + env(safe-area-inset-top)) 12px 10px;
     border-right: 0;
     border-bottom: 1px solid var(--line);
   }
 
+  .brand {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .brand-mark {
+    width: 52px;
+    height: 52px;
+  }
+
   .nav {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
   }
 
   .nav-item {
+    flex: 0 0 auto;
     text-align: center;
+    white-space: nowrap;
   }
 
   .app {
     margin-left: 0;
-    padding: 18px;
+    padding: 18px 18px calc(22px + env(safe-area-inset-bottom));
   }
 
   .topbar,
@@ -990,6 +1041,15 @@ select[multiple] {
 @media (max-width: 620px) {
   .app {
     padding: 18px 16px;
+  }
+
+  .sidebar {
+    gap: 10px;
+  }
+
+  .side-card,
+  .ghost-btn {
+    display: none;
   }
 
   h1 {

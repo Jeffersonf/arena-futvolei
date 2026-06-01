@@ -2,8 +2,11 @@
   "name": "Team Lucao Futevolei",
   "short_name": "TLF Gestao",
   "description": "Painel de alunos, aulas, presencas e mensalidades do Team Lucao Futevolei.",
-  "start_url": ".",
+  "id": "/arena-futvolei/",
+  "start_url": "./?source=pwa",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#080808",
   "theme_color": "#d71920",
   "icons": [

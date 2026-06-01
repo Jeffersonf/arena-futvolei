@@ -407,7 +407,7 @@ function renderPending() {
   document.getElementById('pendingList').innerHTML = students.length ? students.map((student) => `
     <article class="row-card">
       <div>
-        <h3>${escapeHTML(student.nome)}</h3>
+        <button class="link-title compact-title" type="button" data-report-student="${student.id}">${escapeHTML(student.nome)}</button>
         <p class="meta">${escapeHTML(student.plano_nome || 'sem plano')} - ${money.format(Number(student.mensalidade || 0))}</p>
         <div class="pill-row"><span class="pill bad">pagamento pendente</span></div>
       </div>
@@ -490,7 +490,17 @@ function renderClassesTodayPlanner() {
   const target = document.getElementById('classesTodayPlanner');
   if (!target) return;
   const classes = state.classes.filter((item) => item.data === todayISO()).sort(sortClass);
-  target.innerHTML = classes.length ? classes.map((item) => {
+  const expected = classes.reduce((sum, item) => sum + classStudents(item).length, 0);
+  const present = classes.reduce((sum, item) => sum + classStudents(item).filter((student) => item.presencas?.[student.aluno_id || student.id] || student.presente).length, 0);
+  const extrasTotal = classes.reduce((sum, item) => sum + classExtras(item).length, 0);
+  const summary = `
+    <article class="today-summary">
+      <span>Resumo de hoje</span>
+      <strong>${classes.length} aula(s)</strong>
+      <small>${expected} previstos - ${present} presentes - ${extrasTotal} fora da lista</small>
+    </article>
+  `;
+  target.innerHTML = classes.length ? `${summary}${classes.map((item) => {
     const enrolled = classStudents(item);
     const extras = classExtras(item);
     return `
@@ -500,6 +510,7 @@ function renderClassesTodayPlanner() {
             <strong>${escapeHTML(item.horario)} - ${escapeHTML(item.turma || 'Turma')}</strong>
             <span>${escapeHTML(item.professor || 'Professor nao informado')} - ${enrolled.length}/${item.capacidade || 8} previstos</span>
           </div>
+          <a class="mini-btn" href="${whatsappShareUrl(classShareText(item))}" target="_blank" rel="noopener">WhatsApp</a>
           <button class="mini-btn" data-attendance="${item.id}">Presencas</button>
         </div>
         <div class="roster-list">
@@ -508,7 +519,7 @@ function renderClassesTodayPlanner() {
         </div>
       </article>
     `;
-  }).join('') : empty('Nenhuma aula marcada para hoje.');
+  }).join('')}` : empty('Nenhuma aula marcada para hoje.');
 }
 
 function renderClassCalendar() {
@@ -532,21 +543,30 @@ function renderClassCalendar() {
 function renderPayments() {
   const paidThisMonth = (state.payments || []).reduce((sum, item) => sum + Number(item.valor || 0), 0);
   const pending = state.students.filter((student) => student.status !== 'Pausado' && !isPaid(student));
+  const query = document.getElementById('paymentSearch')?.value.trim().toLowerCase() || '';
+  const filter = document.getElementById('paymentStatusFilter')?.value || '';
   document.getElementById('financeSummary').innerHTML = `
     <article class="mini-stat"><span>Recebido no mês</span><strong>${money.format(paidThisMonth)}</strong></article>
     <article class="mini-stat"><span>Pendências</span><strong>${pending.length}</strong></article>
     <article class="mini-stat"><span>Previsão pendente</span><strong>${money.format(pending.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0))}</strong></article>
   `;
-  const rows = state.students.map((student) => `
+  const visibleStudents = state.students.filter((student) => {
+    const haystack = `${student.nome} ${student.telefone} ${student.plano_nome}`.toLowerCase();
+    const matchesQuery = !query || haystack.includes(query);
+    const matchesFilter = !filter || (filter === 'paid' ? isPaid(student) : !isPaid(student));
+    return matchesQuery && matchesFilter;
+  }).sort((a, b) => Number(isPaid(a)) - Number(isPaid(b)) || a.nome.localeCompare(b.nome));
+  const rows = visibleStudents.map((student) => `
     <article class="row-card">
       <div>
-        <h3>${escapeHTML(student.nome)}</h3>
+        <button class="link-title compact-title" type="button" data-report-student="${student.id}">${escapeHTML(student.nome)}</button>
         <p class="meta">${money.format(Number(student.mensalidade || 0))} - pago até ${student.pago_ate ? formatDate(student.pago_ate) : 'sem registro'}</p>
         <div class="pill-row"><span class="pill ${isPaid(student) ? 'ok' : 'bad'}">${isPaid(student) ? 'em dia' : 'pendente'}</span></div>
       </div>
       <div class="actions">
         ${student.telefone ? `<a class="mini-btn" href="${whatsappUrl(student.telefone, `Oi ${student.nome}, tudo bem? Passando para lembrar da mensalidade do Team Lucão Futevôlei.`)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
-        <button class="mini-btn" data-pay="${student.id}">Marcar mês pago</button>
+        <button class="mini-btn" data-copy-charge="${student.id}">Copiar cobranca</button>
+        <button class="mini-btn" data-pay="${student.id}">Marcar mes pago</button>
       </div>
     </article>
   `);
@@ -777,6 +797,7 @@ function classRow(item) {
         ` : ''}
       </div>
       <div class="actions">
+        <a class="mini-btn" href="${whatsappShareUrl(classShareText(item))}" target="_blank" rel="noopener">WhatsApp</a>
         <button class="mini-btn" data-attendance="${item.id}">Presencas</button>
         <button class="mini-btn" data-duplicate-class="${item.id}">Duplicar</button>
         <button class="mini-btn" data-edit-class="${item.id}">Editar</button>
@@ -958,11 +979,33 @@ function pendingChargeText() {
   )).join('\n');
 }
 
+function studentChargeText(student) {
+  return `Oi ${student.nome}, tudo bem? Passando para lembrar da mensalidade do Team Lucao Futevolei no valor de ${money.format(Number(student.mensalidade || 0))}.`;
+}
+
 async function copyPendingCharges() {
   const text = pendingChargeText();
   if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
   setPage('payments');
   toast('Lista de cobranca copiada');
+}
+
+async function copyStudentCharge(studentId) {
+  const student = studentById(studentId);
+  if (!student) return;
+  const text = studentChargeText(student);
+  if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+  toast('Cobranca copiada');
+}
+
+function classShareText(item) {
+  const enrolled = classStudents(item);
+  const names = enrolled.length ? enrolled.map((student, index) => `${index + 1}. ${student.nome}`).join('\n') : 'Sem alunos previstos.';
+  return `Aula Team Lucao Futevolei\n${formatDate(item.data)} as ${item.horario} - ${item.turma || 'Turma'}\nProfessor: ${item.professor || 'nao informado'}\n\nPrevistos:\n${names}`;
+}
+
+function whatsappShareUrl(text) {
+  return `https://wa.me/?text=${encodeURIComponent(text)}`;
 }
 
 function openNextClass() {
@@ -1545,6 +1588,7 @@ function bindEvents() {
   document.querySelectorAll('[data-load-demo]').forEach((button) => button.addEventListener('click', () => loadDemoData().catch((err) => toast(err.message))));
   document.querySelectorAll('[data-backup]').forEach((button) => button.addEventListener('click', () => downloadBackup().catch((err) => toast(err.message))));
   document.querySelectorAll('[data-export]').forEach((button) => button.addEventListener('click', () => exportCsv(button.dataset.export)));
+  document.querySelectorAll('[data-copy-pending]').forEach((button) => button.addEventListener('click', () => copyPendingCharges().catch((err) => toast(err.message))));
   document.querySelectorAll('[data-server-backup]').forEach((button) => button.addEventListener('click', () => createServerBackup().catch((err) => toast(err.message))));
   document.querySelectorAll('[data-reset-local]').forEach((button) => button.addEventListener('click', resetLocal));
   document.querySelectorAll('[data-clear-class-filter]').forEach((button) => button.addEventListener('click', () => {
@@ -1570,6 +1614,8 @@ function bindEvents() {
   });
   document.getElementById('studentStatusFilter').addEventListener('change', renderStudents);
   document.getElementById('studentPaymentFilter').addEventListener('change', renderStudents);
+  document.getElementById('paymentSearch').addEventListener('input', renderPayments);
+  document.getElementById('paymentStatusFilter').addEventListener('change', renderPayments);
   document.getElementById('classDateFilter').addEventListener('change', renderClasses);
   document.getElementById('waitStatusFilter').addEventListener('change', renderWaitlist);
   document.getElementById('importFile').addEventListener('change', (event) => {
@@ -1590,7 +1636,7 @@ function bindEvents() {
     showLogin(true);
   });
   document.body.addEventListener('click', (event) => {
-    const target = event.target.closest('[data-report-student],[data-edit-student],[data-delete-student],[data-edit-class],[data-delete-class],[data-duplicate-class],[data-edit-plan],[data-delete-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-edit-wait],[data-delete-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day]');
+    const target = event.target.closest('[data-report-student],[data-edit-student],[data-delete-student],[data-edit-class],[data-delete-class],[data-duplicate-class],[data-edit-plan],[data-delete-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-copy-charge],[data-edit-wait],[data-delete-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day]');
     if (!target) return;
     if (target.dataset.reportStudent) openStudentReport(target.dataset.reportStudent);
     if (target.dataset.editStudent) openStudent(target.dataset.editStudent);
@@ -1614,6 +1660,7 @@ function bindEvents() {
       renderClasses();
     }
     if (target.dataset.pay) markPaid(target.dataset.pay).catch((err) => toast(err.message));
+    if (target.dataset.copyCharge) copyStudentCharge(target.dataset.copyCharge).catch((err) => toast(err.message));
     if (target.dataset.editWait) openWaitItem(target.dataset.editWait);
     if (target.dataset.deleteWait) deleteWait(target.dataset.deleteWait).catch((err) => toast(err.message));
     if (target.dataset.waitStatus) {
@@ -1627,7 +1674,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260531-operacao', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260601-iphone', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {
