@@ -22,7 +22,7 @@ const {
 const app = express();
 const PORT = Number(process.env.PORT || 3020);
 const ROOT_DIR = path.resolve(__dirname, '..');
-const BACKUPS_DIR = path.join(ROOT_DIR, 'backups');
+const BACKUPS_DIR = process.env.BACKUPS_DIR || path.join(ROOT_DIR, 'backups');
 const ADMIN_PIN = String(process.env.ADMIN_PIN || '1234');
 const AUTO_BACKUP_ON_START = String(process.env.AUTO_BACKUP_ON_START || 'true') !== 'false';
 const AUTO_BACKUP_INTERVAL_HOURS = Number(process.env.AUTO_BACKUP_INTERVAL_HOURS || 0);
@@ -223,6 +223,26 @@ app.post('/api/backups/create', (_req, res) => {
 app.get('/api/backups', (_req, res) => {
   try {
     res.json({ ok: true, retention: BACKUP_RETENTION, items: listBackups() });
+  } catch (err) {
+    jsonError(res, err, 500);
+  }
+});
+
+app.get('/api/backups/:filename', (req, res) => {
+  try {
+    const filename = path.basename(req.params.filename || '');
+    if (!filename.endsWith('.json') || !filename.startsWith('backup_')) {
+      const err = new Error('Backup invalido');
+      err.status = 400;
+      throw err;
+    }
+    const fullPath = path.join(BACKUPS_DIR, filename);
+    if (!fs.existsSync(fullPath)) {
+      const err = new Error('Backup nao encontrado');
+      err.status = 404;
+      throw err;
+    }
+    res.download(fullPath);
   } catch (err) {
     jsonError(res, err, 500);
   }

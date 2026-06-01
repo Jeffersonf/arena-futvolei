@@ -60,6 +60,7 @@ Para rodar como sistema de uso diario, use o servidor Node com SQLite persistent
 ```bash
 ADMIN_PIN=troque-este-pin
 DB_PATH=/caminho/persistente/arena.db
+BACKUPS_DIR=/caminho/persistente/backups
 AUTO_BACKUP_ON_START=true
 AUTO_BACKUP_INTERVAL_HOURS=24
 BACKUP_RETENTION=30
@@ -71,6 +72,7 @@ Endpoints uteis no servidor:
 
 - `GET /health`: status publico.
 - `GET /api/backups`: lista backups.
+- `GET /api/backups/:filename`: baixa um backup especifico.
 - `POST /api/backups/create`: cria backup manual.
 - `GET /api/backup.json`: baixa snapshot JSON.
 - `GET /api/db/download`: baixa o SQLite.

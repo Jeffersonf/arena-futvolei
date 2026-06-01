@@ -16,6 +16,7 @@ Rodar o sistema em um link acessivel pelo iPhone, com banco persistente e backup
 PORT=3020
 ADMIN_PIN=troque-este-pin
 DB_PATH=/data/arena.db
+BACKUPS_DIR=/data/backups
 AUTO_BACKUP_ON_START=true
 AUTO_BACKUP_INTERVAL_HOURS=24
 BACKUP_RETENTION=30
@@ -27,6 +28,25 @@ BACKUP_RETENTION=30
 npm install
 npm start
 ```
+
+## Deploy com Docker
+
+```bash
+docker build -t team-lucao-futevolei .
+docker run -p 3020:3020 --env-file .env -v team-lucao-data:/data team-lucao-futevolei
+```
+
+## Deploy com Render Blueprint
+
+O arquivo `render.yaml` ja define:
+
+- Node 24.
+- Disco persistente em `/data`.
+- `DB_PATH=/data/arena.db`.
+- `BACKUPS_DIR=/data/backups`.
+- Backup automatico diario.
+
+No painel do provedor, configure manualmente `ADMIN_PIN`.
 
 ## Checklist antes de entregar para uso real
 
