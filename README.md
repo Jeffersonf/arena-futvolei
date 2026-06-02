@@ -36,6 +36,7 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Estados visuais nos cards de alunos, aulas, cobrancas e espera
 - Ficha do aluno redesenhada com perfil, plano, pagamento e frequencia
 - Presenca com resumo visual da aula e destaque de presentes
+- Modais, estados vazios, roadmap e tela de dados com acabamento visual
 - Lembra a ultima aba aberta e melhora fechamento de busca/modal
 - Faixa de foco no dashboard com proxima aula, cobrancas e interessado parado
 - Backend Node/SQLite inspirado no FinClinica

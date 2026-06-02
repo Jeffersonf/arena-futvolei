@@ -283,6 +283,17 @@ select {
   justify-content: flex-end;
 }
 
+.data-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.data-actions .soft-btn,
+.data-actions .file-btn {
+  justify-content: center;
+  min-height: 48px;
+}
+
 .mobile-top-brand {
   display: none;
 }
@@ -1046,6 +1057,8 @@ h2 {
 
 .roadmap-card {
   box-shadow: none;
+  position: relative;
+  overflow: hidden;
 }
 
 .roadmap-card h3 {
@@ -1061,6 +1074,21 @@ h2 {
 
 .roadmap-card.done {
   border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
+}
+
+.roadmap-card.done::after {
+  content: "feito";
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  border: 1px solid color-mix(in srgb, #2ecc71 42%, var(--line));
+  border-radius: 999px;
+  padding: 3px 8px;
+  color: #2ecc71;
+  background: color-mix(in srgb, #2ecc71 12%, transparent);
+  font-size: 10px;
+  font-weight: 850;
+  text-transform: uppercase;
 }
 
 .mobile-only-page {
@@ -1122,7 +1150,8 @@ h2 {
   display: none;
   place-items: center;
   padding: 18px;
-  background: rgba(0, 0, 0, .48);
+  background: rgba(0, 0, 0, .54);
+  backdrop-filter: blur(10px);
 }
 
 .modal-wrap.open {
@@ -1137,8 +1166,16 @@ h2 {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 22px;
-  background: var(--bg2);
+  background: color-mix(in srgb, var(--bg2) 94%, var(--panel) 6%);
   box-shadow: var(--shadow);
+}
+
+.modal::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 12%, transparent));
 }
 
 .wide-modal {
@@ -1159,6 +1196,18 @@ h2 {
   border-radius: var(--radius);
   background: var(--soft);
   color: var(--muted);
+  font-size: 0;
+}
+
+.close::before {
+  content: "x";
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.close:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--line));
 }
 
 label {
@@ -1321,10 +1370,28 @@ select[multiple] {
 }
 
 .empty {
-  border: 1px dashed var(--line);
+  display: grid;
+  gap: 6px;
+  border: 1px dashed color-mix(in srgb, var(--line) 78%, var(--accent) 18%);
   border-radius: var(--radius);
   padding: 18px;
   color: var(--muted);
+  background: color-mix(in srgb, var(--panel2) 78%, transparent);
+}
+
+.empty span {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.empty strong {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 1.35;
 }
 
 .toast {

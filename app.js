@@ -976,7 +976,7 @@ function rosterPerson(student, dateIso, present = false) {
 }
 
 function empty(text) {
-  return `<div class="empty">${text}</div>`;
+  return `<div class="empty"><span>Sem dados</span><strong>${escapeHTML(text)}</strong></div>`;
 }
 
 function sortClass(a, b) {
@@ -1966,7 +1966,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260602-polish8', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260602-polish9', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {
