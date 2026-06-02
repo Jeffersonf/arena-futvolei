@@ -56,10 +56,22 @@ Na pratica, ajuda em:
 - Backend Node com SQLite.
 - Modo local no navegador se nao rodar servidor.
 - Visual inicial com a marca Team Lucao Futevolei.
+- Login de demo com primeira tela polida.
+- Navegacao mobile no rodape com tela Mais.
+- Dashboard com foco em proxima aula, cobranca e interessados.
+- Cards de alunos, aulas, cobrancas e espera com estados visuais.
+- Ficha do aluno com plano, pagamento, frequencia, proximas aulas e historico.
+- Aula de hoje com horario destacado, ocupacao, presentes e avulsos.
+- Modal de presenca com resumo visual da aula.
+- QA visual local com screenshots mobile e desktop.
 
 ## O que precisa para apresentar
 
-- Trocar os dados ficticios por dados mais proximos da realidade dele.
+- Rodar `npm run check`.
+- Rodar `npm run visual:check` com o live server aberto.
+- Revisar a demo em `http://127.0.0.1:4280/`.
+- Publicar no GitHub Pages quando a rodada final for aprovada.
+- Trocar os dados ficticios por dados mais proximos da realidade dele, se ele mandar dados reais.
 - Confirmar os planos reais: valores, aulas por semana, avulso, experimental.
 - Confirmar os niveis/turmas: iniciante, intermediario, kids, feminino, avancado etc.
 - Colocar o nome do professor ou professores reais.
@@ -70,14 +82,12 @@ Na pratica, ajuda em:
 
 - Login/senha.
 - Melhor controle de pagamentos, com mes de referencia e historico.
-- Relatorio de presenca por aluno.
-- Filtro por turma, nivel e status.
-- Edicao/delecao mais completa de alunos e aulas.
-- Importacao/restauracao de backup pela interface.
-- WhatsApp rapido para cobrar ou chamar aluno.
-- Deploy online para ele acessar do celular sem depender do seu PC.
+- Relatorio de presenca por aluno mais profundo.
+- Filtros avancados por turma, nivel, professor e horario.
+- Edicao/delecao com mais protecoes e confirmacoes.
+- Restauracao de backup com revisao antes de importar.
+- Deploy online com backend para ele acessar do celular sem depender do seu PC.
 - Seguranca e backup automatico.
-- Ajustes finos de mobile.
 - Area de aula experimental mais explicita.
 
 ## Roadmap
@@ -86,16 +96,20 @@ Na pratica, ajuda em:
 
 Objetivo: deixar bonito e convincente para mostrar.
 
+Status: concluida localmente; falta publicar a rodada final no GitHub Pages.
+
 - Personalizar logo, nome, cores e textos.
 - Criar dados de exemplo realistas do Team Lucao.
 - Revisar planos, niveis e tipos de turma.
 - Melhorar tela mobile.
 - Preparar roteiro de demonstracao.
-- Entrega: demo local funcionando em `localhost`.
+- Entrega: demo local funcionando em `http://127.0.0.1:4280/`.
 
 ### Fase 2: MVP usavel
 
 Objetivo: ele conseguir usar por alguns dias e dizer o que funciona.
+
+Status: base pronta para validacao com ele.
 
 - Adicionar edicao/delecao completa.
 - Melhorar historico de mensalidades.

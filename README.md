@@ -121,3 +121,5 @@ Todos os endpoints `/api/*`, exceto login, exigem header `X-Admin-Pin`.
 O roteiro para apresentar a ideia, explicar o valor no dia a dia e mostrar o roadmap esta em `APRESENTACAO.md`.
 
 O checklist pratico para ensaiar a demo esta em `CHECKLIST_DEMO.md`.
+
+O checklist para fechar a rodada local e publicar no GitHub Pages esta em `FECHAMENTO_PUBLICACAO.md`.
