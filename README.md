@@ -29,6 +29,7 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Fluxo pensado para uso rapido no iPhone
 - Layout otimizado para navegador mobile
 - Navegacao mobile no rodape para ganhar espaco de tela
+- Lembra a ultima aba aberta e melhora fechamento de busca/modal
 - Backend Node/SQLite inspirado no FinClinica
 - Fallback local com `localStorage` ao abrir o HTML direto
 

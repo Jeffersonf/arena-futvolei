@@ -2,6 +2,7 @@
 
 const STORE_KEY = 'fv_school_state_v2';
 const PIN_KEY = 'tlf_admin_pin';
+const PAGE_KEY = 'tlf_last_page';
 const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const currentMonth = () => todayISO().slice(0, 7);
@@ -203,6 +204,7 @@ async function loadData() {
   if (!apiMode) {
     document.getElementById('modeStatus').textContent = 'Local no navegador';
     render();
+    restorePage();
     return;
   }
   document.getElementById('modeStatus').textContent = 'Servidor Node + SQLite';
@@ -221,6 +223,7 @@ async function loadData() {
     payments: payments.items || []
   };
   render();
+  restorePage();
 }
 
 function studentById(id) {
@@ -374,8 +377,20 @@ function toast(message) {
 }
 
 function setPage(page) {
+  if (!document.getElementById(`page-${page}`)) return;
   document.querySelectorAll('.page').forEach((el) => el.classList.toggle('active', el.id === `page-${page}`));
-  document.querySelectorAll('.nav-item').forEach((el) => el.classList.toggle('active', el.dataset.page === page));
+  document.querySelectorAll('.nav-item').forEach((el) => {
+    const active = el.dataset.page === page;
+    el.classList.toggle('active', active);
+    if (active) el.scrollIntoView({ block: 'nearest', inline: 'center' });
+  });
+  localStorage.setItem(PAGE_KEY, page);
+  document.getElementById('globalResults').classList.remove('open');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function restorePage() {
+  setPage(localStorage.getItem(PAGE_KEY) || 'dashboard');
 }
 
 function render() {
@@ -891,11 +906,13 @@ function escapeHTML(value) {
 function openModal(id) {
   document.getElementById(id).classList.add('open');
   document.getElementById(id).setAttribute('aria-hidden', 'false');
+  document.body.classList.add('modal-open');
 }
 
 function closeModal(id) {
   document.getElementById(id).classList.remove('open');
   document.getElementById(id).setAttribute('aria-hidden', 'true');
+  if (!document.querySelector('.modal-wrap.open')) document.body.classList.remove('modal-open');
 }
 
 function renderPlanOptions(selected = '') {
@@ -1749,6 +1766,18 @@ function bindEvents() {
     const target = event.target.closest('[data-global-result]');
     if (target) openGlobalResult(target.dataset.globalResult);
   });
+  document.addEventListener('click', (event) => {
+    if (!event.target.closest('.global-search')) document.getElementById('globalResults').classList.remove('open');
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    const openModalEl = document.querySelector('.modal-wrap.open');
+    if (openModalEl) {
+      closeModal(openModalEl.id);
+      return;
+    }
+    document.getElementById('globalResults').classList.remove('open');
+  });
   document.getElementById('studentStatusFilter').addEventListener('change', renderStudents);
   document.getElementById('studentPaymentFilter').addEventListener('change', renderStudents);
   document.getElementById('paymentMonth').addEventListener('change', renderPayments);
@@ -1819,7 +1848,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260602-mobile3', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260602-usabilidade', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {
