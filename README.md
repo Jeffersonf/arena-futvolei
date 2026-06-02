@@ -30,6 +30,7 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Layout otimizado para navegador mobile
 - Navegacao mobile no rodape para ganhar espaco de tela
 - Lembra a ultima aba aberta e melhora fechamento de busca/modal
+- Faixa de foco no dashboard com proxima aula, cobrancas e interessado parado
 - Backend Node/SQLite inspirado no FinClinica
 - Fallback local com `localStorage` ao abrir o HTML direto
 

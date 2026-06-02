@@ -395,6 +395,7 @@ function restorePage() {
 
 function render() {
   renderPlanOptions();
+  renderFocusStrip();
   renderKpis();
   renderQuickActions();
   renderTodayClasses();
@@ -545,6 +546,48 @@ function renderClasses() {
   renderClassCalendar();
   renderClassSummary(classes);
   document.getElementById('classList').innerHTML = classes.length ? classes.map(classRow).join('') : empty('Crie a primeira aula da agenda.');
+}
+
+function nextWaitLead() {
+  return [...state.waitlist]
+    .filter((item) => !['Convertido', 'Perdido'].includes(item.status || 'Novo'))
+    .sort((a, b) => daysBetween(b.data_cadastro || todayISO()) - daysBetween(a.data_cadastro || todayISO()))[0];
+}
+
+function renderFocusStrip() {
+  const target = document.getElementById('focusStrip');
+  if (!target) return;
+  const next = nextClass();
+  const pending = state.students.filter((student) => student.status !== 'Pausado' && !isPaidForMonth(student, currentMonth()));
+  const pendingValue = pending.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0);
+  const lead = nextWaitLead();
+  const cards = [
+    {
+      label: 'Proxima aula',
+      title: next ? `${formatDate(next.data)} ${next.horario}` : 'Sem aula marcada',
+      text: next ? `${next.turma || 'Turma'} - ${classStudents(next).length}/${next.capacidade || 8} alunos` : 'Crie uma aula para iniciar a agenda.',
+      action: 'next-class'
+    },
+    {
+      label: 'Cobranca',
+      title: `${pending.length} pendente(s)`,
+      text: pending.length ? `${money.format(pendingValue)} a receber neste mes` : 'Mensalidades em dia no mes.',
+      action: 'payments'
+    },
+    {
+      label: 'Interessado',
+      title: lead ? lead.nome : 'Sem lead aberto',
+      text: lead ? `${lead.status || 'Novo'} - ${daysBetween(lead.data_cadastro || todayISO())} dia(s)` : 'Lista de espera sem pendencias.',
+      action: lead ? `wait:${lead.id}` : 'waitlist'
+    }
+  ];
+  target.innerHTML = cards.map((card) => `
+    <button class="focus-card" type="button" data-focus-action="${escapeHTML(card.action)}">
+      <span>${escapeHTML(card.label)}</span>
+      <strong>${escapeHTML(card.title)}</strong>
+      <small>${escapeHTML(card.text)}</small>
+    </button>
+  `).join('');
 }
 
 function renderClassSummary(classes) {
@@ -1163,6 +1206,27 @@ function handleQuickAction(action) {
   if (action === 'quick-class') openClass();
 }
 
+function handleFocusAction(action) {
+  if (action === 'next-class') {
+    openNextClass();
+    return;
+  }
+  if (action === 'payments') {
+    setPage('payments');
+    document.getElementById('paymentStatusFilter').value = 'pending';
+    renderPayments();
+    return;
+  }
+  if (action === 'waitlist') {
+    setPage('waitlist');
+    return;
+  }
+  if (action.startsWith('wait:')) {
+    setPage('waitlist');
+    openWaitItem(action.split(':')[1]);
+  }
+}
+
 function fillClassStudents(selected = []) {
   const select = document.getElementById('classStudents');
   if (!select) return;
@@ -1752,6 +1816,10 @@ function bindEvents() {
     const target = event.target.closest('[data-action]');
     if (target) handleQuickAction(target.dataset.action);
   });
+  document.getElementById('focusStrip').addEventListener('click', (event) => {
+    const target = event.target.closest('[data-focus-action]');
+    if (target) handleFocusAction(target.dataset.focusAction);
+  });
   document.getElementById('studentForm').addEventListener('submit', (event) => saveStudent(event).catch((err) => toast(err.message)));
   document.getElementById('classForm').addEventListener('submit', (event) => saveClass(event).catch((err) => toast(err.message)));
   document.getElementById('planForm').addEventListener('submit', (event) => savePlan(event).catch((err) => toast(err.message)));
@@ -1848,7 +1916,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260602-usabilidade', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260602-foco', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {

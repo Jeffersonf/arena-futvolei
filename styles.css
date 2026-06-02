@@ -367,6 +367,50 @@ h2 {
   margin-bottom: 12px;
 }
 
+.focus-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.focus-card {
+  min-height: 104px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  border-radius: var(--radius);
+  padding: 14px;
+  background: color-mix(in srgb, var(--panel2) 86%, var(--accent) 7%);
+  color: var(--text);
+  text-align: left;
+  box-shadow: var(--shadow);
+}
+
+.focus-card span,
+.focus-card strong,
+.focus-card small {
+  display: block;
+}
+
+.focus-card span {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.focus-card strong {
+  margin-top: 9px;
+  font-size: 20px;
+}
+
+.focus-card small {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
 .quick-actions {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1057,6 +1101,7 @@ select[multiple] {
 
   .kpi-grid,
   .quick-actions,
+  .focus-strip,
   .student-grid,
   .finance-summary,
   .roadmap-grid,
@@ -1194,6 +1239,31 @@ select[multiple] {
   .finance-summary,
   .report-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .focus-strip {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    margin: 0 -10px 10px;
+    padding: 0 10px 2px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .focus-strip::-webkit-scrollbar {
+    display: none;
+  }
+
+  .focus-card {
+    flex: 0 0 82%;
+    min-height: 92px;
+    padding: 12px;
+    box-shadow: none;
+  }
+
+  .focus-card strong {
+    font-size: 18px;
   }
 
   .kpi {
@@ -1344,6 +1414,7 @@ select[multiple] {
 
   .kpi-grid,
   .quick-actions,
+  .focus-strip,
   .finance-summary,
   .report-grid {
     grid-template-columns: 1fr;
