@@ -1,37 +1,48 @@
 :root {
-  --bg: #080808;
-  --bg2: #151515;
-  --panel: rgba(24, 24, 24, .92);
-  --panel2: rgba(32, 32, 32, .86);
-  --line: rgba(255, 255, 255, .13);
-  --text: #f7f7f7;
-  --muted: rgba(247, 247, 247, .64);
-  --soft: rgba(255, 255, 255, .07);
-  --accent: #d71920;
+  --bg: #050506;
+  --bg2: #111113;
+  --panel: rgba(24, 24, 27, .66);
+  --panel2: rgba(34, 34, 38, .52);
+  --glass: rgba(255, 255, 255, .075);
+  --glass-strong: rgba(255, 255, 255, .12);
+  --line: rgba(255, 255, 255, .16);
+  --text: #fbfbfd;
+  --muted: rgba(245, 245, 247, .68);
+  --soft: rgba(255, 255, 255, .09);
+  --accent: #ff2d3d;
+  --aqua: #67e8f9;
   --accent2: #ffffff;
-  --warn: #f2b84b;
-  --bad: #ff6f61;
-  --shadow: 0 18px 50px rgba(0, 0, 0, .28);
-  --shadow-soft: 0 10px 30px rgba(0, 0, 0, .18);
+  --warn: #ffd166;
+  --bad: #ff6b70;
+  --ok: #34d399;
+  --shadow: 0 28px 80px rgba(0, 0, 0, .42);
+  --shadow-soft: 0 16px 44px rgba(0, 0, 0, .26);
+  --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, .14);
   --radius: 8px;
+  --blur: blur(24px) saturate(150%);
   color-scheme: dark;
 }
 
 [data-theme="light"] {
-  --bg: #f5f5f5;
-  --bg2: #e9e9e9;
-  --panel: rgba(255, 255, 255, .94);
-  --panel2: rgba(245, 245, 245, .96);
-  --line: rgba(8, 8, 8, .14);
-  --text: #111111;
-  --muted: rgba(17, 17, 17, .62);
-  --soft: rgba(8, 8, 8, .06);
-  --accent: #c8101a;
+  --bg: #f5f6f8;
+  --bg2: #e9ebef;
+  --panel: rgba(255, 255, 255, .7);
+  --panel2: rgba(255, 255, 255, .56);
+  --glass: rgba(255, 255, 255, .58);
+  --glass-strong: rgba(255, 255, 255, .8);
+  --line: rgba(24, 24, 27, .12);
+  --text: #121214;
+  --muted: rgba(24, 24, 27, .62);
+  --soft: rgba(24, 24, 27, .06);
+  --accent: #d71920;
+  --aqua: #0284c7;
   --accent2: #111111;
-  --warn: #8d5d00;
-  --bad: #b52e2b;
-  --shadow: 0 18px 50px rgba(8, 8, 8, .12);
-  --shadow-soft: 0 10px 28px rgba(8, 8, 8, .08);
+  --warn: #9a6800;
+  --bad: #c83a42;
+  --ok: #067647;
+  --shadow: 0 28px 80px rgba(32, 32, 38, .14);
+  --shadow-soft: 0 14px 38px rgba(32, 32, 38, .1);
+  --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, .72);
   color-scheme: light;
 }
 
@@ -46,11 +57,24 @@ body {
   overflow-x: hidden;
   -webkit-text-size-adjust: 100%;
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--accent) 15%, transparent) 0 2px, transparent 2px 100%),
-    linear-gradient(135deg, var(--bg) 0%, var(--bg2) 58%, color-mix(in srgb, var(--bg2) 88%, var(--accent) 12%) 100%);
-  background-size: 100% 100%, auto;
+    radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--accent) 20%, transparent) 0 16rem, transparent 30rem),
+    radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--aqua) 14%, transparent) 0 14rem, transparent 30rem),
+    radial-gradient(circle at 48% 92%, color-mix(in srgb, var(--accent) 14%, transparent) 0 18rem, transparent 34rem),
+    linear-gradient(135deg, var(--bg) 0%, var(--bg2) 100%);
+  background-attachment: fixed;
   color: var(--text);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: linear-gradient(rgba(255, 255, 255, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .03) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, .72), transparent 78%);
 }
 
 body.modal-open {
@@ -84,8 +108,9 @@ select {
   place-items: center;
   padding: calc(14px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--accent) 18%, transparent) 0 2px, transparent 2px 100%),
-    linear-gradient(135deg, #080808 0%, #171717 62%, color-mix(in srgb, #171717 82%, var(--accent) 18%) 100%);
+    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--accent) 28%, transparent) 0 12rem, transparent 28rem),
+    radial-gradient(circle at 84% 82%, rgba(255, 255, 255, .08) 0 14rem, transparent 26rem),
+    linear-gradient(135deg, #050506 0%, #141416 100%);
 }
 
 .login-wall.open {
@@ -98,10 +123,10 @@ select {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 24px;
-  background: color-mix(in srgb, var(--panel) 94%, transparent);
-  box-shadow: var(--shadow);
+  background: var(--panel);
+  box-shadow: var(--shadow), var(--inner-highlight);
   text-align: center;
-  backdrop-filter: blur(18px);
+  backdrop-filter: var(--blur);
 }
 
 .login-logo {
@@ -166,8 +191,9 @@ select {
   flex-direction: column;
   gap: 18px;
   border-right: 1px solid var(--line);
-  background: color-mix(in srgb, var(--panel) 94%, transparent);
-  backdrop-filter: blur(18px);
+  background: var(--panel);
+  box-shadow: var(--inner-highlight);
+  backdrop-filter: var(--blur);
 }
 
 .brand {
@@ -189,6 +215,7 @@ select {
   background: #ffffff;
   color: #080808;
   font-weight: 900;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .22);
 }
 
 .brand-mark img {
@@ -230,10 +257,12 @@ select {
   border-radius: var(--radius);
   padding: 0 14px;
   color: var(--text);
-  background: var(--soft);
+  background: var(--glass);
   font-weight: 750;
   text-decoration: none;
-  transition: background .16s ease, border-color .16s ease, transform .16s ease;
+  box-shadow: var(--inner-highlight);
+  backdrop-filter: var(--blur);
+  transition: background .16s ease, border-color .16s ease, transform .16s ease, box-shadow .16s ease;
 }
 
 .nav-item {
@@ -243,8 +272,9 @@ select {
 .nav-item.active,
 .primary-btn {
   border-color: color-mix(in srgb, var(--accent) 48%, var(--line));
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 72%, #ffffff 16%));
   color: #ffffff;
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--accent) 32%, transparent), var(--inner-highlight);
 }
 
 .nav-item:hover,
@@ -256,7 +286,7 @@ select {
 .focus-card:hover,
 .more-card:hover {
   border-color: color-mix(in srgb, var(--accent) 34%, var(--line));
-  background: color-mix(in srgb, var(--soft) 72%, var(--accent) 12%);
+  background: color-mix(in srgb, var(--glass-strong) 78%, var(--accent) 10%);
 }
 
 .soft-btn {
@@ -276,7 +306,9 @@ select {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 14px;
-  background: var(--panel2);
+  background: var(--glass);
+  box-shadow: var(--inner-highlight);
+  backdrop-filter: var(--blur);
 }
 
 .side-card span,
@@ -304,6 +336,8 @@ select {
 }
 
 .topbar {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -312,8 +346,19 @@ select {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 18px;
-  background: color-mix(in srgb, var(--panel) 88%, transparent);
-  box-shadow: var(--shadow-soft);
+  background: var(--panel);
+  box-shadow: var(--shadow-soft), var(--inner-highlight);
+  backdrop-filter: var(--blur);
+}
+
+.topbar::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(120deg, rgba(255, 255, 255, .11), transparent 34%, color-mix(in srgb, var(--aqua) 10%, transparent) 100%);
+  mask-image: linear-gradient(#000, transparent 70%);
 }
 
 .topbar > div {
@@ -354,9 +399,11 @@ select {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 0 12px;
-  background: var(--panel2);
+  background: var(--glass);
   color: var(--text);
   outline: none;
+  box-shadow: var(--inner-highlight);
+  backdrop-filter: var(--blur);
 }
 
 input:focus,
@@ -377,8 +424,9 @@ select:focus,
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: var(--bg2);
-  box-shadow: var(--shadow);
+  background: var(--panel);
+  box-shadow: var(--shadow), var(--inner-highlight);
+  backdrop-filter: var(--blur);
 }
 
 .global-results.open {
@@ -474,10 +522,11 @@ h2 {
   border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
   border-radius: var(--radius);
   padding: 14px;
-  background: color-mix(in srgb, var(--panel2) 86%, var(--accent) 7%);
+  background: color-mix(in srgb, var(--panel) 84%, var(--accent) 8%);
   color: var(--text);
   text-align: left;
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--shadow-soft), var(--inner-highlight);
+  backdrop-filter: var(--blur);
 }
 
 .focus-live {
@@ -486,16 +535,16 @@ h2 {
 
 .focus-danger {
   border-color: color-mix(in srgb, var(--bad) 48%, var(--line));
-  background: color-mix(in srgb, var(--panel2) 86%, var(--bad) 7%);
+  background: color-mix(in srgb, var(--panel) 84%, var(--bad) 8%);
 }
 
 .focus-warn {
   border-color: color-mix(in srgb, var(--warn) 44%, var(--line));
-  background: color-mix(in srgb, var(--panel2) 88%, var(--warn) 6%);
+  background: color-mix(in srgb, var(--panel) 86%, var(--warn) 7%);
 }
 
 .focus-ok {
-  border-color: color-mix(in srgb, #2ecc71 36%, var(--line));
+  border-color: color-mix(in srgb, var(--ok) 36%, var(--line));
 }
 
 .focus-card span,
@@ -537,14 +586,15 @@ h2 {
   border-radius: var(--radius);
   padding: 12px;
   color: var(--text);
-  background: var(--panel2);
+  background: var(--glass);
   text-align: left;
-  box-shadow: none;
+  box-shadow: var(--inner-highlight);
+  backdrop-filter: var(--blur);
 }
 
 .quick-action:first-child {
   border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
-  background: color-mix(in srgb, var(--panel2) 84%, var(--accent) 9%);
+  background: color-mix(in srgb, var(--panel) 82%, var(--accent) 10%);
 }
 
 .quick-action span,
@@ -572,7 +622,26 @@ h2 {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--panel);
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--shadow-soft), var(--inner-highlight);
+  backdrop-filter: var(--blur);
+}
+
+.kpi,
+.student-card,
+.row-card,
+.mini-stat,
+.today-class,
+.calendar-day,
+.today-summary,
+.quick-action,
+.focus-card,
+.more-card,
+.roadmap-card {
+  background-image: linear-gradient(145deg, rgba(255, 255, 255, .07), transparent 42%), radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--aqua) 8%, transparent), transparent 38%);
+}
+
+.panel {
+  background-image: linear-gradient(145deg, rgba(255, 255, 255, .055), transparent 35%);
 }
 
 .kpi {
@@ -593,6 +662,13 @@ h2 {
   line-height: 1;
 }
 
+.kpi strong,
+.mini-stat strong,
+.focus-card strong,
+.quick-action strong {
+  text-shadow: 0 1px 16px rgba(255, 255, 255, .08);
+}
+
 .kpi small {
   display: block;
   margin-top: 7px;
@@ -602,7 +678,7 @@ h2 {
 }
 
 .kpi-ok {
-  border-color: color-mix(in srgb, #2ecc71 34%, var(--line));
+  border-color: color-mix(in srgb, var(--ok) 34%, var(--line));
 }
 
 .kpi-warn {
@@ -674,7 +750,7 @@ h2 {
 }
 
 .pill.ok {
-  color: #2ecc71;
+  color: var(--ok);
 }
 
 .pill.warn {
@@ -748,7 +824,7 @@ h2 {
 .class-confirmada::before,
 .class-finalizada::before,
 .wait-convertido::before {
-  background: #2ecc71;
+  background: var(--ok);
 }
 
 .status-experimental::before,
@@ -775,7 +851,7 @@ h2 {
 .payment-paid,
 .class-confirmada,
 .class-finalizada {
-  border-color: color-mix(in srgb, #2ecc71 24%, var(--line));
+  border-color: color-mix(in srgb, var(--ok) 24%, var(--line));
 }
 
 .payment-paid {
@@ -842,9 +918,11 @@ h2 {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 0 13px;
-  background: var(--panel2);
+  background: var(--glass);
   color: var(--text);
   outline: none;
+  box-shadow: var(--inner-highlight);
+  backdrop-filter: var(--blur);
 }
 
 .search {
@@ -872,7 +950,9 @@ h2 {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 14px;
-  background: var(--panel2);
+  background: var(--glass);
+  box-shadow: var(--inner-highlight);
+  backdrop-filter: var(--blur);
 }
 
 .mini-stat span,
@@ -919,7 +999,9 @@ h2 {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 12px;
-  background: var(--panel2);
+  background: var(--glass);
+  box-shadow: var(--inner-highlight);
+  backdrop-filter: var(--blur);
 }
 
 .today-summary {
@@ -1058,11 +1140,13 @@ h2 {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 7px 9px;
-  background: var(--soft);
+  background: var(--glass);
+  box-shadow: var(--inner-highlight);
+  backdrop-filter: var(--blur);
 }
 
 .roster-person.present {
-  border-color: color-mix(in srgb, #2ecc71 45%, var(--line));
+  border-color: color-mix(in srgb, var(--ok) 45%, var(--line));
 }
 
 .roster-person.extra {
@@ -1126,11 +1210,11 @@ h2 {
   position: absolute;
   top: 12px;
   right: 12px;
-  border: 1px solid color-mix(in srgb, #2ecc71 42%, var(--line));
+  border: 1px solid color-mix(in srgb, var(--ok) 42%, var(--line));
   border-radius: 999px;
   padding: 3px 8px;
-  color: #2ecc71;
-  background: color-mix(in srgb, #2ecc71 12%, transparent);
+  color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 12%, transparent);
   font-size: 10px;
   font-weight: 850;
   text-transform: uppercase;
@@ -1153,9 +1237,11 @@ h2 {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 14px;
-  background: var(--panel2);
+  background: var(--glass);
   color: var(--text);
   text-align: left;
+  box-shadow: var(--inner-highlight);
+  backdrop-filter: var(--blur);
 }
 
 .more-card span,
@@ -1211,8 +1297,9 @@ h2 {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 22px;
-  background: color-mix(in srgb, var(--bg2) 94%, var(--panel) 6%);
-  box-shadow: var(--shadow);
+  background: color-mix(in srgb, var(--panel) 90%, var(--bg2) 10%);
+  box-shadow: var(--shadow), var(--inner-highlight);
+  backdrop-filter: var(--blur);
 }
 
 .modal::before {
@@ -1271,10 +1358,12 @@ select {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 0 12px;
-  background: var(--panel);
+  background: var(--glass);
   color: var(--text);
   outline: none;
   font-size: 16px;
+  box-shadow: var(--inner-highlight);
+  backdrop-filter: var(--blur);
 }
 
 select[multiple] {
@@ -1368,7 +1457,7 @@ select[multiple] {
 }
 
 .student-profile.payment-paid::before {
-  background: #2ecc71;
+  background: var(--ok);
 }
 
 .student-profile.payment-pending::before {
@@ -1400,18 +1489,20 @@ select[multiple] {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 12px;
-  background: var(--panel);
+  background: var(--glass);
+  box-shadow: var(--inner-highlight);
+  backdrop-filter: var(--blur);
 }
 
 .check-item.checked-in {
-  border-color: color-mix(in srgb, #2ecc71 42%, var(--line));
-  background: color-mix(in srgb, var(--panel) 88%, #2ecc71 5%);
+  border-color: color-mix(in srgb, var(--ok) 42%, var(--line));
+  background: color-mix(in srgb, var(--panel) 88%, var(--ok) 5%);
 }
 
 .check-item button.present {
-  border-color: color-mix(in srgb, #2ecc71 45%, var(--line));
-  background: color-mix(in srgb, #2ecc71 18%, var(--soft));
-  color: #2ecc71;
+  border-color: color-mix(in srgb, var(--ok) 45%, var(--line));
+  background: color-mix(in srgb, var(--ok) 18%, var(--soft));
+  color: var(--ok);
 }
 
 .empty {
@@ -1451,7 +1542,8 @@ select[multiple] {
   padding: 12px 14px;
   background: var(--panel);
   color: var(--text);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow), var(--inner-highlight);
+  backdrop-filter: var(--blur);
   transition: .18s;
 }
 
@@ -1585,11 +1677,11 @@ select[multiple] {
     display: block;
     width: 100%;
     padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
-    border-top: 1px solid var(--line);
+    border-top: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
     border-bottom: 0;
-    background: color-mix(in srgb, var(--bg2) 96%, transparent);
-    box-shadow: 0 -14px 34px rgba(0, 0, 0, .32);
-    backdrop-filter: blur(18px);
+    background: color-mix(in srgb, var(--panel) 82%, transparent);
+    box-shadow: 0 -20px 44px rgba(0, 0, 0, .36), var(--inner-highlight);
+    backdrop-filter: var(--blur);
   }
 
   .brand,
@@ -1628,6 +1720,7 @@ select[multiple] {
     min-width: 58px;
     min-height: 48px;
     padding: 0 6px;
+    border-radius: 14px;
     text-align: center;
     white-space: nowrap;
     font-size: 13px;
