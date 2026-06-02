@@ -9,8 +9,8 @@
     <meta name="apple-mobile-web-app-title" content="TLF Gestao" />
     <title>Team Lucão Futevôlei</title>
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260601-tipos" />
-    <link rel="stylesheet" href="styles.css?v=20260601-tipos" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260602-filtros" />
+    <link rel="stylesheet" href="styles.css?v=20260602-filtros" />
   </head>
   <body>
     <div class="login-wall" id="loginWall" aria-hidden="true">
@@ -146,8 +146,24 @@
           <div class="section-label">Aulas previstas</div>
           <div class="filters">
             <input id="classDateFilter" type="date" aria-label="Filtrar aulas por data" />
+            <select id="classTypeFilter" aria-label="Filtrar aulas por tipo">
+              <option value="">Todos os tipos</option>
+              <option value="Regular">Regular</option>
+              <option value="Experimental">Experimental</option>
+              <option value="Reposicao">Reposicao</option>
+              <option value="Avulso">Avulso</option>
+              <option value="Evento">Evento</option>
+            </select>
+            <select id="classStatusFilter" aria-label="Filtrar aulas por status">
+              <option value="">Todos os status</option>
+              <option value="Marcada">Marcada</option>
+              <option value="Confirmada">Confirmada</option>
+              <option value="Finalizada">Finalizada</option>
+              <option value="Cancelada">Cancelada</option>
+            </select>
             <button class="soft-btn" type="button" data-clear-class-filter>Ver todas</button>
           </div>
+          <div class="finance-summary" id="classSummary"></div>
           <div class="list" id="classList"></div>
         </div>
       </section>
@@ -440,6 +456,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="app.js?v=20260601-tipos"></script>
+    <script src="app.js?v=20260602-filtros"></script>
   </body>
 </html>

@@ -11,6 +11,7 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Relatorio individual ao clicar no nome do aluno
 - Aulas de hoje com previstos, avulsos e status rapido
 - Tipo de aula: regular, experimental, reposicao, avulso ou evento
+- Filtros de aulas por data, tipo e status
 - Copia rapida da lista da aula e do resumo de presenca
 - Dashboard do dia com pendencias
 - Filtros de alunos e aulas

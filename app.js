@@ -421,10 +421,11 @@ function renderQuickActions() {
   const activeStudents = state.students.filter((student) => student.status !== 'Pausado');
   const pending = activeStudents.filter((student) => !isPaidForMonth(student, currentMonth()));
   const next = nextClass();
+  const experimentalToday = state.classes.filter((item) => item.data === todayISO() && classType(item) === 'Experimental').length;
   const actions = [
     ['Cobrar pendentes', `${pending.length} aluno(s)`, 'quick-pending'],
     ['Abrir proxima aula', next ? `${formatDate(next.data)} ${next.horario}` : 'sem aula', 'quick-next-class'],
-    ['Novo interessado', 'lista de espera', 'quick-waitlist'],
+    ['Experimentais hoje', `${experimentalToday} aula(s)`, 'quick-experimental'],
     ['Nova aula', 'agenda', 'quick-class']
   ];
   document.getElementById('quickActions').innerHTML = actions.map(([title, detail, action]) => `
@@ -518,10 +519,33 @@ function openGlobalResult(action) {
 
 function renderClasses() {
   const date = document.getElementById('classDateFilter').value;
-  const classes = [...state.classes].filter((item) => !date || item.data === date).sort(sortClass);
+  const type = document.getElementById('classTypeFilter')?.value || '';
+  const status = document.getElementById('classStatusFilter')?.value || '';
+  const classes = [...state.classes].filter((item) => (
+    (!date || item.data === date)
+    && (!type || classType(item) === type)
+    && (!status || (item.status || 'Marcada') === status)
+  )).sort(sortClass);
   renderClassesTodayPlanner();
   renderClassCalendar();
+  renderClassSummary(classes);
   document.getElementById('classList').innerHTML = classes.length ? classes.map(classRow).join('') : empty('Crie a primeira aula da agenda.');
+}
+
+function renderClassSummary(classes) {
+  const target = document.getElementById('classSummary');
+  if (!target) return;
+  const future = classes.filter((item) => item.data >= todayISO() && item.status !== 'Cancelada').length;
+  const experimental = classes.filter((item) => classType(item) === 'Experimental').length;
+  const repos = classes.filter((item) => classType(item) === 'Reposicao').length;
+  const avulsos = classes.reduce((sum, item) => sum + classExtras(item).filter((extra) => ['Avulso', 'Reposicao', 'Experimental', 'Visitante'].includes(extraType(extra))).length, 0);
+  target.innerHTML = `
+    <article class="mini-stat"><span>Filtradas</span><strong>${classes.length}</strong></article>
+    <article class="mini-stat"><span>Futuras</span><strong>${future}</strong></article>
+    <article class="mini-stat"><span>Experimentais</span><strong>${experimental}</strong></article>
+    <article class="mini-stat"><span>Reposicoes</span><strong>${repos}</strong></article>
+    <article class="mini-stat"><span>Fora da lista</span><strong>${avulsos}</strong></article>
+  `;
 }
 
 function renderClassesTodayPlanner() {
@@ -1112,6 +1136,13 @@ function handleQuickAction(action) {
   if (action === 'quick-pending') copyPendingCharges().catch((err) => toast(err.message));
   if (action === 'quick-next-class') openNextClass();
   if (action === 'quick-waitlist') openWaitlist();
+  if (action === 'quick-experimental') {
+    setPage('classes');
+    document.getElementById('classDateFilter').value = todayISO();
+    document.getElementById('classTypeFilter').value = 'Experimental';
+    document.getElementById('classStatusFilter').value = '';
+    renderClasses();
+  }
   if (action === 'quick-class') openClass();
 }
 
@@ -1696,6 +1727,8 @@ function bindEvents() {
   document.querySelectorAll('[data-reset-local]').forEach((button) => button.addEventListener('click', resetLocal));
   document.querySelectorAll('[data-clear-class-filter]').forEach((button) => button.addEventListener('click', () => {
     document.getElementById('classDateFilter').value = '';
+    document.getElementById('classTypeFilter').value = '';
+    document.getElementById('classStatusFilter').value = '';
     renderClasses();
   }));
   document.getElementById('quickActions').addEventListener('click', (event) => {
@@ -1722,6 +1755,8 @@ function bindEvents() {
   document.getElementById('paymentSearch').addEventListener('input', renderPayments);
   document.getElementById('paymentStatusFilter').addEventListener('change', renderPayments);
   document.getElementById('classDateFilter').addEventListener('change', renderClasses);
+  document.getElementById('classTypeFilter').addEventListener('change', renderClasses);
+  document.getElementById('classStatusFilter').addEventListener('change', renderClasses);
   document.getElementById('waitStatusFilter').addEventListener('change', renderWaitlist);
   document.getElementById('importFile').addEventListener('change', (event) => {
     importBackup(event.target.files[0]).catch((err) => toast(err.message));
@@ -1784,7 +1819,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260601-tipos', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260602-filtros', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {

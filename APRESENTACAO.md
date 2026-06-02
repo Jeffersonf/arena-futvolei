@@ -41,6 +41,7 @@ Um painel simples para tirar a escola do improviso: menos planilha solta, menos 
 - Agenda de aulas com visao de hoje e calendario previsto.
 - Presenca por aula, todos presentes e avulsos.
 - Tipo da aula: regular, experimental, reposicao, avulso ou evento.
+- Filtros de aulas por data, tipo e status.
 - Status rapido de aula: confirmar, finalizar, cancelar e reabrir.
 - Copia rapida da lista da aula e do resumo de presenca.
 - Pagamento marcado no mes filtrado da mensalidade.
