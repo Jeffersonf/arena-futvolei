@@ -431,14 +431,21 @@ function renderKpis() {
   const active = state.students.filter((s) => s.status === 'Ativo').length;
   const trial = state.students.filter((s) => s.status === 'Experimental').length;
   const classesToday = state.classes.filter((c) => c.data === todayISO()).length;
-  const pending = state.students.filter((s) => s.status !== 'Pausado' && !isPaid(s)).length;
+  const pendingStudents = state.students.filter((s) => s.status !== 'Pausado' && !isPaid(s));
+  const pendingValue = pendingStudents.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0);
   const items = [
-    ['Alunos ativos', active],
-    ['Experimentais', trial],
-    ['Aulas hoje', classesToday],
-    ['Mensalidades pendentes', pending]
+    ['Alunos ativos', active, `${state.students.length} cadastrados`, ''],
+    ['Experimentais', trial, trial ? 'acompanhar conversao' : 'sem teste aberto', 'warn'],
+    ['Aulas hoje', classesToday, classesToday ? 'abrir presencas' : 'agenda livre', ''],
+    ['Pendencias', pendingStudents.length, pendingStudents.length ? `${money.format(pendingValue)} a receber` : 'financeiro em dia', pendingStudents.length ? 'bad' : 'ok']
   ];
-  document.getElementById('kpiGrid').innerHTML = items.map(([label, value]) => `<article class="kpi"><span>${label}</span><strong>${value}</strong></article>`).join('');
+  document.getElementById('kpiGrid').innerHTML = items.map(([label, value, detail, tone]) => `
+    <article class="kpi ${tone ? `kpi-${tone}` : ''}">
+      <span>${label}</span>
+      <strong>${value}</strong>
+      <small>${escapeHTML(detail)}</small>
+    </article>
+  `).join('');
 }
 
 function nextClass() {
@@ -582,23 +589,26 @@ function renderFocusStrip() {
       label: 'Proxima aula',
       title: next ? `${formatDate(next.data)} ${next.horario}` : 'Sem aula marcada',
       text: next ? `${next.turma || 'Turma'} - ${classStudents(next).length}/${next.capacidade || 8} alunos` : 'Crie uma aula para iniciar a agenda.',
-      action: 'next-class'
+      action: 'next-class',
+      tone: 'live'
     },
     {
       label: 'Cobranca',
       title: `${pending.length} pendente(s)`,
       text: pending.length ? `${money.format(pendingValue)} a receber neste mes` : 'Mensalidades em dia no mes.',
-      action: 'payments'
+      action: 'payments',
+      tone: pending.length ? 'danger' : 'ok'
     },
     {
       label: 'Interessado',
       title: lead ? lead.nome : 'Sem lead aberto',
       text: lead ? `${lead.status || 'Novo'} - ${daysBetween(lead.data_cadastro || todayISO())} dia(s)` : 'Lista de espera sem pendencias.',
-      action: lead ? `wait:${lead.id}` : 'waitlist'
+      action: lead ? `wait:${lead.id}` : 'waitlist',
+      tone: lead ? 'warn' : 'ok'
     }
   ];
   target.innerHTML = cards.map((card) => `
-    <button class="focus-card" type="button" data-focus-action="${escapeHTML(card.action)}">
+    <button class="focus-card focus-${escapeHTML(card.tone)}" type="button" data-focus-action="${escapeHTML(card.action)}">
       <span>${escapeHTML(card.label)}</span>
       <strong>${escapeHTML(card.title)}</strong>
       <small>${escapeHTML(card.text)}</small>
@@ -1928,7 +1938,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260602-polish1', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260602-polish2', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {
