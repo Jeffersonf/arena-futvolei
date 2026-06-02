@@ -92,6 +92,9 @@ function ensureSchema() {
       dia_vencimento INTEGER DEFAULT 10,
       status TEXT DEFAULT 'Ativo',
       nivel TEXT DEFAULT 'Iniciante',
+      dia_fixo TEXT DEFAULT '',
+      horario_fixo TEXT DEFAULT '',
+      turma_fixa TEXT DEFAULT '',
       observacao TEXT DEFAULT '',
       pago_ate TEXT DEFAULT '',
       data_cadastro TEXT DEFAULT (date('now')),
@@ -180,6 +183,15 @@ function ensureSchema() {
   const studentColumns = tableColumns('alunos');
   if (!studentColumns.includes('dia_vencimento')) {
     run('ALTER TABLE alunos ADD COLUMN dia_vencimento INTEGER DEFAULT 10');
+  }
+  if (!studentColumns.includes('dia_fixo')) {
+    run("ALTER TABLE alunos ADD COLUMN dia_fixo TEXT DEFAULT ''");
+  }
+  if (!studentColumns.includes('horario_fixo')) {
+    run("ALTER TABLE alunos ADD COLUMN horario_fixo TEXT DEFAULT ''");
+  }
+  if (!studentColumns.includes('turma_fixa')) {
+    run("ALTER TABLE alunos ADD COLUMN turma_fixa TEXT DEFAULT ''");
   }
 
   const classColumns = tableColumns('aulas');

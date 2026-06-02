@@ -148,6 +148,9 @@ function normalizeStudentPayload(body = {}) {
     dia_vencimento: Math.min(31, Math.max(1, Number(body.dia_vencimento || body.vencimento_dia || body.dueDay || 10) || 10)),
     status: String(body.status || 'Ativo'),
     nivel: String(body.nivel || body.level || 'Iniciante'),
+    dia_fixo: String(body.dia_fixo ?? body.fixedDay ?? ''),
+    horario_fixo: String(body.horario_fixo || body.fixedTime || '').slice(0, 5),
+    turma_fixa: String(body.turma_fixa || body.fixedGroup || '').trim(),
     observacao: String(body.observacao || body.note || ''),
     pago_ate: String(body.pago_ate || body.paidUntil || '')
   };

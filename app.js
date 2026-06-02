@@ -3,7 +3,8 @@
 const STORE_KEY = 'fv_school_state_v2';
 const PIN_KEY = 'tlf_admin_pin';
 const PAGE_KEY = 'tlf_last_page';
-const MOBILE_MORE_PAGES = ['plans', 'reports', 'roadmap', 'data'];
+const MOBILE_MORE_PAGES = ['plans', 'reports'];
+const REMOVED_PAGES = ['roadmap', 'data'];
 const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const currentMonth = () => todayISO().slice(0, 7);
@@ -194,7 +195,9 @@ async function detectServer() {
     const timer = setTimeout(() => controller.abort(), 900);
     const res = await fetch('/health', { signal: controller.signal });
     clearTimeout(timer);
-    return res.ok;
+    if (!res.ok) return false;
+    const data = await res.json().catch(() => null);
+    return Boolean(data && data.ok === true && data.mode === 'server');
   } catch {
     return false;
   }
@@ -343,6 +346,20 @@ function formatDate(value) {
   return `${day}/${month}/${year}`;
 }
 
+function weekdayName(value) {
+  const names = ['Domingo', 'Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sabado'];
+  return names[Number(value)] || '';
+}
+
+function nextDateForWeekday(weekday, fromIso = todayISO()) {
+  const target = Number(weekday);
+  if (!Number.isInteger(target) || target < 0 || target > 6) return '';
+  const date = new Date(`${fromIso}T12:00:00`);
+  const diff = (target - date.getDay() + 7) % 7;
+  date.setDate(date.getDate() + diff);
+  return date.toISOString().slice(0, 10);
+}
+
 function addMonthsIso(dateIso, months = 1) {
   const date = dateIso ? new Date(`${dateIso}T12:00:00`) : new Date();
   date.setMonth(date.getMonth() + months);
@@ -382,6 +399,7 @@ function toast(message) {
 }
 
 function setPage(page) {
+  if (REMOVED_PAGES.includes(page)) page = 'dashboard';
   const isMobile = window.matchMedia('(max-width: 620px)').matches;
   if (page === 'more' && !isMobile) page = 'dashboard';
   if (!document.getElementById(`page-${page}`)) return;
@@ -399,13 +417,19 @@ function setPage(page) {
 
 function restorePage() {
   const saved = localStorage.getItem(PAGE_KEY) || 'dashboard';
-  setPage(saved === 'more' && !window.matchMedia('(max-width: 620px)').matches ? 'dashboard' : saved);
+  setPage((saved === 'more' && !window.matchMedia('(max-width: 620px)').matches) || REMOVED_PAGES.includes(saved) ? 'dashboard' : saved);
 }
 
 function toggleTheme() {
   const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
   document.documentElement.dataset.theme = next;
   localStorage.setItem('fv_theme', next);
+  updateThemeButton();
+}
+
+function updateThemeButton() {
+  const button = document.getElementById('themeBtn');
+  if (button) button.textContent = document.documentElement.dataset.theme === 'dark' ? '🌙' : '☀️';
 }
 
 function logout() {
@@ -509,7 +533,16 @@ function renderStudents() {
     const matchesPayment = !payment || (payment === 'paid' ? isPaid(student) : !isPaid(student));
     return matchesQuery && matchesStatus && matchesPayment;
   });
-  document.getElementById('studentGrid').innerHTML = students.length ? students.map(studentCard).join('') : empty('Nenhum aluno encontrado.');
+  document.getElementById('studentGrid').innerHTML = students.length ? `
+    <div class="student-list-head" aria-hidden="true">
+      <span>Aluno</span>
+      <span>Plano</span>
+      <span>Agenda</span>
+      <span>Pagamento</span>
+      <span>Acoes</span>
+    </div>
+    ${students.map(studentCard).join('')}
+  ` : empty('Nenhum aluno encontrado.');
 }
 
 function renderGlobalResults() {
@@ -715,11 +748,13 @@ function renderPayments() {
   const activeStudents = state.students.filter((student) => student.status !== 'Pausado');
   const pending = activeStudents.filter((student) => !isPaidForMonth(student, month));
   const expected = activeStudents.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0);
+  const receiveRate = expected ? Math.round((paidThisMonth / expected) * 100) : 0;
   const query = document.getElementById('paymentSearch')?.value.trim().toLowerCase() || '';
   const filter = document.getElementById('paymentStatusFilter')?.value || '';
   document.getElementById('financeSummary').innerHTML = `
     <article class="mini-stat kpi-ok"><span>Recebido no mês</span><strong>${money.format(paidThisMonth)}</strong></article>
     <article class="mini-stat"><span>Previsao do mes</span><strong>${money.format(expected)}</strong></article>
+    <article class="mini-stat ${receiveRate >= 80 ? 'kpi-ok' : pending.length ? 'kpi-warn' : ''}"><span>Recebimento</span><strong>${receiveRate}%</strong></article>
     <article class="mini-stat ${pending.length ? 'kpi-bad' : 'kpi-ok'}"><span>Pendências</span><strong>${pending.length}</strong></article>
     <article class="mini-stat ${pending.length ? 'kpi-bad' : 'kpi-ok'}"><span>A receber</span><strong>${money.format(pending.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0))}</strong></article>
   `;
@@ -742,7 +777,7 @@ function renderPayments() {
       <div class="actions">
         ${student.telefone ? `<a class="mini-btn" href="${whatsappUrl(student.telefone, `Oi ${student.nome}, tudo bem? Passando para lembrar da mensalidade do Team Lucão Futevôlei.`)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
         <button class="mini-btn" data-copy-charge="${student.id}">Copiar cobranca</button>
-        <button class="mini-btn" data-pay="${student.id}">Marcar mes pago</button>
+        <button class="mini-btn" data-pay="${student.id}">${isPaidForMonth(student, month) ? 'Marcar nao pago' : 'Marcar pago'}</button>
       </div>
     </article>
   `);
@@ -768,7 +803,6 @@ function renderPlans() {
       ${plan.descricao ? `<p class="meta">${escapeHTML(plan.descricao)}</p>` : ''}
       <div class="actions">
         <button class="mini-btn" data-edit-plan="${plan.id}">Editar</button>
-        <button class="mini-btn danger-mini" data-delete-plan="${plan.id}">Remover</button>
       </div>
     </article>
   `).join('') : empty('Cadastre planos para organizar aulas e mensalidades.');
@@ -800,7 +834,6 @@ function renderWaitlist() {
         <button class="mini-btn" data-edit-wait="${item.id}">Editar</button>
         <button class="mini-btn" data-convert-wait="${item.id}">Virar aluno</button>
         <button class="mini-btn danger-mini" data-wait-status="${item.id}:Perdido">Perdido</button>
-        <button class="mini-btn" data-delete-wait="${item.id}">Remover</button>
       </div>
     </article>
   `;
@@ -889,23 +922,30 @@ function studentCard(student) {
   const weekly = weeklyAttendanceCount(student.id);
   const target = planWeeklyTarget(student);
   const paid = isPaid(student);
+  const schedule = [student.dia_fixo ? weekdayName(student.dia_fixo) : '', student.horario_fixo || '', student.turma_fixa || ''].filter(Boolean).join(' - ') || 'sem horario fixo';
   return `
-    <article class="student-card status-${cssToken(student.status || 'Ativo')} payment-${paid ? 'paid' : 'pending'}">
-      <button class="link-title" type="button" data-report-student="${student.id}">${escapeHTML(student.nome)}</button>
-      <p class="meta">${escapeHTML(student.telefone || 'sem telefone')} - ${money.format(Number(student.mensalidade || 0))}/mes - vence dia ${dueDay(student)}</p>
-      <div class="pill-row">
-        <span class="pill">${escapeHTML(student.plano_nome || 'sem plano')}</span>
-        <span class="pill">${escapeHTML(student.nivel || 'Iniciante')}</span>
-        <span class="pill ${student.status === 'Ativo' ? 'ok' : student.status === 'Experimental' ? 'warn' : ''}">${escapeHTML(student.status || 'Ativo')}</span>
-        <span class="pill ${paid ? 'ok' : 'bad'}">${paid ? 'em dia' : 'pendente'}</span>
-        <span class="pill">${weekly}/${target || '-'} na semana</span>
+    <article class="student-row status-${cssToken(student.status || 'Ativo')} payment-${paid ? 'paid' : 'pending'}">
+      <div class="student-main">
+        <button class="link-title compact-title" type="button" data-report-student="${student.id}">${escapeHTML(student.nome)}</button>
+        <p class="meta">${escapeHTML(student.telefone || 'sem telefone')} - vence dia ${dueDay(student)}</p>
       </div>
-      ${student.observacao ? `<p class="meta">${escapeHTML(student.observacao)}</p>` : ''}
-      <div class="actions">
+      <div>
+        <strong>${escapeHTML(student.plano_nome || 'Sem plano')}</strong>
+        <p class="meta">${money.format(Number(student.mensalidade || 0))}/mes - ${escapeHTML(student.nivel || 'Iniciante')}</p>
+        <span class="pill ${student.status === 'Ativo' ? 'ok' : student.status === 'Experimental' ? 'warn' : ''}">${escapeHTML(student.status || 'Ativo')}</span>
+      </div>
+      <div>
+        <strong>${weekly}/${target || '-'}</strong>
+        <p class="meta">${escapeHTML(schedule)}</p>
+      </div>
+      <div>
+        <span class="pill ${paid ? 'ok' : 'bad'}">${paid ? 'em dia' : 'pendente'}</span>
+        <p class="meta">${paid ? `pago ate ${formatDate(student.pago_ate)}` : 'sem registro do mes'}</p>
+      </div>
+      <div class="actions student-actions">
         ${student.telefone ? `<a class="mini-btn" href="${whatsappUrl(student.telefone, message)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
         <button class="mini-btn" data-edit-student="${student.id}">Editar</button>
-        <button class="mini-btn" data-pay="${student.id}">Pago</button>
-        <button class="mini-btn danger-mini" data-delete-student="${student.id}">Remover</button>
+        <button class="mini-btn" data-pay="${student.id}">${paid ? 'Nao pago' : 'Pago'}</button>
       </div>
     </article>
   `;
@@ -936,12 +976,10 @@ function classRow(item) {
       </div>
       <div class="actions">
         <a class="mini-btn" href="${whatsappShareUrl(classShareText(item))}" target="_blank" rel="noopener">WhatsApp</a>
-        <button class="mini-btn" data-copy-class="${item.id}">Copiar lista</button>
         <button class="mini-btn" data-attendance="${item.id}">Presencas</button>
         ${classStatusActions(item)}
-        <button class="mini-btn" data-duplicate-class="${item.id}">Duplicar</button>
+        <button class="mini-btn" data-copy-class="${item.id}">Copiar</button>
         <button class="mini-btn" data-edit-class="${item.id}">Editar</button>
-        <button class="mini-btn danger-mini" data-delete-class="${item.id}">Remover</button>
       </div>
     </article>
   `;
@@ -955,11 +993,8 @@ function classStatusActions(item) {
   if (item.status === 'Cancelada') {
     return `<button class="mini-btn" data-class-status="${id}:Marcada">Reativar</button>`;
   }
-  return `
-    ${item.status === 'Confirmada' ? '' : `<button class="mini-btn" data-class-status="${id}:Confirmada">Confirmar</button>`}
-    <button class="mini-btn" data-class-status="${id}:Finalizada">Finalizar</button>
-    <button class="mini-btn danger-mini" data-class-status="${id}:Cancelada">Cancelar</button>
-  `;
+  if (item.status === 'Confirmada') return `<button class="mini-btn" data-class-status="${id}:Finalizada">Finalizar</button>`;
+  return `<button class="mini-btn" data-class-status="${id}:Confirmada">Confirmar</button>`;
 }
 
 function rosterPerson(student, dateIso, present = false) {
@@ -988,6 +1023,12 @@ function escapeHTML(value) {
 }
 
 function openModal(id) {
+  document.querySelectorAll('.modal-wrap.open').forEach((modal) => {
+    if (modal.id !== id) {
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+  });
   document.getElementById(id).classList.add('open');
   document.getElementById(id).setAttribute('aria-hidden', 'false');
   document.body.classList.add('modal-open');
@@ -1017,6 +1058,9 @@ function openStudent(id = '') {
   document.getElementById('studentLevel').value = student.nivel || 'Iniciante';
   document.getElementById('studentStatus').value = student.status || 'Ativo';
   document.getElementById('studentNote').value = student.observacao || '';
+  document.getElementById('studentFixedDay').value = student.dia_fixo ?? '';
+  document.getElementById('studentFixedTime').value = student.horario_fixo || '';
+  document.getElementById('studentFixedGroup').value = student.turma_fixa || student.turma || '';
   openModal('studentModal');
 }
 
@@ -1285,6 +1329,95 @@ function fillClassStudents(selected = []) {
   )).join('');
 }
 
+function syncStudentFixedSchedule(student) {
+  if (!student?.id || student.status === 'Pausado') return 0;
+  if (student.dia_fixo === '' || student.dia_fixo === null || student.dia_fixo === undefined || !student.horario_fixo) return 0;
+  const start = nextDateForWeekday(student.dia_fixo);
+  if (!start) return 0;
+  const group = student.turma_fixa || student.turma || student.nivel || 'Turma fixa';
+  let touched = 0;
+  Array.from({ length: 4 }, (_item, index) => addDaysIso(start, index * 7)).forEach((dateIso) => {
+    let item = state.classes.find((entry) => (
+      entry.data === dateIso &&
+      entry.horario === student.horario_fixo &&
+      String(entry.turma || '') === String(group) &&
+      entry.status !== 'Cancelada'
+    ));
+    if (!item) {
+      item = {
+        id: uid(),
+        data: dateIso,
+        horario: student.horario_fixo,
+        turma: group,
+        professor: '',
+        tipo: 'Regular',
+        capacidade: 8,
+        status: 'Marcada',
+        aluno_ids: [],
+        presencas: {},
+        extra_presentes: []
+      };
+      state.classes.push(item);
+    }
+    const ids = new Set(classStudentIds(item).map(String));
+    if (!ids.has(String(student.id))) {
+      item.aluno_ids = [...ids, String(student.id)];
+      item.presencas = item.presencas || {};
+      item.presencas[student.id] = item.presencas[student.id] || false;
+      touched += 1;
+    }
+  });
+  return touched;
+}
+
+async function syncStudentFixedScheduleApi(student) {
+  if (!student?.id || student.status === 'Pausado') return 0;
+  if (student.dia_fixo === '' || student.dia_fixo === null || student.dia_fixo === undefined || !student.horario_fixo) return 0;
+  const start = nextDateForWeekday(student.dia_fixo);
+  if (!start) return 0;
+  const group = student.turma_fixa || student.turma || student.nivel || 'Turma fixa';
+  let touched = 0;
+  for (const dateIso of Array.from({ length: 4 }, (_item, index) => addDaysIso(start, index * 7))) {
+    const existing = state.classes.find((entry) => (
+      entry.data === dateIso &&
+      entry.horario === student.horario_fixo &&
+      String(entry.turma || '') === String(group) &&
+      entry.status !== 'Cancelada'
+    ));
+    if (!existing) {
+      await api('/api/classes', {
+        method: 'POST',
+        body: JSON.stringify({
+          data: dateIso,
+          horario: student.horario_fixo,
+          turma: group,
+          professor: '',
+          tipo: 'Regular',
+          capacidade: 8,
+          status: 'Marcada',
+          aluno_ids: [student.id],
+          presencas: {}
+        })
+      });
+      touched += 1;
+      continue;
+    }
+    const ids = new Set(classStudentIds(existing).map(String));
+    if (!ids.has(String(student.id))) {
+      await api(`/api/classes/${existing.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          ...existing,
+          aluno_ids: [...ids, String(student.id)],
+          presencas: existing.presencas || {}
+        })
+      });
+      touched += 1;
+    }
+  }
+  return touched;
+}
+
 async function saveStudent(event) {
   event.preventDefault();
   const id = document.getElementById('studentId').value;
@@ -1299,19 +1432,26 @@ async function saveStudent(event) {
     dia_vencimento: dueDay({ dia_vencimento: document.getElementById('studentDueDay').value }),
     status: document.getElementById('studentStatus').value,
     nivel: document.getElementById('studentLevel').value,
+    dia_fixo: document.getElementById('studentFixedDay').value,
+    horario_fixo: document.getElementById('studentFixedTime').value,
+    turma_fixa: document.getElementById('studentFixedGroup').value.trim(),
     observacao: document.getElementById('studentNote').value.trim(),
     pago_ate: studentById(id)?.pago_ate || ''
   };
   if (apiMode) {
-    await api(id ? `/api/students/${id}` : '/api/students', { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) });
+    const saved = await api(id ? `/api/students/${id}` : '/api/students', { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) });
     await loadData();
+    const linked = await syncStudentFixedScheduleApi(saved.item || { ...payload, id });
+    if (linked) await loadData();
   } else {
     const next = { ...payload, id: id || uid() };
     const index = state.students.findIndex((student) => String(student.id) === String(next.id));
     if (index >= 0) state.students[index] = next;
     else state.students.push(next);
+    const linked = syncStudentFixedSchedule(next);
     saveLocalState();
     render();
+    if (linked) toast(`${linked} aula(s) vinculada(s)`);
   }
   closeModal('studentModal');
   toast('Aluno salvo');
@@ -1445,7 +1585,6 @@ function openAttendance(classId) {
         <h3>${escapeHTML(extra.nome || extra)}</h3>
         <p class="meta">${escapeHTML(extraType(extra))} - fora da lista prevista</p>
       </div>
-      <button class="mini-btn danger-mini" data-remove-extra="${item.id}:${index}">Remover</button>
     </article>
   `).join('') : empty('Nenhum avulso marcado.');
   openModal('attendanceModal');
@@ -1531,6 +1670,22 @@ async function markPaid(studentId) {
   if (!student) return;
   const month = selectedPaymentMonth();
   const paidUntil = dueDateForMonth(student, month);
+  const alreadyPaid = isPaidForMonth(student, month);
+  if (alreadyPaid) {
+    if (!confirm(`Marcar ${student.nome} como NAO pago em ${month}?`)) return;
+    if (apiMode) {
+      await api(`/api/students/${studentId}`, { method: 'PUT', body: JSON.stringify({ ...student, pago_ate: '' }) });
+      await loadData();
+    } else {
+      student.pago_ate = '';
+      state.payments = (state.payments || []).filter((item) => !(String(item.aluno_id) === String(student.id) && paymentMonth(item) === month));
+      saveLocalState();
+      render();
+    }
+    toast('Mensalidade marcada como nao paga');
+    return;
+  }
+  if (!confirm(`Confirmar pagamento de ${student.nome} em ${month}?`)) return;
   if (apiMode) {
     await api(`/api/students/${studentId}/pay`, { method: 'POST', body: JSON.stringify({ referencia: month, vencimento: paidUntil }) });
     await loadData();
@@ -1964,9 +2119,10 @@ function bindEvents() {
 }
 
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
+updateThemeButton();
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260602-glass5', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260602-glass6', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {

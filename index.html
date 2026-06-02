@@ -9,8 +9,8 @@
     <meta name="apple-mobile-web-app-title" content="TLF Gestao" />
     <title>Team Lucão Futevôlei</title>
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260602-glass5" />
-    <link rel="stylesheet" href="styles.css?v=20260602-glass5" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260602-glass6" />
+    <link rel="stylesheet" href="styles.css?v=20260602-glass6" />
   </head>
   <body>
     <div class="login-wall" id="loginWall" aria-hidden="true">
@@ -42,16 +42,14 @@
       <nav class="nav" aria-label="Menu principal">
         <span class="nav-label">Operacao</span>
         <button class="nav-item active" data-page="dashboard">Início</button>
-        <button class="nav-item" data-page="students">Alunos</button>
-        <button class="nav-item" data-page="classes">Aulas</button>
-        <button class="nav-item" data-page="payments">Cobrar</button>
-        <button class="nav-item" data-page="waitlist">Espera</button>
+        <button class="nav-item" data-page="students"><span>👥</span> Alunos</button>
+        <button class="nav-item" data-page="classes"><span>📅</span> Aulas</button>
+        <button class="nav-item" data-page="payments"><span>💳</span> Cobrar</button>
+        <button class="nav-item" data-page="waitlist"><span>⏳</span> Espera</button>
         <span class="nav-label secondary-nav">Gestao</span>
-        <button class="nav-item secondary-nav" data-page="plans">Planos</button>
+        <button class="nav-item secondary-nav" data-page="plans"><span>🏷️</span> Planos</button>
         <button class="nav-item secondary-nav" data-page="reports">Relatórios</button>
-        <button class="nav-item secondary-nav" data-page="roadmap">Roadmap</button>
-        <button class="nav-item secondary-nav" data-page="data">Dados</button>
-        <button class="nav-item mobile-only" data-page="more">Mais</button>
+        <button class="nav-item mobile-only" data-page="more"><span>⋯</span> Mais</button>
       </nav>
       <div class="side-card">
         <span>Atalho do dia</span>
@@ -61,9 +59,9 @@
         <span>Modo</span>
         <strong id="modeStatus">Carregando...</strong>
       </div>
-      <button class="ghost-btn" id="themeBtn" type="button">Alternar tema</button>
       <button class="ghost-btn" id="logoutBtn" type="button">Sair</button>
     </aside>
+    <button class="theme-float" id="themeBtn" type="button" aria-label="Alternar tema">🌙</button>
 
     <main class="app">
       <header class="topbar">
@@ -140,7 +138,7 @@
               <option value="pending">Pendentes</option>
             </select>
           </div>
-          <div class="student-grid" id="studentGrid"></div>
+          <div class="student-list" id="studentGrid"></div>
         </div>
       </section>
 
@@ -343,16 +341,6 @@
               <strong>Relatorios</strong>
               <small>Frequencia, pendencias e pontos de atencao.</small>
             </button>
-            <button class="more-card" type="button" data-more-page="data">
-              <span>sistema</span>
-              <strong>Dados</strong>
-              <small>Demo, backup, importacao e CSV.</small>
-            </button>
-            <button class="more-card" type="button" data-more-page="roadmap">
-              <span>produto</span>
-              <strong>Roadmap</strong>
-              <small>Fases pensadas para virar sistema real.</small>
-            </button>
             <button class="more-card" type="button" data-more-action="theme">
               <span>tema</span>
               <strong>Claro / escuro</strong>
@@ -399,6 +387,22 @@
           </select>
         </label>
         <label>Observação<input id="studentNote" placeholder="Restrições, objetivo, responsável..." /></label>
+        <div class="form-row">
+          <label>Dia fixo
+            <select id="studentFixedDay">
+              <option value="">Sem dia fixo</option>
+              <option value="1">Segunda</option>
+              <option value="2">Terca</option>
+              <option value="3">Quarta</option>
+              <option value="4">Quinta</option>
+              <option value="5">Sexta</option>
+              <option value="6">Sabado</option>
+              <option value="0">Domingo</option>
+            </select>
+          </label>
+          <label>Horario fixo<input id="studentFixedTime" type="time" /></label>
+        </div>
+        <label>Turma fixa<input id="studentFixedGroup" placeholder="Ex: Iniciantes 18h" /></label>
         <button class="primary-btn" type="submit">Salvar aluno</button>
       </form>
     </div>
@@ -513,6 +517,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="app.js?v=20260602-glass5"></script>
+    <script src="app.js?v=20260602-glass6"></script>
   </body>
 </html>
