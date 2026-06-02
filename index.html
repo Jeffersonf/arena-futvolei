@@ -9,8 +9,8 @@
     <meta name="apple-mobile-web-app-title" content="TLF Gestao" />
     <title>Team Lucão Futevôlei</title>
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260602-polish10" />
-    <link rel="stylesheet" href="styles.css?v=20260602-polish10" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260602-polish11" />
+    <link rel="stylesheet" href="styles.css?v=20260602-polish11" />
   </head>
   <body>
     <div class="login-wall" id="loginWall" aria-hidden="true">
@@ -18,13 +18,14 @@
         <span class="brand-mark login-logo" aria-hidden="true">
           <img src="assets/team-lucao-logo.png" alt="" />
         </span>
-        <div>
+        <div class="login-copy">
           <p class="eyebrow">acesso restrito</p>
           <h2>Team Lucao Futevolei</h2>
+          <p>Painel rapido para organizar alunos, aulas e cobrancas.</p>
         </div>
         <label>PIN de acesso<input id="loginPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="1234" /></label>
         <button class="primary-btn" type="submit">Entrar</button>
-        <p class="muted">PIN padrao do piloto: 1234. Em producao, defina ADMIN_PIN no servidor.</p>
+        <p class="login-pin">PIN da demo: <strong>1234</strong></p>
       </form>
     </div>
 
@@ -510,6 +511,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="app.js?v=20260602-polish10"></script>
+    <script src="app.js?v=20260602-polish11"></script>
   </body>
 </html>
