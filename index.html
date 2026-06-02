@@ -9,8 +9,8 @@
     <meta name="apple-mobile-web-app-title" content="TLF Gestao" />
     <title>Team Lucão Futevôlei</title>
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260602-foco" />
-    <link rel="stylesheet" href="styles.css?v=20260602-foco" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260602-mais" />
+    <link rel="stylesheet" href="styles.css?v=20260602-mais" />
   </head>
   <body>
     <div class="login-wall" id="loginWall" aria-hidden="true">
@@ -42,12 +42,13 @@
         <button class="nav-item active" data-page="dashboard">Início</button>
         <button class="nav-item" data-page="students">Alunos</button>
         <button class="nav-item" data-page="classes">Aulas</button>
-        <button class="nav-item" data-page="payments">Mensalidades</button>
-        <button class="nav-item" data-page="plans">Planos</button>
+        <button class="nav-item" data-page="payments">Cobrar</button>
+        <button class="nav-item secondary-nav" data-page="plans">Planos</button>
         <button class="nav-item" data-page="waitlist">Espera</button>
-        <button class="nav-item" data-page="reports">Relatórios</button>
-        <button class="nav-item" data-page="roadmap">Roadmap</button>
-        <button class="nav-item" data-page="data">Dados</button>
+        <button class="nav-item secondary-nav" data-page="reports">Relatórios</button>
+        <button class="nav-item secondary-nav" data-page="roadmap">Roadmap</button>
+        <button class="nav-item secondary-nav" data-page="data">Dados</button>
+        <button class="nav-item mobile-only" data-page="more">Mais</button>
       </nav>
       <div class="side-card">
         <span>Atalho do dia</span>
@@ -310,6 +311,49 @@
           </div>
         </div>
       </section>
+
+      <section class="page mobile-only-page" id="page-more">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <span>atalhos</span>
+              <h2>Mais</h2>
+            </div>
+          </div>
+          <div class="more-grid">
+            <button class="more-card" type="button" data-more-page="plans">
+              <span>oferta</span>
+              <strong>Planos</strong>
+              <small>Valores e aulas por semana.</small>
+            </button>
+            <button class="more-card" type="button" data-more-page="reports">
+              <span>gestao</span>
+              <strong>Relatorios</strong>
+              <small>Frequencia, pendencias e pontos de atencao.</small>
+            </button>
+            <button class="more-card" type="button" data-more-page="data">
+              <span>sistema</span>
+              <strong>Dados</strong>
+              <small>Demo, backup, importacao e CSV.</small>
+            </button>
+            <button class="more-card" type="button" data-more-page="roadmap">
+              <span>produto</span>
+              <strong>Roadmap</strong>
+              <small>Fases pensadas para virar sistema real.</small>
+            </button>
+            <button class="more-card" type="button" data-more-action="theme">
+              <span>tema</span>
+              <strong>Claro / escuro</strong>
+              <small>Alternar visual do painel.</small>
+            </button>
+            <button class="more-card danger-more" type="button" data-more-action="logout">
+              <span>sessao</span>
+              <strong>Sair</strong>
+              <small>Voltar para a tela do PIN.</small>
+            </button>
+          </div>
+        </div>
+      </section>
     </main>
 
     <div class="modal-wrap" id="studentModal" aria-hidden="true">
@@ -457,6 +501,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="app.js?v=20260602-foco"></script>
+    <script src="app.js?v=20260602-mais"></script>
   </body>
 </html>

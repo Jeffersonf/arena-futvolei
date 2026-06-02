@@ -169,6 +169,10 @@ select {
   gap: 6px;
 }
 
+.mobile-only {
+  display: none;
+}
+
 .nav-item,
 .ghost-btn,
 .soft-btn,
@@ -853,6 +857,58 @@ h2 {
   border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
 }
 
+.mobile-only-page {
+  display: none;
+}
+
+.more-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.more-card {
+  display: grid;
+  align-content: start;
+  min-height: 104px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  background: var(--panel2);
+  color: var(--text);
+  text-align: left;
+}
+
+.more-card span,
+.more-card strong,
+.more-card small {
+  display: block;
+}
+
+.more-card span {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.more-card strong {
+  margin-top: 8px;
+  font-size: 18px;
+}
+
+.more-card small {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.danger-more strong {
+  color: var(--bad);
+}
+
 .modal-wrap {
   position: fixed;
   inset: 0;
@@ -1150,6 +1206,18 @@ select[multiple] {
     display: none;
   }
 
+  .mobile-only {
+    display: inline-grid;
+  }
+
+  .secondary-nav {
+    display: none;
+  }
+
+  .mobile-only-page.active {
+    display: block;
+  }
+
   .nav {
     display: flex;
     gap: 7px;
@@ -1165,9 +1233,9 @@ select[multiple] {
 
   .nav-item {
     flex: 0 0 auto;
-    min-width: 84px;
+    min-width: 64px;
     min-height: 48px;
-    padding: 0 10px;
+    padding: 0 8px;
     text-align: center;
     white-space: nowrap;
   }
@@ -1230,6 +1298,7 @@ select[multiple] {
   .student-grid,
   .filters,
   .roadmap-grid,
+  .more-grid,
   .form-row {
     grid-template-columns: 1fr;
   }

@@ -3,6 +3,7 @@
 const STORE_KEY = 'fv_school_state_v2';
 const PIN_KEY = 'tlf_admin_pin';
 const PAGE_KEY = 'tlf_last_page';
+const MOBILE_MORE_PAGES = ['plans', 'reports', 'roadmap', 'data'];
 const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const currentMonth = () => todayISO().slice(0, 7);
@@ -377,10 +378,13 @@ function toast(message) {
 }
 
 function setPage(page) {
+  const isMobile = window.matchMedia('(max-width: 620px)').matches;
+  if (page === 'more' && !isMobile) page = 'dashboard';
   if (!document.getElementById(`page-${page}`)) return;
+  const moreActive = isMobile && MOBILE_MORE_PAGES.includes(page);
   document.querySelectorAll('.page').forEach((el) => el.classList.toggle('active', el.id === `page-${page}`));
   document.querySelectorAll('.nav-item').forEach((el) => {
-    const active = el.dataset.page === page;
+    const active = el.dataset.page === page || (moreActive && el.dataset.page === 'more');
     el.classList.toggle('active', active);
     if (active) el.scrollIntoView({ block: 'nearest', inline: 'center' });
   });
@@ -390,7 +394,19 @@ function setPage(page) {
 }
 
 function restorePage() {
-  setPage(localStorage.getItem(PAGE_KEY) || 'dashboard');
+  const saved = localStorage.getItem(PAGE_KEY) || 'dashboard';
+  setPage(saved === 'more' && !window.matchMedia('(max-width: 620px)').matches ? 'dashboard' : saved);
+}
+
+function toggleTheme() {
+  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem('fv_theme', next);
+}
+
+function logout() {
+  localStorage.removeItem(PIN_KEY);
+  showLogin(true);
 }
 
 function render() {
@@ -1863,18 +1879,14 @@ function bindEvents() {
     const plan = planById(event.target.value);
     if (plan) document.getElementById('studentFee').value = plan.preco || '';
   });
-  document.getElementById('themeBtn').addEventListener('click', () => {
-    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.dataset.theme = next;
-    localStorage.setItem('fv_theme', next);
-  });
-  document.getElementById('logoutBtn').addEventListener('click', () => {
-    localStorage.removeItem(PIN_KEY);
-    showLogin(true);
-  });
+  document.getElementById('themeBtn').addEventListener('click', toggleTheme);
+  document.getElementById('logoutBtn').addEventListener('click', logout);
   document.body.addEventListener('click', (event) => {
-    const target = event.target.closest('[data-report-student],[data-edit-student],[data-delete-student],[data-edit-class],[data-delete-class],[data-duplicate-class],[data-class-status],[data-copy-class],[data-edit-plan],[data-delete-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-copy-charge],[data-edit-wait],[data-delete-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day]');
+    const target = event.target.closest('[data-report-student],[data-edit-student],[data-delete-student],[data-edit-class],[data-delete-class],[data-duplicate-class],[data-class-status],[data-copy-class],[data-edit-plan],[data-delete-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-copy-charge],[data-edit-wait],[data-delete-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day],[data-more-page],[data-more-action]');
     if (!target) return;
+    if (target.dataset.morePage) setPage(target.dataset.morePage);
+    if (target.dataset.moreAction === 'theme') toggleTheme();
+    if (target.dataset.moreAction === 'logout') logout();
     if (target.dataset.reportStudent) openStudentReport(target.dataset.reportStudent);
     if (target.dataset.editStudent) openStudent(target.dataset.editStudent);
     if (target.dataset.deleteStudent) deleteStudent(target.dataset.deleteStudent).catch((err) => toast(err.message));
@@ -1916,7 +1928,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260602-foco', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260602-mais', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {
