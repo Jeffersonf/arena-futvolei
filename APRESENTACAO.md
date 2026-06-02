@@ -35,11 +35,11 @@ Um painel simples para tirar a escola do improviso: menos planilha solta, menos 
 - Demo online no GitHub Pages.
 - PIN simples para piloto.
 - Mais de 60 itens ficticios entre alunos, aulas, pagamentos e interessados.
-- Dashboard operacional.
+- Dashboard operacional com foco em proxima aula, cobrancas e interessados.
 - Cadastro de alunos, planos e mensalidades.
-- Relatorio individual do aluno.
-- Agenda de aulas com visao de hoje e calendario previsto.
-- Presenca por aula, todos presentes e avulsos.
+- Relatorio individual do aluno com perfil, plano, pagamento, frequencia e historico.
+- Agenda de aulas com visao de hoje, horario destacado e calendario previsto.
+- Presenca por aula com resumo visual, todos presentes e avulsos.
 - Tipo da aula: regular, experimental, reposicao, avulso ou evento.
 - Filtros de aulas por data, tipo e status.
 - Status rapido de aula: confirmar, finalizar, cancelar e reabrir.
@@ -52,6 +52,8 @@ Um painel simples para tirar a escola do improviso: menos planilha solta, menos 
 - PWA instalavel no celular.
 - Backend Node com SQLite para uso real.
 - Preparacao para deploy com Docker/Render.
+- Polimento visual mobile/iPhone e desktop/PC.
+- QA visual local com screenshots mobile e desktop.
 
 ## O que falta confirmar com ele
 
@@ -78,7 +80,7 @@ Status: pronta.
 
 ### Versao 0.2 - Piloto rapido no iPhone
 
-Status: em andamento.
+Status: quase pronta para apresentacao.
 
 - Fluxo de aula de hoje com poucos toques.
 - Relatorio individual ao clicar no aluno.
@@ -86,6 +88,8 @@ Status: em andamento.
 - Acoes de WhatsApp em aluno, aula e cobranca.
 - Lista de espera com urgencia de resposta.
 - Ajustes finos de tela pequena.
+- Navegacao inferior com tela Mais.
+- Cards compactos, estados visuais e resumo de presenca.
 
 ### Versao 0.3 - Operacao interna real
 

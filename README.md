@@ -72,6 +72,24 @@ http://localhost:3020
 
 Tambem da para abrir `index.html` diretamente no navegador para usar em modo local.
 
+Live local usado durante o polimento visual:
+
+```bash
+npm run live
+```
+
+Depois acesse:
+
+```text
+http://127.0.0.1:4280/
+```
+
+QA visual local:
+
+```bash
+npm run visual:check
+```
+
 ## Uso real online
 
 Para rodar como sistema de uso diario, use o servidor Node com SQLite persistente. Configure pelo menos:

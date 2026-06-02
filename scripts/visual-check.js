@@ -1,7 +1,9 @@
 const { chromium } = require('playwright');
+const fs = require('fs');
 
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
+const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260602-polish11';
 
 const cases = [
   { name: 'mobile-login', viewport: { width: 390, height: 844 }, page: null },
@@ -19,13 +21,17 @@ async function login(page) {
 }
 
 (async () => {
-  const fs = require('fs');
+  fs.rmSync(outDir, { recursive: true, force: true });
   fs.mkdirSync(outDir, { recursive: true });
   const browser = await chromium.launch({ headless: true });
   for (const item of cases) {
     const context = await browser.newContext({ viewport: item.viewport, deviceScaleFactor: 1 });
     const page = await context.newPage();
     await page.goto(`${baseUrl}?visual=${item.name}`, { waitUntil: 'networkidle' });
+    const assetVersion = await page.locator('script[src*="app.js"]').getAttribute('src');
+    if (baseUrl.includes('127.0.0.1') && !assetVersion.includes(expectedAssetVersion)) {
+      throw new Error(`${item.name}: asset version inesperada (${assetVersion})`);
+    }
     if (item.page) {
       await login(page);
       await page.evaluate((target) => window.localStorage.setItem('tlf_last_page', target), item.page);
