@@ -1563,7 +1563,7 @@ select[multiple] {
 
   .nav {
     display: flex;
-    gap: 7px;
+    gap: 5px;
     overflow-x: auto;
     padding: 0;
     scrollbar-width: none;
@@ -1576,11 +1576,12 @@ select[multiple] {
 
   .nav-item {
     flex: 0 0 auto;
-    min-width: 64px;
+    min-width: 58px;
     min-height: 48px;
-    padding: 0 8px;
+    padding: 0 6px;
     text-align: center;
     white-space: nowrap;
+    font-size: 13px;
   }
 
   .topbar {
@@ -1902,13 +1903,4 @@ select[multiple] {
   .roster-list {
     grid-template-columns: 1fr;
   }
-
-  .kpi-grid,
-  .quick-actions,
-  .focus-strip,
-  .finance-summary,
-  .report-grid {
-    grid-template-columns: 1fr;
-  }
-
 }
