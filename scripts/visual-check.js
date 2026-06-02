@@ -3,7 +3,7 @@ const fs = require('fs');
 
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
-const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260602-glass3';
+const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260602-glass5';
 
 const cases = [
   { name: 'mobile-login', viewport: { width: 390, height: 844 }, page: null },
