@@ -653,16 +653,26 @@ function renderClassesTodayPlanner() {
   target.innerHTML = classes.length ? `${summary}${classes.map((item) => {
     const enrolled = classStudents(item);
     const extras = classExtras(item);
+    const capacity = Number(item.capacidade || 8);
+    const presentCount = enrolled.filter((student) => item.presencas?.[student.aluno_id || student.id] || student.presente).length;
     return `
-      <article class="today-class">
+      <article class="today-class class-${cssToken(item.status || 'Marcada')} type-${cssToken(classType(item))}">
         <div class="today-class-head">
-          <div>
-            <strong>${escapeHTML(item.horario)} - ${escapeHTML(item.turma || 'Turma')}</strong>
-            <span>${escapeHTML(item.professor || 'Professor nao informado')} - ${enrolled.length}/${item.capacidade || 8} previstos</span>
+          <div class="class-timebox">
+            <span>${escapeHTML(item.horario)}</span>
+            <small>${escapeHTML(classType(item))}</small>
+          </div>
+          <div class="class-main">
+            <strong>${escapeHTML(item.turma || 'Turma')}</strong>
+            <span>${escapeHTML(item.professor || 'Professor nao informado')}</span>
+            <div class="pill-row">
+              <span class="pill">${enrolled.length}/${capacity} previstos</span>
+              <span class="pill ${presentCount >= enrolled.length && enrolled.length ? 'ok' : 'warn'}">${presentCount}/${enrolled.length} presentes</span>
+              ${extras.length ? `<span class="pill warn">${extras.length} fora da lista</span>` : ''}
+              <span class="pill">${escapeHTML(item.status || 'Marcada')}</span>
+            </div>
           </div>
           <div class="actions">
-            <span class="pill warn">${escapeHTML(classType(item))}</span>
-            <span class="pill">${escapeHTML(item.status || 'Marcada')}</span>
             <a class="mini-btn" href="${whatsappShareUrl(classShareText(item))}" target="_blank" rel="noopener">WhatsApp</a>
             <button class="mini-btn" data-copy-class="${item.id}">Copiar lista</button>
             <button class="mini-btn" data-attendance="${item.id}">Presencas</button>
@@ -1956,7 +1966,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260602-polish6', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260602-polish7', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {

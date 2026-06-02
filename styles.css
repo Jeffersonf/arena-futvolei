@@ -867,10 +867,10 @@ h2 {
 }
 
 .today-class-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
 }
 
 .today-class-head strong,
@@ -880,6 +880,46 @@ h2 {
 
 .today-class-head span {
   margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.class-timebox {
+  display: grid;
+  min-width: 74px;
+  gap: 5px;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--line));
+  border-radius: var(--radius);
+  padding: 9px;
+  background: color-mix(in srgb, var(--soft) 78%, var(--accent) 8%);
+  text-align: center;
+}
+
+.class-timebox span {
+  margin: 0;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.class-timebox small {
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.class-main {
+  min-width: 0;
+}
+
+.class-main strong {
+  font-size: 17px;
+}
+
+.class-main > span {
   color: var(--muted);
   font-size: 12px;
 }
@@ -1698,11 +1738,22 @@ select[multiple] {
 
   .today-class-head {
     display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
     gap: 9px;
   }
 
   .today-class-head .actions {
     display: flex;
+    grid-column: 1 / -1;
+  }
+
+  .class-timebox {
+    min-width: 66px;
+    padding: 8px;
+  }
+
+  .class-timebox span {
+    font-size: 18px;
   }
 
   .student-profile {
