@@ -1412,9 +1412,14 @@ function openAttendance(classId) {
   activeAttendanceClassId = classId;
   const ids = classStudentIds(item);
   const extras = classExtras(item);
-  document.getElementById('attendanceTitle').textContent = `${formatDate(item.data)} as ${item.horario} - ${item.turma || 'Turma'} (${classType(item)})`;
+  const presentCount = ids.filter((id) => item.presencas?.[id] || item.presencas?.[String(id)]).length;
+  document.getElementById('attendanceTitle').innerHTML = `
+    <span>${formatDate(item.data)} as ${escapeHTML(item.horario)} - ${escapeHTML(item.turma || 'Turma')}</span>
+    <strong>${presentCount}/${ids.length} presentes</strong>
+    <small>${escapeHTML(classType(item))} - ${escapeHTML(item.status || 'Marcada')} - ${extras.length} fora da lista</small>
+  `;
   document.getElementById('attendanceList').innerHTML = ids.map(studentById).filter(Boolean).map((student) => `
-    <div class="check-item">
+    <div class="check-item ${item.presencas?.[student.id] ? 'checked-in' : ''}">
       <div>
         <strong>${escapeHTML(student.nome)}</strong>
         <p class="meta">${escapeHTML(student.plano_nome || 'sem plano')} - ${weeklyAttendanceCount(student.id, item.data)}/${planWeeklyTarget(student) || '-'} na semana</p>
@@ -1951,7 +1956,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260602-polish5', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260602-polish6', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {

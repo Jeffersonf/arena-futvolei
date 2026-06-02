@@ -1145,6 +1145,40 @@ select[multiple] {
   margin-top: 14px;
 }
 
+#attendanceTitle {
+  display: grid;
+  gap: 4px;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--line));
+  border-radius: var(--radius);
+  padding: 12px;
+  background: color-mix(in srgb, var(--panel) 82%, var(--accent) 7%);
+}
+
+#attendanceTitle span,
+#attendanceTitle strong,
+#attendanceTitle small {
+  display: block;
+}
+
+#attendanceTitle span {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+#attendanceTitle strong {
+  color: var(--text);
+  font-size: 24px;
+  line-height: 1;
+}
+
+#attendanceTitle small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .extra-attendance {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1213,9 +1247,15 @@ select[multiple] {
   background: var(--panel);
 }
 
+.check-item.checked-in {
+  border-color: color-mix(in srgb, #2ecc71 42%, var(--line));
+  background: color-mix(in srgb, var(--panel) 88%, #2ecc71 5%);
+}
+
 .check-item button.present {
-  background: color-mix(in srgb, var(--accent) 22%, var(--soft));
-  color: var(--accent);
+  border-color: color-mix(in srgb, #2ecc71 45%, var(--line));
+  background: color-mix(in srgb, #2ecc71 18%, var(--soft));
+  color: #2ecc71;
 }
 
 .empty {
