@@ -1062,6 +1062,10 @@ select[multiple] {
 }
 
 @media (max-width: 620px) {
+  body {
+    background: linear-gradient(135deg, var(--bg), var(--bg2));
+  }
+
   .login-box {
     width: calc(100vw - 28px);
     max-width: 300px;
@@ -1074,7 +1078,7 @@ select[multiple] {
   }
 
   .app {
-    padding: 14px 10px calc(92px + env(safe-area-inset-bottom));
+    padding: 12px 10px calc(92px + env(safe-area-inset-bottom));
   }
 
   .sidebar {
@@ -1121,7 +1125,7 @@ select[multiple] {
 
   h1 {
     max-width: calc(100vw - 24px);
-    font-size: 22px;
+    font-size: 20px;
     line-height: 1.08;
   }
 
@@ -1130,18 +1134,26 @@ select[multiple] {
   }
 
   .panel {
-    padding: 12px;
+    border: 0;
+    padding: 0;
+    background: transparent;
     box-shadow: none;
   }
 
   .panel-head {
     display: grid;
-    gap: 10px;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding: 0 2px;
   }
 
   .topbar {
-    gap: 12px;
-    margin-bottom: 14px;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .topbar > div:first-child {
+    display: none;
   }
 
   .top-actions {
@@ -1152,6 +1164,18 @@ select[multiple] {
 
   .top-actions .global-search {
     grid-column: 1 / -1;
+  }
+
+  .global-search input,
+  .search,
+  .filters input,
+  .filters select {
+    min-height: 46px;
+  }
+
+  .filters {
+    gap: 7px;
+    margin-bottom: 10px;
   }
 
   .student-grid,
@@ -1169,25 +1193,69 @@ select[multiple] {
   }
 
   .kpi {
-    padding: 13px;
+    padding: 11px;
+    background: var(--panel2);
+    box-shadow: none;
+  }
+
+  .kpi span {
+    font-size: 10px;
   }
 
   .kpi strong {
-    font-size: 26px;
+    margin-top: 5px;
+    font-size: 24px;
   }
 
   .quick-action {
-    min-height: 66px;
+    min-height: 58px;
     padding: 10px;
+    box-shadow: none;
+  }
+
+  .quick-action span {
+    font-size: 10px;
   }
 
   .quick-action strong {
     font-size: 14px;
+    margin-top: 5px;
   }
 
   .row-card {
     grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 11px;
+    background: var(--panel2);
+  }
+
+  .student-card,
+  .today-class,
+  .calendar-day,
+  .today-summary,
+  .mini-stat,
+  .roadmap-card {
+    box-shadow: none;
+  }
+
+  .student-card {
     padding: 12px;
+    background: var(--panel2);
+  }
+
+  .link-title,
+  .student-card h3 {
+    font-size: 16px;
+  }
+
+  .meta,
+  .muted {
+    font-size: 12px;
+  }
+
+  .pill {
+    padding: 4px 7px;
+    font-size: 11px;
   }
 
   .actions {
@@ -1205,6 +1273,8 @@ select[multiple] {
   .primary-btn,
   .file-btn {
     min-height: 44px;
+    padding-right: 10px;
+    padding-left: 10px;
   }
 
   .today-class-head {
@@ -1239,6 +1309,10 @@ select[multiple] {
     border-right: 0;
     border-left: 0;
     border-bottom: 0;
+  }
+
+  .section-label {
+    margin: 12px 2px 6px;
   }
 
   .check-item {
