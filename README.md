@@ -28,6 +28,7 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - PWA instalavel no celular
 - Fluxo pensado para uso rapido no iPhone
 - Layout otimizado para navegador mobile
+- Navegacao mobile no rodape para ganhar espaco de tela
 - Backend Node/SQLite inspirado no FinClinica
 - Fallback local com `localStorage` ao abrir o HTML direto
 
