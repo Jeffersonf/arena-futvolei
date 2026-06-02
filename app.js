@@ -718,10 +718,10 @@ function renderPayments() {
   const query = document.getElementById('paymentSearch')?.value.trim().toLowerCase() || '';
   const filter = document.getElementById('paymentStatusFilter')?.value || '';
   document.getElementById('financeSummary').innerHTML = `
-    <article class="mini-stat"><span>Recebido no mês</span><strong>${money.format(paidThisMonth)}</strong></article>
+    <article class="mini-stat kpi-ok"><span>Recebido no mês</span><strong>${money.format(paidThisMonth)}</strong></article>
     <article class="mini-stat"><span>Previsao do mes</span><strong>${money.format(expected)}</strong></article>
-    <article class="mini-stat"><span>Pendências</span><strong>${pending.length}</strong></article>
-    <article class="mini-stat"><span>A receber</span><strong>${money.format(pending.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0))}</strong></article>
+    <article class="mini-stat ${pending.length ? 'kpi-bad' : 'kpi-ok'}"><span>Pendências</span><strong>${pending.length}</strong></article>
+    <article class="mini-stat ${pending.length ? 'kpi-bad' : 'kpi-ok'}"><span>A receber</span><strong>${money.format(pending.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0))}</strong></article>
   `;
   const visibleStudents = state.students.filter((student) => {
     const haystack = `${student.nome} ${student.telefone} ${student.plano_nome}`.toLowerCase();
@@ -733,7 +733,7 @@ function renderPayments() {
     <article class="row-card payment-row ${isPaidForMonth(student, month) ? 'payment-paid' : 'payment-pending'}">
       <div>
         <button class="link-title compact-title" type="button" data-report-student="${student.id}">${escapeHTML(student.nome)}</button>
-        <p class="meta">${money.format(Number(student.mensalidade || 0))} - pago até ${student.pago_ate ? formatDate(student.pago_ate) : 'sem registro'}</p>
+        <p class="meta">${escapeHTML(student.plano_nome || 'sem plano')} - ${money.format(Number(student.mensalidade || 0))} - pago até ${student.pago_ate ? formatDate(student.pago_ate) : 'sem registro'}</p>
         <div class="pill-row">
           <span class="pill ${isPaidForMonth(student, month) ? 'ok' : 'bad'}">${isPaidForMonth(student, month) ? 'em dia' : 'pendente'}</span>
           <span class="pill">vence dia ${dueDay(student)}</span>
@@ -781,7 +781,7 @@ function renderWaitlist() {
     const age = daysBetween(item.data_cadastro || todayISO());
     const needsReply = (item.status || 'Novo') === 'Novo' && age >= 2;
     return `
-    <article class="row-card wait-row wait-${cssToken(item.status || 'Novo')}">
+    <article class="row-card wait-row wait-${cssToken(item.status || 'Novo')} ${needsReply ? 'wait-needs-reply' : ''}">
       <div>
         <h3>${escapeHTML(item.nome)}</h3>
         <p class="meta">${escapeHTML(item.telefone || 'sem telefone')} - ${escapeHTML(item.preferencia || 'sem preferencia')}</p>
@@ -1966,7 +1966,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260602-polish7', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260602-polish8', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {
