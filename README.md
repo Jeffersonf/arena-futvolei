@@ -33,6 +33,7 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Cards mobile mais compactos, com acoes em trilho horizontal
 - Polimento visual global para desktop e iPhone
 - Dashboard com contexto visual de agenda, cobranca e conversao
+- Estados visuais nos cards de alunos, aulas, cobrancas e espera
 - Lembra a ultima aba aberta e melhora fechamento de busca/modal
 - Faixa de foco no dashboard com proxima aula, cobrancas e interessado parado
 - Backend Node/SQLite inspirado no FinClinica

@@ -287,6 +287,10 @@ function extraType(extra = {}) {
   return extra.tipo || extra.tipo_presenca || extra.type || 'Avulso';
 }
 
+function cssToken(value = '') {
+  return String(value || 'item').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'item';
+}
+
 function weekBounds(dateIso = todayISO()) {
   const date = new Date(`${dateIso}T12:00:00`);
   const day = date.getDay();
@@ -716,7 +720,7 @@ function renderPayments() {
     return matchesQuery && matchesFilter;
   }).sort((a, b) => Number(isPaidForMonth(a, month)) - Number(isPaidForMonth(b, month)) || a.nome.localeCompare(b.nome));
   const rows = visibleStudents.map((student) => `
-    <article class="row-card">
+    <article class="row-card payment-row ${isPaidForMonth(student, month) ? 'payment-paid' : 'payment-pending'}">
       <div>
         <button class="link-title compact-title" type="button" data-report-student="${student.id}">${escapeHTML(student.nome)}</button>
         <p class="meta">${money.format(Number(student.mensalidade || 0))} - pago até ${student.pago_ate ? formatDate(student.pago_ate) : 'sem registro'}</p>
@@ -767,7 +771,7 @@ function renderWaitlist() {
     const age = daysBetween(item.data_cadastro || todayISO());
     const needsReply = (item.status || 'Novo') === 'Novo' && age >= 2;
     return `
-    <article class="row-card">
+    <article class="row-card wait-row wait-${cssToken(item.status || 'Novo')}">
       <div>
         <h3>${escapeHTML(item.nome)}</h3>
         <p class="meta">${escapeHTML(item.telefone || 'sem telefone')} - ${escapeHTML(item.preferencia || 'sem preferencia')}</p>
@@ -874,15 +878,16 @@ function studentCard(student) {
   const message = `Oi ${student.nome}, tudo bem? Aqui e do Team Lucao Futevolei.`;
   const weekly = weeklyAttendanceCount(student.id);
   const target = planWeeklyTarget(student);
+  const paid = isPaid(student);
   return `
-    <article class="student-card">
+    <article class="student-card status-${cssToken(student.status || 'Ativo')} payment-${paid ? 'paid' : 'pending'}">
       <button class="link-title" type="button" data-report-student="${student.id}">${escapeHTML(student.nome)}</button>
-      <p class="meta">${escapeHTML(student.telefone || 'sem telefone')}</p>
+      <p class="meta">${escapeHTML(student.telefone || 'sem telefone')} - ${money.format(Number(student.mensalidade || 0))}/mes - vence dia ${dueDay(student)}</p>
       <div class="pill-row">
         <span class="pill">${escapeHTML(student.plano_nome || 'sem plano')}</span>
         <span class="pill">${escapeHTML(student.nivel || 'Iniciante')}</span>
         <span class="pill ${student.status === 'Ativo' ? 'ok' : student.status === 'Experimental' ? 'warn' : ''}">${escapeHTML(student.status || 'Ativo')}</span>
-        <span class="pill ${isPaid(student) ? 'ok' : 'bad'}">${isPaid(student) ? 'em dia' : 'pendente'}</span>
+        <span class="pill ${paid ? 'ok' : 'bad'}">${paid ? 'em dia' : 'pendente'}</span>
         <span class="pill">${weekly}/${target || '-'} na semana</span>
       </div>
       ${student.observacao ? `<p class="meta">${escapeHTML(student.observacao)}</p>` : ''}
@@ -901,7 +906,7 @@ function classRow(item) {
   const present = enrolled.filter((student) => item.presencas?.[student.aluno_id || student.id] || student.presente).length;
   const extras = classExtras(item);
   return `
-    <article class="row-card">
+    <article class="row-card class-row class-${cssToken(item.status || 'Marcada')} type-${cssToken(classType(item))}">
       <div>
         <h3>${formatDate(item.data)} as ${item.horario} - ${escapeHTML(item.turma || 'Turma')}</h3>
         <p class="meta">${escapeHTML(item.professor || 'Professor nao informado')} - ${enrolled.length}/${item.capacidade || 8} aluno(s) previstos</p>
@@ -1938,7 +1943,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260602-polish2', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260602-polish4', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {

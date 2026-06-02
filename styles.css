@@ -303,6 +303,16 @@ select {
   outline: none;
 }
 
+input:focus,
+select:focus,
+.global-search input:focus,
+.search:focus,
+.filters input:focus,
+.filters select:focus {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
 .global-results {
   position: absolute;
   inset: calc(100% + 6px) 0 auto 0;
@@ -391,14 +401,14 @@ h2 {
 
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 12px;
   margin-bottom: 12px;
 }
 
 .focus-strip {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 10px;
   margin-bottom: 12px;
 }
@@ -460,7 +470,7 @@ h2 {
 
 .quick-actions {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 10px;
   margin-bottom: 12px;
 }
@@ -647,13 +657,73 @@ h2 {
 
 .student-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
   gap: 10px;
 }
 
 .student-card {
   padding: 16px;
   box-shadow: none;
+}
+
+.student-card,
+.row-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.student-card::before,
+.row-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: transparent;
+}
+
+.payment-pending::before,
+.class-cancelada::before,
+.wait-perdido::before {
+  background: var(--bad);
+}
+
+.payment-paid::before,
+.status-ativo.payment-paid::before,
+.class-confirmada::before,
+.class-finalizada::before,
+.wait-convertido::before {
+  background: #2ecc71;
+}
+
+.status-experimental::before,
+.type-experimental::before,
+.wait-novo::before,
+.wait-contatado::before,
+.wait-experimental-marcado::before {
+  background: var(--warn);
+}
+
+.class-marcada::before {
+  background: var(--accent);
+}
+
+.payment-pending,
+.class-cancelada {
+  border-color: color-mix(in srgb, var(--bad) 34%, var(--line));
+}
+
+.payment-paid,
+.class-confirmada,
+.class-finalizada {
+  border-color: color-mix(in srgb, #2ecc71 24%, var(--line));
+}
+
+.status-experimental,
+.type-experimental,
+.wait-novo,
+.wait-contatado,
+.wait-experimental-marcado {
+  border-color: color-mix(in srgb, var(--warn) 28%, var(--line));
 }
 
 .student-card .meta,
@@ -705,7 +775,7 @@ h2 {
 
 .filters {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 8px;
   margin-bottom: 14px;
 }
@@ -714,7 +784,7 @@ h2 {
 .roadmap-grid,
 .report-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 10px;
   margin-bottom: 14px;
 }
@@ -745,7 +815,13 @@ h2 {
 }
 
 .section-label {
-  margin: 10px 0 2px;
+  margin: 12px 0 6px;
+}
+
+.section-label + .filters,
+.section-label + .today-planner,
+.section-label + .class-calendar {
+  margin-top: 0;
 }
 
 .today-planner,
@@ -900,14 +976,6 @@ h2 {
 
 .compact-row {
   background: var(--panel2);
-}
-
-.roadmap-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.report-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .report-columns {
