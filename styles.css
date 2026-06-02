@@ -512,6 +512,7 @@ h2 {
 
 .row-card h3 {
   font-size: 16px;
+  line-height: 1.25;
 }
 
 .meta,
@@ -554,6 +555,7 @@ h2 {
   flex-wrap: wrap;
   gap: 6px;
   justify-content: flex-end;
+  max-width: 460px;
 }
 
 .mini-btn {
@@ -583,6 +585,11 @@ h2 {
 .student-card {
   padding: 16px;
   box-shadow: none;
+}
+
+.student-card .meta,
+.row-card .meta {
+  margin-top: 4px;
 }
 
 .student-card h3 {
@@ -1367,8 +1374,8 @@ select[multiple] {
 
   .row-card {
     grid-template-columns: 1fr;
-    gap: 10px;
-    padding: 11px;
+    gap: 9px;
+    padding: 12px;
     background: var(--panel2);
   }
 
@@ -1386,9 +1393,20 @@ select[multiple] {
     background: var(--panel2);
   }
 
+  .student-card,
+  .row-card,
+  .today-class,
+  .today-summary,
+  .calendar-day,
+  .mini-stat,
+  .more-card {
+    border-color: color-mix(in srgb, var(--line) 72%, transparent);
+  }
+
   .link-title,
   .student-card h3 {
     font-size: 16px;
+    line-height: 1.22;
   }
 
   .meta,
@@ -1402,32 +1420,46 @@ select[multiple] {
   }
 
   .actions {
+    flex-wrap: nowrap;
     justify-content: flex-start;
+    max-width: 100%;
     width: 100%;
+    overflow-x: auto;
+    padding: 1px 2px 4px 0;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .actions::-webkit-scrollbar {
+    display: none;
   }
 
   .actions > .mini-btn,
   .actions > a.mini-btn {
-    flex: 1 1 calc(50% - 6px);
+    flex: 0 0 auto;
   }
 
   .mini-btn,
   .soft-btn,
   .primary-btn,
   .file-btn {
-    min-height: 44px;
+    min-height: 42px;
     padding-right: 10px;
     padding-left: 10px;
   }
 
+  .row-card .actions,
+  .student-card .actions {
+    margin-top: 2px;
+  }
+
   .today-class-head {
     display: grid;
-    gap: 12px;
+    gap: 9px;
   }
 
   .today-class-head .actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
   }
 
   .roster-list {
@@ -1476,7 +1508,6 @@ select[multiple] {
 }
 
 @media (max-width: 390px) {
-  .today-class-head .actions,
   .roster-list {
     grid-template-columns: 1fr;
   }
@@ -1489,8 +1520,4 @@ select[multiple] {
     grid-template-columns: 1fr;
   }
 
-  .actions > .mini-btn,
-  .actions > a.mini-btn {
-    flex-basis: 100%;
-  }
 }

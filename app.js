@@ -1928,7 +1928,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260602-mais', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260602-cards', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {
