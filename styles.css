@@ -1160,6 +1160,35 @@ select[multiple] {
   margin-bottom: 14px;
 }
 
+.student-profile {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  background: color-mix(in srgb, var(--panel) 82%, var(--panel2) 18%);
+}
+
+.student-profile::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--accent);
+}
+
+.student-profile.payment-paid::before {
+  background: #2ecc71;
+}
+
+.student-profile.payment-pending::before {
+  background: var(--bad);
+}
+
+.student-profile h2 {
+  font-size: clamp(24px, 4vw, 34px);
+}
+
 .student-report-grid {
   margin-top: 12px;
 }
@@ -1634,6 +1663,14 @@ select[multiple] {
 
   .today-class-head .actions {
     display: flex;
+  }
+
+  .student-profile {
+    padding: 12px;
+  }
+
+  .student-profile .actions {
+    margin-top: 4px;
   }
 
   .roster-list {

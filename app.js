@@ -1019,12 +1019,20 @@ function openStudentReport(id) {
   const nextClasses = summary.history.filter((item) => item.data >= todayISO()).slice(0, 6);
   const recentClasses = [...summary.history].filter((item) => item.data < todayISO()).reverse().slice(0, 6);
   const payments = (state.payments || []).filter((item) => String(item.aluno_id) === String(id)).slice(0, 6);
+  const paid = isPaid(student);
+  const plan = `${escapeHTML(student.plano_nome || 'sem plano')} - ${money.format(Number(student.mensalidade || 0))}/mes`;
   document.getElementById('studentReport').innerHTML = `
-    <div class="report-hero">
+    <div class="report-hero student-profile ${paid ? 'payment-paid' : 'payment-pending'}">
       <div>
         <span class="section-label">Relatorio do aluno</span>
         <h2>${escapeHTML(student.nome)}</h2>
-        <p class="meta">${escapeHTML(student.telefone || 'sem telefone')} - ${escapeHTML(student.plano_nome || 'sem plano')} - vence dia ${dueDay(student)} - ${escapeHTML(student.nivel || 'sem nivel')}</p>
+        <p class="meta">${escapeHTML(student.telefone || 'sem telefone')} - ${plan} - vence dia ${dueDay(student)}</p>
+        <div class="pill-row">
+          <span class="pill ${student.status === 'Ativo' ? 'ok' : student.status === 'Experimental' ? 'warn' : ''}">${escapeHTML(student.status || 'Ativo')}</span>
+          <span class="pill">${escapeHTML(student.nivel || 'sem nivel')}</span>
+          <span class="pill ${paid ? 'ok' : 'bad'}">${paid ? 'pagamento em dia' : 'pagamento pendente'}</span>
+          <span class="pill">${weekly}/${target || '-'} na semana</span>
+        </div>
       </div>
       <div class="actions">
         ${student.telefone ? `<a class="mini-btn" href="${whatsappUrl(student.telefone, `Oi ${student.nome}, tudo bem? Aqui e do Team Lucao Futevolei.`)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
@@ -1036,7 +1044,7 @@ function openStudentReport(id) {
       <article class="mini-stat"><span>Semana atual</span><strong>${weekly}/${target || '-'}</strong></article>
       <article class="mini-stat"><span>Presencas</span><strong>${summary.present}/${summary.enrolled}</strong></article>
       <article class="mini-stat"><span>Comparecimento</span><strong>${summary.rate}%</strong></article>
-      <article class="mini-stat"><span>Pagamento</span><strong>${isPaid(student) ? 'Em dia' : 'Pendente'}</strong></article>
+      <article class="mini-stat ${paid ? 'kpi-ok' : 'kpi-bad'}"><span>Pagamento</span><strong>${paid ? 'Em dia' : 'Pendente'}</strong></article>
     </div>
     ${student.observacao ? `<p class="report-note">${escapeHTML(student.observacao)}</p>` : ''}
     <div class="two-col report-columns">
@@ -1943,7 +1951,7 @@ function bindEvents() {
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260602-polish4', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260602-polish5', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   loadData().catch((err) => {
