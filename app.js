@@ -3,7 +3,7 @@
 const STORE_KEY = 'fv_school_state_v2';
 const PIN_KEY = 'tlf_admin_pin';
 const PAGE_KEY = 'tlf_last_page';
-const MOBILE_MORE_PAGES = ['plans', 'reports'];
+const MOBILE_MORE_PAGES = ['waitlist', 'plans', 'reports'];
 const REMOVED_PAGES = ['roadmap', 'data'];
 const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const todayISO = () => new Date().toISOString().slice(0, 10);

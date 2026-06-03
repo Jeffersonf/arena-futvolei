@@ -3,8 +3,8 @@ const fs = require('fs');
 
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
-const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260603-booking1';
-const expectedPolishVersion = process.env.VISUAL_POLISH_VERSION || '20260603-visual6';
+const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260603-booking2';
+const expectedPolishVersion = process.env.VISUAL_POLISH_VERSION || '20260603-visual7';
 
 const cases = [
   { name: 'mobile-booking', viewport: { width: 390, height: 844 }, page: null },
@@ -15,6 +15,7 @@ const cases = [
   { name: 'mobile-bookings', viewport: { width: 390, height: 844 }, page: 'bookings' },
   { name: 'mobile-student-report', viewport: { width: 390, height: 844 }, page: 'students', action: 'student-report' },
   { name: 'mobile-attendance', viewport: { width: 390, height: 844 }, page: 'classes', action: 'attendance' },
+  { name: 'mobile-more', viewport: { width: 390, height: 844 }, page: 'more' },
   { name: 'desktop-dashboard', viewport: { width: 1440, height: 950 }, page: 'dashboard' },
   { name: 'desktop-students', viewport: { width: 1440, height: 950 }, page: 'students' },
   { name: 'desktop-bookings', viewport: { width: 1440, height: 950 }, page: 'bookings' },
