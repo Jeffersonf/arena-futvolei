@@ -1,0 +1,366 @@
+:root {
+  --bg: #08090b;
+  --bg2: #101315;
+  --panel: rgba(22, 24, 27, .78);
+  --panel2: rgba(32, 35, 38, .58);
+  --glass: rgba(255, 255, 255, .075);
+  --glass-strong: rgba(255, 255, 255, .12);
+  --line: rgba(255, 255, 255, .13);
+  --muted: rgba(245, 247, 250, .64);
+  --soft: rgba(255, 255, 255, .075);
+  --accent: #ff4050;
+  --aqua: #5eead4;
+  --warn: #f5c451;
+  --bad: #fb7185;
+  --ok: #2dd4bf;
+  --shadow: 0 24px 60px rgba(0, 0, 0, .34);
+  --shadow-soft: 0 14px 34px rgba(0, 0, 0, .2);
+  --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, .12);
+  --hairline: rgba(255, 255, 255, .055);
+  --blur: blur(18px) saturate(145%);
+}
+
+[data-theme="light"] {
+  --bg: #f4f6f8;
+  --bg2: #e9eef2;
+  --panel: rgba(255, 255, 255, .78);
+  --panel2: rgba(255, 255, 255, .62);
+  --glass: rgba(255, 255, 255, .55);
+  --glass-strong: rgba(255, 255, 255, .82);
+  --line: rgba(15, 23, 42, .11);
+  --muted: rgba(15, 23, 42, .62);
+  --soft: rgba(15, 23, 42, .055);
+  --accent: #d91f35;
+  --aqua: #0891b2;
+  --warn: #a16207;
+  --bad: #be123c;
+  --ok: #0f766e;
+}
+
+body {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .035), transparent 36vh),
+    linear-gradient(135deg, var(--bg), var(--bg2));
+}
+
+body::before {
+  background:
+    linear-gradient(90deg, rgba(255, 64, 80, .07), transparent 34%),
+    linear-gradient(270deg, rgba(94, 234, 212, .055), transparent 38%);
+  opacity: 1;
+}
+
+.app {
+  padding-top: 28px;
+}
+
+.sidebar,
+.topbar,
+.panel,
+.kpi,
+.focus-card,
+.quick-action,
+.row-card,
+.student-row,
+.student-card,
+.mini-stat,
+.today-class,
+.calendar-day,
+.today-summary,
+.modal,
+.booking-shell,
+.booking-form,
+.booking-board,
+.booking-class-card,
+.mobile-top-brand,
+.global-results {
+  border-color: color-mix(in srgb, var(--line) 82%, transparent);
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  box-shadow: var(--shadow-soft), var(--inner-highlight), 0 0 0 1px var(--hairline);
+}
+
+.panel,
+.kpi,
+.focus-card,
+.quick-action,
+.row-card,
+.student-row,
+.student-card,
+.mini-stat,
+.today-class,
+.calendar-day,
+.today-summary,
+.booking-class-card,
+.mobile-top-brand {
+  border-radius: 8px;
+}
+
+.topbar {
+  border-radius: 10px;
+  padding: 20px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .025)),
+    color-mix(in srgb, var(--panel) 92%, transparent);
+}
+
+.topbar h1 {
+  max-width: 640px;
+  font-size: clamp(28px, 2.45vw, 38px);
+  line-height: 1.04;
+  font-weight: 850;
+}
+
+.sidebar {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .055), transparent 34%),
+    color-mix(in srgb, var(--panel) 94%, transparent);
+}
+
+.brand-mark {
+  border-color: rgba(255, 255, 255, .2);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .24), 0 0 0 1px rgba(255, 64, 80, .22);
+}
+
+.nav-item,
+.ghost-btn,
+.soft-btn,
+.primary-btn,
+.file-btn,
+.mini-btn,
+.close {
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .095), rgba(255, 255, 255, .04));
+  box-shadow: var(--inner-highlight), 0 0 0 1px var(--hairline);
+}
+
+.nav-item.active {
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .045)),
+    color-mix(in srgb, var(--accent) 18%, var(--panel));
+  box-shadow: 0 10px 22px rgba(255, 64, 80, .1), var(--inner-highlight);
+}
+
+.primary-btn {
+  border-color: color-mix(in srgb, var(--accent) 54%, var(--line));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .17), transparent),
+    linear-gradient(135deg, #ff4d5e, #e62d42);
+  box-shadow: 0 14px 28px rgba(255, 64, 80, .22), var(--inner-highlight);
+}
+
+.soft-btn,
+.mini-btn {
+  color: color-mix(in srgb, var(--text) 88%, var(--accent));
+}
+
+.eyebrow,
+.panel-head span,
+.side-card span,
+.section-label,
+.quick-action span,
+.focus-card span,
+.mini-stat span,
+.more-card span,
+.form-group legend {
+  color: color-mix(in srgb, var(--accent) 70%, #ffffff 30%);
+  letter-spacing: .1em;
+}
+
+.focus-card,
+.quick-action:first-child {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .065), rgba(255, 255, 255, .02)),
+    color-mix(in srgb, var(--panel) 91%, var(--accent) 4%);
+}
+
+.focus-card,
+.quick-action,
+.kpi,
+.mini-stat {
+  border-color: color-mix(in srgb, var(--line) 86%, transparent);
+}
+
+.focus-live,
+.quick-action:first-child {
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--line));
+}
+
+.focus-warn,
+.kpi-warn {
+  border-color: color-mix(in srgb, var(--warn) 24%, var(--line));
+  background: color-mix(in srgb, var(--panel) 94%, var(--warn) 3%);
+}
+
+.focus-danger,
+.kpi-bad {
+  border-color: color-mix(in srgb, var(--bad) 26%, var(--line));
+  background: color-mix(in srgb, var(--panel) 94%, var(--bad) 3%);
+}
+
+.focus-ok,
+.kpi-ok,
+.payment-paid,
+.booking-aprovado {
+  border-color: color-mix(in srgb, var(--ok) 24%, var(--line));
+}
+
+.row-card::before,
+.student-card::before,
+.student-row::before {
+  width: 2px;
+  opacity: .78;
+}
+
+.payment-pending::before,
+.class-cancelada::before,
+.wait-perdido::before {
+  background: color-mix(in srgb, var(--bad) 72%, transparent);
+}
+
+.payment-paid::before,
+.status-ativo.payment-paid::before,
+.class-confirmada::before,
+.class-finalizada::before,
+.wait-convertido::before {
+  background: color-mix(in srgb, var(--ok) 76%, transparent);
+}
+
+.pill {
+  border-color: color-mix(in srgb, var(--line) 76%, transparent);
+  background: rgba(255, 255, 255, .07);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1);
+}
+
+.pill.ok,
+.ok {
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 38%, var(--line));
+  background: color-mix(in srgb, var(--ok) 12%, transparent);
+}
+
+.pill.warn,
+.warn {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 38%, var(--line));
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+}
+
+.pill.bad,
+.bad {
+  color: var(--bad);
+  border-color: color-mix(in srgb, var(--bad) 38%, var(--line));
+  background: color-mix(in srgb, var(--bad) 12%, transparent);
+}
+
+input,
+select {
+  border-color: color-mix(in srgb, var(--line) 86%, transparent);
+  background: rgba(255, 255, 255, .07);
+}
+
+input:focus,
+select:focus,
+.search:focus {
+  border-color: color-mix(in srgb, var(--aqua) 42%, var(--accent));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--aqua) 14%, transparent);
+}
+
+.booking-wall,
+.login-wall {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .04), transparent 42%),
+    linear-gradient(135deg, var(--bg), var(--bg2));
+}
+
+.booking-hero h1 {
+  color: var(--text);
+}
+
+.booking-logo,
+.login-logo {
+  border-radius: 18px;
+}
+
+.theme-float {
+  border-color: rgba(255, 255, 255, .18);
+  background: rgba(255, 255, 255, .08);
+  backdrop-filter: var(--blur);
+}
+
+@media (max-width: 620px) {
+  body::before {
+    background: linear-gradient(180deg, rgba(255, 255, 255, .045), transparent 42vh);
+  }
+
+  .app {
+    padding-top: 12px;
+  }
+
+  .sidebar {
+    background: rgba(18, 20, 23, .86);
+    backdrop-filter: blur(18px) saturate(150%);
+  }
+
+  .nav-item {
+    min-width: 62px;
+    border-radius: 14px;
+    font-size: 12px;
+  }
+
+  .top-actions {
+    gap: 8px;
+  }
+
+  .top-actions .primary-btn,
+  .top-actions .soft-btn {
+    min-height: 44px;
+  }
+
+  .mobile-top-brand,
+  .global-search input,
+  .search,
+  .filters input,
+  .filters select {
+    border-radius: 10px;
+  }
+
+  .kpi-grid,
+  .quick-actions,
+  .finance-summary,
+  .report-grid {
+    gap: 8px;
+  }
+
+  .kpi,
+  .mini-stat {
+    min-height: 82px;
+  }
+
+  .row-card,
+  .student-row,
+  .today-class {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .018)),
+      rgba(27, 30, 33, .78);
+  }
+
+  .student-plan,
+  .student-frequency,
+  .student-payment {
+    background: rgba(255, 255, 255, .045);
+  }
+
+  .booking-shell {
+    background: rgba(22, 24, 27, .76);
+  }
+
+  .booking-class-card {
+    min-height: 96px;
+  }
+
+  .modal {
+    border-radius: 14px 14px 0 0;
+    background: rgba(24, 26, 29, .94);
+  }
+}
