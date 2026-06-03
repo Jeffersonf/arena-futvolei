@@ -664,11 +664,14 @@ function renderBookings() {
     const full = item ? classStudentIds(item).length >= Number(item.capacidade || 8) : false;
     return `
       <article class="row-card booking-request booking-${cssToken(status)}">
-        <div>
-          <h3>${escapeHTML(booking.nome)}</h3>
-          <p class="meta">${escapeHTML(booking.telefone || 'sem WhatsApp')} - ${item ? `${formatDate(item.data)} as ${item.horario} - ${escapeHTML(item.turma || 'Turma')}` : 'aula removida'}</p>
-          <div class="pill-row">
+        <div class="booking-main">
+          <div class="booking-titleline">
+            <h3>${escapeHTML(booking.nome)}</h3>
             <span class="pill ${bookingStatusTone(status)}">${escapeHTML(status)}</span>
+          </div>
+          <p class="meta">${escapeHTML(booking.telefone || 'sem WhatsApp')}</p>
+          <p class="booking-class-meta">${item ? `${formatDate(item.data)} as ${item.horario} - ${escapeHTML(item.turma || 'Turma')}` : 'aula removida'}</p>
+          <div class="pill-row">
             ${item ? `<span class="pill ${full ? 'bad' : 'ok'}">${classStudentIds(item).length}/${item.capacidade || 8} vagas</span>` : ''}
             ${booking.criado_em ? `<span class="pill">${formatDate(booking.criado_em)}</span>` : ''}
           </div>
