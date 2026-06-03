@@ -305,6 +305,36 @@ select:focus,
   backdrop-filter: var(--blur);
 }
 
+.today-class,
+.class-row {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .018)),
+    color-mix(in srgb, var(--panel) 94%, var(--aqua) 2%);
+}
+
+.class-timebox {
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .025)),
+    color-mix(in srgb, var(--accent) 16%, var(--panel));
+}
+
+.today-class .actions .mini-btn,
+.class-row .actions .mini-btn {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .085), rgba(255, 255, 255, .035)),
+    color-mix(in srgb, var(--panel) 94%, transparent);
+}
+
+.roster-person {
+  background: color-mix(in srgb, var(--glass) 82%, transparent);
+}
+
+.roster-person.present {
+  border-color: color-mix(in srgb, var(--ok) 44%, var(--line));
+  background: color-mix(in srgb, var(--ok) 13%, transparent);
+}
+
 .wide-modal .close {
   z-index: 3;
 }
@@ -350,6 +380,13 @@ select:focus,
     min-width: 62px;
     border-radius: 14px;
     font-size: 12px;
+  }
+
+  .nav-item.active {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, .13), rgba(255, 255, 255, .045)),
+      color-mix(in srgb, var(--accent) 14%, var(--panel));
+    box-shadow: var(--inner-highlight), 0 0 0 1px rgba(255, 255, 255, .04);
   }
 
   .top-actions {
@@ -404,8 +441,8 @@ select:focus,
   .student-row,
   .today-class {
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .018)),
-      rgba(27, 30, 33, .78);
+      linear-gradient(180deg, rgba(255, 255, 255, .048), rgba(255, 255, 255, .016)),
+      rgba(24, 27, 30, .76);
   }
 
   .student-plan,
