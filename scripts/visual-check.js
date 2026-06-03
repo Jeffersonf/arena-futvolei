@@ -8,11 +8,14 @@ const expectedPolishVersion = process.env.VISUAL_POLISH_VERSION || '20260603-vis
 
 const cases = [
   { name: 'mobile-booking', viewport: { width: 390, height: 844 }, page: null },
+  { name: 'desktop-booking', viewport: { width: 1440, height: 950 }, page: null },
   { name: 'mobile-dashboard', viewport: { width: 390, height: 844 }, page: 'dashboard' },
   { name: 'mobile-classes', viewport: { width: 390, height: 844 }, page: 'classes' },
   { name: 'mobile-payments', viewport: { width: 390, height: 844 }, page: 'payments' },
+  { name: 'mobile-bookings', viewport: { width: 390, height: 844 }, page: 'bookings' },
   { name: 'desktop-dashboard', viewport: { width: 1440, height: 950 }, page: 'dashboard' },
-  { name: 'desktop-students', viewport: { width: 1440, height: 950 }, page: 'students' }
+  { name: 'desktop-students', viewport: { width: 1440, height: 950 }, page: 'students' },
+  { name: 'desktop-bookings', viewport: { width: 1440, height: 950 }, page: 'bookings' }
 ];
 
 async function login(page) {
