@@ -3,8 +3,20 @@
 const STORE_KEY = 'fv_school_state_v2';
 const PIN_KEY = 'tlf_admin_pin';
 const PAGE_KEY = 'tlf_last_page';
+const VISUAL_THEME_VERSION = 'ios-light-20260603';
 const MOBILE_MORE_PAGES = ['waitlist', 'plans', 'reports'];
 const REMOVED_PAGES = ['roadmap', 'data'];
+const PAGE_TITLES = {
+  dashboard: ['operacao de hoje', 'Painel do dia'],
+  bookings: ['alunos', 'Pedidos de aula'],
+  students: ['cadastro', 'Alunos'],
+  classes: ['agenda', 'Aulas'],
+  payments: ['financeiro', 'Mensalidades'],
+  waitlist: ['demanda', 'Lista de espera'],
+  plans: ['oferta', 'Planos'],
+  reports: ['gestao', 'Relatorios'],
+  more: ['atalhos', 'Mais']
+};
 const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const currentMonth = () => todayISO().slice(0, 7);
@@ -418,6 +430,14 @@ function toast(message) {
   toast.timer = setTimeout(() => el.classList.remove('show'), 2200);
 }
 
+function updateTopbar(page) {
+  const [eyebrow, title] = PAGE_TITLES[page] || PAGE_TITLES.dashboard;
+  const eyebrowEl = document.getElementById('topbarEyebrow');
+  const titleEl = document.getElementById('topbarTitle');
+  if (eyebrowEl) eyebrowEl.textContent = eyebrow;
+  if (titleEl) titleEl.textContent = title;
+}
+
 function setPage(page) {
   if (REMOVED_PAGES.includes(page)) page = 'dashboard';
   const isMobile = window.matchMedia('(max-width: 620px)').matches;
@@ -430,6 +450,8 @@ function setPage(page) {
     el.classList.toggle('active', active);
     if (active) el.scrollIntoView({ block: 'nearest', inline: 'center' });
   });
+  document.documentElement.dataset.page = page;
+  updateTopbar(page);
   localStorage.setItem(PAGE_KEY, page);
   document.getElementById('globalResults').classList.remove('open');
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -478,15 +500,19 @@ function render() {
 
 function renderKpis() {
   const active = state.students.filter((s) => s.status === 'Ativo').length;
-  const trial = state.students.filter((s) => s.status === 'Experimental').length;
+  const todayClasses = state.classes.filter((item) => item.data === todayISO() && item.status !== 'Cancelada');
+  const expectedToday = todayClasses.reduce((sum, item) => sum + classStudents(item).length, 0);
+  const presentToday = todayClasses.reduce((sum, item) => (
+    sum + classStudents(item).filter((student) => item.presencas?.[student.aluno_id || student.id] || student.presente).length
+  ), 0);
   const pendingStudents = state.students.filter((s) => s.status !== 'Pausado' && !isPaid(s));
   const pendingBookings = (state.bookings || []).filter((item) => (item.status || 'Pendente') === 'Pendente').length;
   const pendingValue = pendingStudents.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0);
   const items = [
-    ['Alunos ativos', active, `${state.students.length} cadastrados`, ''],
-    ['Experimentais', trial, trial ? 'acompanhar conversao' : 'sem teste aberto', 'warn'],
-    ['Pedidos', pendingBookings, pendingBookings ? 'aprovar ou recusar' : 'sem pedido aberto', pendingBookings ? 'warn' : 'ok'],
-    ['Pendencias', pendingStudents.length, pendingStudents.length ? `${money.format(pendingValue)} a receber` : 'financeiro em dia', pendingStudents.length ? 'bad' : 'ok']
+    ['Aulas hoje', todayClasses.length, `${expectedToday} previstos`, todayClasses.length ? '' : 'ok'],
+    ['Presencas', `${presentToday}/${expectedToday || 0}`, expectedToday ? 'marcadas hoje' : 'sem lista hoje', expectedToday && presentToday < expectedToday ? 'warn' : 'ok'],
+    ['Pedidos', pendingBookings, pendingBookings ? 'aprovar agora' : 'sem pedido aberto', pendingBookings ? 'warn' : 'ok'],
+    ['A receber', pendingStudents.length, pendingStudents.length ? money.format(pendingValue) : `${active} alunos ativos`, pendingStudents.length ? 'bad' : 'ok']
   ];
   document.getElementById('kpiGrid').innerHTML = items.map(([label, value, detail, tone]) => `
     <article class="kpi ${tone ? `kpi-${tone}` : ''}">
@@ -506,22 +532,7 @@ function nextClass() {
 }
 
 function renderQuickActions() {
-  const activeStudents = state.students.filter((student) => student.status !== 'Pausado');
-  const pending = activeStudents.filter((student) => !isPaidForMonth(student, currentMonth()));
-  const next = nextClass();
-  const pendingBookings = (state.bookings || []).filter((item) => (item.status || 'Pendente') === 'Pendente').length;
-  const actions = [
-    ['Cobrar pendentes', `${pending.length} aluno(s)`, 'quick-pending'],
-    ['Abrir proxima aula', next ? `${formatDate(next.data)} ${next.horario}` : 'sem aula', 'quick-next-class'],
-    ['Pedidos de aula', `${pendingBookings} aberto(s)`, 'quick-bookings'],
-    ['Nova aula', 'agenda', 'quick-class']
-  ];
-  document.getElementById('quickActions').innerHTML = actions.map(([title, detail, action]) => `
-    <button class="quick-action" type="button" data-action="${action}">
-      <span>${title}</span>
-      <strong>${escapeHTML(detail)}</strong>
-    </button>
-  `).join('');
+  document.getElementById('quickActions').innerHTML = '';
 }
 
 function renderTodayClasses() {
@@ -531,16 +542,20 @@ function renderTodayClasses() {
 
 function renderPending() {
   const students = state.students.filter((student) => student.status !== 'Pausado' && !isPaid(student));
-  document.getElementById('pendingList').innerHTML = students.length ? students.map((student) => `
-    <article class="row-card">
-      <div>
-        <button class="link-title compact-title" type="button" data-report-student="${student.id}">${escapeHTML(student.nome)}</button>
-        <p class="meta">${escapeHTML(student.plano_nome || 'sem plano')} - ${money.format(Number(student.mensalidade || 0))}</p>
-        <div class="pill-row"><span class="pill bad">pagamento pendente</span></div>
-      </div>
-      <div class="actions"><button class="mini-btn" data-pay="${student.id}">Marcar pago</button></div>
-    </article>
-  `).join('') : empty('Sem pendências por enquanto.');
+  const visible = students.slice(0, 5);
+  document.getElementById('pendingList').innerHTML = students.length ? `
+    ${visible.map((student) => `
+      <article class="row-card">
+        <div>
+          <button class="link-title compact-title" type="button" data-report-student="${student.id}">${escapeHTML(student.nome)}</button>
+          <p class="meta">${escapeHTML(student.plano_nome || 'sem plano')} - ${money.format(Number(student.mensalidade || 0))}</p>
+          <div class="pill-row"><span class="pill bad">pagamento pendente</span></div>
+        </div>
+        <div class="actions"><button class="mini-btn" data-pay="${student.id}">Marcar pago</button></div>
+      </article>
+    `).join('')}
+    ${students.length > visible.length ? `<button class="soft-btn dashboard-more-btn" type="button" data-action="quick-pending">Ver ${students.length - visible.length} restante(s)</button>` : ''}
+  ` : empty('Sem pendencias por enquanto.');
 }
 
 function renderStudents() {
@@ -696,47 +711,34 @@ function renderFocusStrip() {
   const target = document.getElementById('focusStrip');
   if (!target) return;
   const next = nextClass();
+  const todayClasses = state.classes.filter((item) => item.data === todayISO() && item.status !== 'Cancelada').sort(sortClass);
   const pending = state.students.filter((student) => student.status !== 'Pausado' && !isPaidForMonth(student, currentMonth()));
   const pendingValue = pending.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0);
   const lead = nextWaitLead();
   const pendingBookings = (state.bookings || []).filter((item) => (item.status || 'Pendente') === 'Pendente');
-  const cards = [
-    {
-      label: 'Proxima aula',
-      title: next ? `${formatDate(next.data)} ${next.horario}` : 'Sem aula marcada',
-      text: next ? `${next.turma || 'Turma'} - ${classStudents(next).length}/${next.capacidade || 8} alunos` : 'Crie uma aula para iniciar a agenda.',
-      action: 'next-class',
-      tone: 'live'
-    },
-    {
-      label: 'Cobranca',
-      title: `${pending.length} pendente(s)`,
-      text: pending.length ? `${money.format(pendingValue)} a receber neste mes` : 'Mensalidades em dia no mes.',
-      action: 'payments',
-      tone: pending.length ? 'danger' : 'ok'
-    },
-    {
-      label: 'Pedido de aula',
-      title: pendingBookings.length ? `${pendingBookings.length} aguardando` : 'Sem pedido aberto',
-      text: pendingBookings[0] ? `${pendingBookings[0].nome} quer entrar na agenda` : 'Aluno pode pedir aula pela tela inicial.',
-      action: 'bookings',
-      tone: pendingBookings.length ? 'warn' : 'ok'
-    },
-    {
-      label: 'Interessado',
-      title: lead ? lead.nome : 'Sem lead aberto',
-      text: lead ? `${lead.status || 'Novo'} - ${daysBetween(lead.data_cadastro || todayISO())} dia(s)` : 'Lista de espera sem pendencias.',
-      action: lead ? `wait:${lead.id}` : 'waitlist',
-      tone: lead ? 'warn' : 'ok'
-    }
-  ];
-  target.innerHTML = cards.map((card) => `
-    <button class="focus-card focus-${escapeHTML(card.tone)}" type="button" data-focus-action="${escapeHTML(card.action)}">
-      <span>${escapeHTML(card.label)}</span>
-      <strong>${escapeHTML(card.title)}</strong>
-      <small>${escapeHTML(card.text)}</small>
-    </button>
-  `).join('');
+  const nextStudents = next ? classStudents(next) : [];
+  const nextPresent = next ? nextStudents.filter((student) => next.presencas?.[student.aluno_id || student.id] || student.presente).length : 0;
+  const briefTitle = next ? `${next.horario} - ${next.turma || 'Turma'}` : 'Sem aula marcada';
+  const briefText = next ? `${formatDate(next.data)} - ${nextStudents.length}/${next.capacidade || 8} previstos - ${nextPresent}/${nextStudents.length || 0} presentes` : 'Crie a primeira aula do dia para iniciar a operacao.';
+  target.innerHTML = `
+    <section class="day-command focus-${next ? 'live' : 'ok'}">
+      <div class="day-command-main">
+        <span class="eyebrow">agora</span>
+        <h2>${escapeHTML(briefTitle)}</h2>
+        <p>${escapeHTML(briefText)}</p>
+        <div class="pill-row">
+          <span class="pill">${todayClasses.length} aula(s) hoje</span>
+          <span class="pill ${pendingBookings.length ? 'warn' : 'ok'}">${pendingBookings.length} pedido(s)</span>
+          <span class="pill ${pending.length ? 'bad' : 'ok'}">${pending.length ? money.format(pendingValue) : 'financeiro em dia'}</span>
+        </div>
+      </div>
+      <div class="day-command-actions">
+        <button class="primary-btn" type="button" data-focus-action="next-class">${next ? 'Abrir presenca' : 'Criar aula'}</button>
+        <button class="soft-btn" type="button" data-focus-action="bookings">Pedidos</button>
+        <button class="soft-btn" type="button" data-focus-action="${lead ? `wait:${lead.id}` : 'waitlist'}">Espera</button>
+      </div>
+    </section>
+  `;
 }
 
 function renderClassSummary(classes) {
@@ -1395,6 +1397,10 @@ function handleFocusAction(action) {
     setPage('payments');
     document.getElementById('paymentStatusFilter').value = 'pending';
     renderPayments();
+    return;
+  }
+  if (action === 'bookings') {
+    setPage('bookings');
     return;
   }
   if (action === 'waitlist') {
@@ -2318,8 +2324,9 @@ function bindEvents() {
   document.getElementById('themeBtn').addEventListener('click', toggleTheme);
   document.getElementById('logoutBtn').addEventListener('click', logout);
   document.body.addEventListener('click', (event) => {
-    const target = event.target.closest('[data-report-student],[data-edit-student],[data-delete-student],[data-edit-class],[data-delete-class],[data-duplicate-class],[data-class-status],[data-copy-class],[data-edit-plan],[data-delete-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-copy-charge],[data-edit-wait],[data-delete-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day],[data-more-page],[data-more-action],[data-booking-action]');
+    const target = event.target.closest('[data-action],[data-report-student],[data-edit-student],[data-delete-student],[data-edit-class],[data-delete-class],[data-duplicate-class],[data-class-status],[data-copy-class],[data-edit-plan],[data-delete-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-copy-charge],[data-edit-wait],[data-delete-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day],[data-more-page],[data-more-action],[data-booking-action]');
     if (!target) return;
+    if (target.dataset.action && !target.closest('#quickActions')) handleQuickAction(target.dataset.action);
     if (target.dataset.morePage) setPage(target.dataset.morePage);
     if (target.dataset.moreAction === 'theme') toggleTheme();
     if (target.dataset.moreAction === 'logout') logout();
@@ -2365,7 +2372,11 @@ function bindEvents() {
   });
 }
 
-document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'dark';
+if (localStorage.getItem('fv_visual_theme_version') !== VISUAL_THEME_VERSION) {
+  localStorage.setItem('fv_theme', 'light');
+  localStorage.setItem('fv_visual_theme_version', VISUAL_THEME_VERSION);
+}
+document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'light';
 updateThemeButton();
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
