@@ -4,6 +4,7 @@ const fs = require('fs');
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
 const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260603-booking1';
+const expectedPolishVersion = process.env.VISUAL_POLISH_VERSION || '20260603-visual2';
 
 const cases = [
   { name: 'mobile-booking', viewport: { width: 390, height: 844 }, page: null },
@@ -33,6 +34,10 @@ async function login(page) {
     const assetVersion = await page.locator('script[src*="app.js"]').getAttribute('src');
     if (baseUrl.includes('127.0.0.1') && !assetVersion.includes(expectedAssetVersion)) {
       throw new Error(`${item.name}: asset version inesperada (${assetVersion})`);
+    }
+    const polishVersion = await page.locator('link[href*="visual-polish.css"]').getAttribute('href');
+    if (baseUrl.includes('127.0.0.1') && !polishVersion.includes(expectedPolishVersion)) {
+      throw new Error(`${item.name}: visual polish inesperado (${polishVersion})`);
     }
     if (item.page) {
       await login(page);
