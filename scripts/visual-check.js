@@ -4,7 +4,7 @@ const fs = require('fs');
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
 const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260603-booking1';
-const expectedPolishVersion = process.env.VISUAL_POLISH_VERSION || '20260603-visual5';
+const expectedPolishVersion = process.env.VISUAL_POLISH_VERSION || '20260603-visual6';
 
 const cases = [
   { name: 'mobile-booking', viewport: { width: 390, height: 844 }, page: null },
@@ -13,9 +13,13 @@ const cases = [
   { name: 'mobile-classes', viewport: { width: 390, height: 844 }, page: 'classes' },
   { name: 'mobile-payments', viewport: { width: 390, height: 844 }, page: 'payments' },
   { name: 'mobile-bookings', viewport: { width: 390, height: 844 }, page: 'bookings' },
+  { name: 'mobile-student-report', viewport: { width: 390, height: 844 }, page: 'students', action: 'student-report' },
+  { name: 'mobile-attendance', viewport: { width: 390, height: 844 }, page: 'classes', action: 'attendance' },
   { name: 'desktop-dashboard', viewport: { width: 1440, height: 950 }, page: 'dashboard' },
   { name: 'desktop-students', viewport: { width: 1440, height: 950 }, page: 'students' },
-  { name: 'desktop-bookings', viewport: { width: 1440, height: 950 }, page: 'bookings' }
+  { name: 'desktop-bookings', viewport: { width: 1440, height: 950 }, page: 'bookings' },
+  { name: 'desktop-student-report', viewport: { width: 1440, height: 950 }, page: 'students', action: 'student-report' },
+  { name: 'desktop-attendance', viewport: { width: 1440, height: 950 }, page: 'classes', action: 'attendance' }
 ];
 
 async function login(page) {
@@ -24,6 +28,17 @@ async function login(page) {
   await page.locator('#loginPin').fill('1234');
   await page.getByRole('button', { name: 'Entrar' }).click();
   await page.waitForFunction(() => !document.getElementById('loginWall').classList.contains('open'), null, { timeout: 5000 });
+}
+
+async function runCaseAction(page, action) {
+  if (action === 'student-report') {
+    await page.locator('#page-students.active .student-row [data-report-student]').first().click();
+    await page.waitForSelector('#studentReportModal.open', { timeout: 5000 });
+  }
+  if (action === 'attendance') {
+    await page.locator('#page-classes.active [data-attendance]').first().click();
+    await page.waitForSelector('#attendanceModal.open', { timeout: 5000 });
+  }
 }
 
 (async () => {
@@ -46,6 +61,7 @@ async function login(page) {
       await login(page);
       await page.evaluate((target) => window.localStorage.setItem('tlf_last_page', target), item.page);
       await page.reload({ waitUntil: 'networkidle' });
+      if (item.action) await runCaseAction(page, item.action);
     }
     await page.screenshot({ path: `${outDir}/${item.name}.png`, fullPage: false });
     const issueCount = await page.evaluate(() => {
