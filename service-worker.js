@@ -1,4 +1,4 @@
-const CACHE_NAME = 'team-lucao-v37';
+const CACHE_NAME = 'team-lucao-v38';
 const ASSETS = [
   './',
   './index.html?v=20260602-glass6',

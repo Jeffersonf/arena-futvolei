@@ -9,10 +9,44 @@
     <meta name="apple-mobile-web-app-title" content="TLF Gestao" />
     <title>Team Lucão Futevôlei</title>
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260602-glass6" />
-    <link rel="stylesheet" href="styles.css?v=20260602-glass6" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260603-booking1" />
+    <link rel="stylesheet" href="styles.css?v=20260603-booking1" />
   </head>
   <body>
+    <div class="booking-wall" id="bookingWall" aria-hidden="true">
+      <section class="booking-shell">
+        <div class="booking-hero">
+          <span class="brand-mark booking-logo" aria-hidden="true">
+            <img src="assets/team-lucao-logo.png" alt="" />
+          </span>
+          <div>
+            <p class="eyebrow">agendamento de aula</p>
+            <h1>Team Lucao Futevolei</h1>
+            <p>Escolha um horario disponivel e envie seu pedido. O professor confirma pelo painel.</p>
+          </div>
+        </div>
+        <div class="booking-layout">
+          <form class="booking-form" id="bookingForm">
+            <label>Nome<input id="bookingName" autocomplete="name" placeholder="Seu nome" required /></label>
+            <label>WhatsApp<input id="bookingPhone" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" /></label>
+            <label>Aula<select id="bookingClass" required></select></label>
+            <label>Observacao<input id="bookingNote" placeholder="Nivel, reposicao, experimental..." /></label>
+            <button class="primary-btn" type="submit">Pedir vaga</button>
+            <p class="booking-status" id="bookingStatus"></p>
+          </form>
+          <div class="booking-board">
+            <div class="panel-head compact-head">
+              <div>
+                <span>proximos horarios</span>
+                <h2>Aulas disponiveis</h2>
+              </div>
+            </div>
+            <div class="booking-class-list" id="bookingClassList"></div>
+          </div>
+        </div>
+        <button class="soft-btn admin-entry" id="adminAccessBtn" type="button">Acesso professor</button>
+      </section>
+    </div>
     <div class="login-wall" id="loginWall" aria-hidden="true">
       <form class="login-box" id="loginForm">
         <span class="brand-mark login-logo" aria-hidden="true">
@@ -41,6 +75,7 @@
       </div>
       <nav class="nav" aria-label="Menu principal">
         <span class="nav-label">Operacao</span>
+        <button class="nav-item" data-page="bookings"><span>✓</span> Pedidos</button>
         <button class="nav-item active" data-page="dashboard">Início</button>
         <button class="nav-item" data-page="students"><span>👥</span> Alunos</button>
         <button class="nav-item" data-page="classes"><span>📅</span> Aulas</button>
@@ -177,6 +212,19 @@
           </div>
           <div class="finance-summary" id="classSummary"></div>
           <div class="list" id="classList"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-bookings">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <span>alunos</span>
+              <h2>Pedidos de aula</h2>
+            </div>
+          </div>
+          <div class="finance-summary" id="bookingSummary"></div>
+          <div class="list" id="bookingList"></div>
         </div>
       </section>
 
@@ -517,6 +565,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="app.js?v=20260602-glass6"></script>
+    <script src="app.js?v=20260603-booking1"></script>
   </body>
 </html>

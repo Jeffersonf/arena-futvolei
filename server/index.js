@@ -13,6 +13,7 @@ const {
   row,
   rows,
   run,
+  scalar,
   stateSnapshot,
   tableColumns,
   tableResponse,
@@ -128,13 +129,11 @@ function scheduleAutomaticBackups() {
 
 function requirePin(req, res, next) {
   if (!req.path.startsWith('/api/')) return next();
-  if (req.path === '/api/login') return next();
+  if (req.path === '/api/login' || req.path.startsWith('/api/public/')) return next();
   const pin = String(req.get('x-admin-pin') || '');
   if (pin !== ADMIN_PIN) return res.status(401).json({ ok: false, error: 'PIN invalido' });
   return next();
 }
-
-app.use(requirePin);
 
 function normalizeStudentPayload(body = {}) {
   const plan = body.plano_id ? row('SELECT * FROM planos WHERE id=?', [body.plano_id]) : null;
@@ -214,10 +213,55 @@ function upsertClassStudents(classId, studentIds = [], attendance = {}) {
 
 app.get('/', (_req, res) => res.sendFile(path.join(ROOT_DIR, 'index.html')));
 app.get('/health', (_req, res) => res.json(publicState(stateSnapshot({ includeLogs: false }))));
+app.get('/api/public/classes', (_req, res) => {
+  const items = rows(`
+    SELECT a.*,
+      (SELECT COUNT(*) FROM aula_alunos aa WHERE aa.aula_id=a.id) AS inscritos
+    FROM aulas a
+    WHERE a.status != 'Cancelada' AND a.data >= ?
+    ORDER BY a.data, a.horario
+    LIMIT 40
+  `, [today()]).map((item) => ({
+    id: item.id,
+    data: item.data,
+    horario: item.horario,
+    turma: item.turma,
+    tipo: item.tipo,
+    professor: item.professor,
+    capacidade: item.capacidade,
+    inscritos: item.inscritos
+  }));
+  res.json({ ok: true, items });
+});
+app.post('/api/public/bookings', (req, res) => {
+  try {
+    const classItem = row('SELECT * FROM aulas WHERE id=?', [req.body.aula_id]);
+    if (!classItem) throw new Error('Aula nao encontrada');
+    if (classItem.status === 'Cancelada') throw new Error('Aula cancelada');
+    const currentCount = scalar('SELECT COUNT(*) AS total FROM aula_alunos WHERE aula_id=?', [classItem.id]);
+    if (currentCount >= Number(classItem.capacidade || 8)) throw new Error('Aula lotada');
+    const payload = {
+      nome: String(req.body.nome || '').trim(),
+      telefone: String(req.body.telefone || '').trim(),
+      aula_id: Number(classItem.id),
+      status: 'Pendente',
+      observacao: String(req.body.observacao || '').trim()
+    };
+    if (!payload.nome) throw new Error('Informe seu nome');
+    const result = insertRow('agendamentos', payload);
+    logAction('Agendamento', `${payload.nome} solicitou aula ${classItem.id}.`);
+    res.json({ ok: true, item: row('SELECT * FROM agendamentos WHERE id=?', [result.id]) });
+  } catch (err) {
+    jsonError(res, err);
+  }
+});
 app.post('/api/login', (req, res) => {
   if (String(req.body.pin || '') !== ADMIN_PIN) return jsonError(res, new Error('PIN invalido'), 401);
   return res.json({ ok: true });
 });
+
+app.use(requirePin);
+
 app.get('/api/state', (_req, res) => res.json({ ok: true, state: stateSnapshot({ includeLogs: true }) }));
 app.post('/api/sync', (_req, res) => res.json({ ok: true, state: stateSnapshot({ includeLogs: true }) }));
 app.get('/api/backup.json', (_req, res) => res.json(stateSnapshot({ includeLogs: true })));
@@ -429,6 +473,51 @@ app.get('/api/payments', (req, res) => {
   const month = String(req.query.month || currentMonth()).slice(0, 7);
   const payments = rows('SELECT p.*, a.nome AS aluno_nome FROM pagamentos p LEFT JOIN alunos a ON a.id=p.aluno_id WHERE referencia=? OR pago_em LIKE ? ORDER BY id DESC', [month, `${month}%`]);
   res.json({ ok: true, month, items: payments });
+});
+
+app.get('/api/bookings', (_req, res) => {
+  const items = rows(`
+    SELECT ag.*, a.data, a.horario, a.turma, a.tipo, a.capacidade,
+      (SELECT COUNT(*) FROM aula_alunos aa WHERE aa.aula_id=ag.aula_id) AS inscritos
+    FROM agendamentos ag
+    LEFT JOIN aulas a ON a.id=ag.aula_id
+    ORDER BY ag.status='Pendente' DESC, ag.id DESC
+  `);
+  res.json({ ok: true, items });
+});
+
+app.post('/api/bookings/:id/respond', (req, res) => {
+  try {
+    const booking = row('SELECT * FROM agendamentos WHERE id=?', [req.params.id]);
+    if (!booking) throw new Error('Pedido nao encontrado');
+    const classItem = classWithStudents(row('SELECT * FROM aulas WHERE id=?', [booking.aula_id]));
+    if (!classItem) throw new Error('Aula nao encontrada');
+    const action = String(req.body.action || '').toLowerCase();
+    if (!['approve', 'reject'].includes(action)) throw new Error('Acao invalida');
+    if (action === 'reject') {
+      run("UPDATE agendamentos SET status='Recusado', respondido_em=? WHERE id=?", [today(), booking.id]);
+      logAction('Agendamento', `${booking.nome} recusado na aula ${booking.aula_id}.`);
+      return res.json({ ok: true, item: row('SELECT * FROM agendamentos WHERE id=?', [booking.id]) });
+    }
+    const currentIds = classItem.aluno_ids || [];
+    if (currentIds.length >= Number(classItem.capacidade || 8) && !req.body.force) throw new Error('Aula lotada');
+    const digits = String(booking.telefone || '').replace(/\D/g, '');
+    const student = digits
+      ? row("SELECT * FROM alunos WHERE REPLACE(REPLACE(REPLACE(REPLACE(telefone, '(', ''), ')', ''), '-', ''), ' ', '') LIKE ?", [`%${digits.slice(-8)}`])
+      : null;
+    if (student) {
+      upsertClassStudents(classItem.id, [...currentIds, student.id], classItem.presencas || {});
+    } else {
+      const extras = parseJsonList(classItem.extras);
+      extras.push({ id: `ag${booking.id}`, nome: booking.nome, tipo: 'Solicitado', criado_em: today() });
+      run('UPDATE aulas SET extras=? WHERE id=?', [JSON.stringify(extras), classItem.id]);
+    }
+    run("UPDATE agendamentos SET status='Aprovado', respondido_em=? WHERE id=?", [today(), booking.id]);
+    logAction('Agendamento', `${booking.nome} aprovado na aula ${booking.aula_id}.`);
+    return res.json({ ok: true, item: row('SELECT * FROM agendamentos WHERE id=?', [booking.id]) });
+  } catch (err) {
+    return jsonError(res, err);
+  }
 });
 
 app.get('/api/waitlist', (_req, res) => {

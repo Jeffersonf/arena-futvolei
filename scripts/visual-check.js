@@ -3,10 +3,10 @@ const fs = require('fs');
 
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
-const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260602-glass6';
+const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260603-booking1';
 
 const cases = [
-  { name: 'mobile-login', viewport: { width: 390, height: 844 }, page: null },
+  { name: 'mobile-booking', viewport: { width: 390, height: 844 }, page: null },
   { name: 'mobile-dashboard', viewport: { width: 390, height: 844 }, page: 'dashboard' },
   { name: 'mobile-classes', viewport: { width: 390, height: 844 }, page: 'classes' },
   { name: 'mobile-payments', viewport: { width: 390, height: 844 }, page: 'payments' },
@@ -15,6 +15,8 @@ const cases = [
 ];
 
 async function login(page) {
+  const bookingOpen = await page.locator('#bookingWall.open').count();
+  if (bookingOpen) await page.locator('#adminAccessBtn').click();
   await page.locator('#loginPin').fill('1234');
   await page.getByRole('button', { name: 'Entrar' }).click();
   await page.waitForFunction(() => !document.getElementById('loginWall').classList.contains('open'), null, { timeout: 5000 });

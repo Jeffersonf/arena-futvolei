@@ -13,6 +13,7 @@ const DATA_TABLES = [
   'aulas',
   'aula_alunos',
   'pagamentos',
+  'agendamentos',
   'disponibilidade',
   'lista_espera',
   'logs'
@@ -149,6 +150,18 @@ function ensureSchema() {
       forma_pagamento TEXT DEFAULT '',
       observacao TEXT DEFAULT '',
       FOREIGN KEY(aluno_id) REFERENCES alunos(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS agendamentos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nome TEXT NOT NULL,
+      telefone TEXT,
+      aula_id INTEGER NOT NULL,
+      status TEXT DEFAULT 'Pendente',
+      observacao TEXT DEFAULT '',
+      criado_em TEXT DEFAULT (date('now')),
+      respondido_em TEXT DEFAULT '',
+      FOREIGN KEY(aula_id) REFERENCES aulas(id) ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS disponibilidade (
@@ -361,7 +374,7 @@ function restoreState(payload, mode = 'merge') {
   db.exec('BEGIN');
   try {
     if (mode === 'replace') {
-      ['logs', 'aula_alunos', 'pagamentos', 'aulas', 'alunos', 'lista_espera', 'disponibilidade', 'planos'].forEach((table) => {
+      ['logs', 'aula_alunos', 'pagamentos', 'agendamentos', 'aulas', 'alunos', 'lista_espera', 'disponibilidade', 'planos'].forEach((table) => {
         if (tableExists(table)) run(`DELETE FROM ${table}`);
       });
     }
@@ -400,6 +413,7 @@ module.exports = {
   row,
   rows,
   run,
+  scalar,
   stateSnapshot,
   tableColumns,
   tableResponse,

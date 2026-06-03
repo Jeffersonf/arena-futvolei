@@ -26,6 +26,7 @@ const starter = {
     { id: 'c1', data: todayISO(), horario: '18:30', turma: 'Iniciantes', professor: 'Jefferson', tipo: 'Regular', capacidade: 8, status: 'Marcada', aluno_ids: ['s1', 's2'], presencas: { s1: true, s2: false }, extra_presentes: [] }
   ],
   payments: [],
+  bookings: [],
   waitlist: [
     { id: 'w1', nome: 'Carla Mendes', telefone: '(15) 99999-0003', preferencia: 'Noite - iniciante', status: 'Novo', observacao: 'Pediu informacoes pelo WhatsApp', data_cadastro: todayISO() }
   ]
@@ -130,11 +131,17 @@ function demoState() {
     observacao: ['Chamou pelo Instagram', 'Aguardando confirmar horario', 'Perguntou sobre valores', 'Indicacao de aluno'][index % 4],
     data_cadastro: addDaysIso(today, -index)
   }));
+  const bookings = [
+    { id: 'ag1', nome: 'Rafael Brito', telefone: '(15) 99222-0001', aula_id: classes[1]?.id, status: 'Pendente', observacao: 'Quer fazer experimental', criado_em: today, respondido_em: '' },
+    { id: 'ag2', nome: 'Marina Lins', telefone: '(15) 99222-0002', aula_id: classes[4]?.id, status: 'Pendente', observacao: 'Reposicao de sabado', criado_em: today, respondido_em: '' },
+    { id: 'ag3', nome: 'Julia Moraes', telefone: '(15) 99222-0003', aula_id: classes[2]?.id, status: 'Aprovado', observacao: 'Confirmada pelo professor', criado_em: addDaysIso(today, -1), respondido_em: today }
+  ].filter((item) => item.aula_id);
   return {
     students,
     plans,
     classes,
     payments,
+    bookings,
     waitlist
   };
 }
@@ -174,6 +181,14 @@ function showLogin(show = true) {
   if (show) setTimeout(() => document.getElementById('loginPin').focus(), 50);
 }
 
+function showBooking(show = true) {
+  const wall = document.getElementById('bookingWall');
+  if (!wall) return;
+  wall.classList.toggle('open', show);
+  wall.setAttribute('aria-hidden', show ? 'false' : 'true');
+  if (show) renderPublicBooking();
+}
+
 async function unlockApp(pin) {
   const cleanPin = String(pin || '').trim();
   if (!cleanPin) throw new Error('Informe o PIN');
@@ -185,6 +200,7 @@ async function unlockApp(pin) {
   }
   localStorage.setItem(PIN_KEY, cleanPin);
   showLogin(false);
+  showBooking(false);
   await loadData();
 }
 
@@ -206,25 +222,29 @@ async function detectServer() {
 async function loadData() {
   apiMode = await detectServer();
   if (!apiMode) {
-    document.getElementById('modeStatus').textContent = 'Local no navegador';
+    const modeStatus = document.getElementById('modeStatus');
+    if (modeStatus) modeStatus.textContent = 'Local no navegador';
     render();
     restorePage();
     return;
   }
-  document.getElementById('modeStatus').textContent = 'Servidor Node + SQLite';
-  const [students, classes, plans, waitlist, payments] = await Promise.all([
+  const modeStatus = document.getElementById('modeStatus');
+  if (modeStatus) modeStatus.textContent = 'Servidor Node + SQLite';
+  const [students, classes, plans, waitlist, payments, bookings] = await Promise.all([
     api('/api/students'),
     api('/api/classes'),
     api('/api/plans'),
     api('/api/waitlist'),
-    api('/api/payments')
+    api('/api/payments'),
+    api('/api/bookings')
   ]);
   state = {
     students: students.items || [],
     classes: classes.items || [],
     plans: plans.items || [],
     waitlist: waitlist.items || [],
-    payments: payments.items || []
+    payments: payments.items || [],
+    bookings: bookings.items || []
   };
   render();
   restorePage();
@@ -446,6 +466,7 @@ function render() {
   renderPending();
   renderStudents();
   renderClasses();
+  renderBookings();
   renderPayments();
   renderPlans();
   renderWaitlist();
@@ -458,13 +479,13 @@ function render() {
 function renderKpis() {
   const active = state.students.filter((s) => s.status === 'Ativo').length;
   const trial = state.students.filter((s) => s.status === 'Experimental').length;
-  const classesToday = state.classes.filter((c) => c.data === todayISO()).length;
   const pendingStudents = state.students.filter((s) => s.status !== 'Pausado' && !isPaid(s));
+  const pendingBookings = (state.bookings || []).filter((item) => (item.status || 'Pendente') === 'Pendente').length;
   const pendingValue = pendingStudents.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0);
   const items = [
     ['Alunos ativos', active, `${state.students.length} cadastrados`, ''],
     ['Experimentais', trial, trial ? 'acompanhar conversao' : 'sem teste aberto', 'warn'],
-    ['Aulas hoje', classesToday, classesToday ? 'abrir presencas' : 'agenda livre', ''],
+    ['Pedidos', pendingBookings, pendingBookings ? 'aprovar ou recusar' : 'sem pedido aberto', pendingBookings ? 'warn' : 'ok'],
     ['Pendencias', pendingStudents.length, pendingStudents.length ? `${money.format(pendingValue)} a receber` : 'financeiro em dia', pendingStudents.length ? 'bad' : 'ok']
   ];
   document.getElementById('kpiGrid').innerHTML = items.map(([label, value, detail, tone]) => `
@@ -488,11 +509,11 @@ function renderQuickActions() {
   const activeStudents = state.students.filter((student) => student.status !== 'Pausado');
   const pending = activeStudents.filter((student) => !isPaidForMonth(student, currentMonth()));
   const next = nextClass();
-  const experimentalToday = state.classes.filter((item) => item.data === todayISO() && classType(item) === 'Experimental').length;
+  const pendingBookings = (state.bookings || []).filter((item) => (item.status || 'Pendente') === 'Pendente').length;
   const actions = [
     ['Cobrar pendentes', `${pending.length} aluno(s)`, 'quick-pending'],
     ['Abrir proxima aula', next ? `${formatDate(next.data)} ${next.horario}` : 'sem aula', 'quick-next-class'],
-    ['Experimentais hoje', `${experimentalToday} aula(s)`, 'quick-experimental'],
+    ['Pedidos de aula', `${pendingBookings} aberto(s)`, 'quick-bookings'],
     ['Nova aula', 'agenda', 'quick-class']
   ];
   document.getElementById('quickActions').innerHTML = actions.map(([title, detail, action]) => `
@@ -608,6 +629,60 @@ function renderClasses() {
   document.getElementById('classList').innerHTML = classes.length ? classes.map(classRow).join('') : empty('Crie a primeira aula da agenda.');
 }
 
+function bookingClass(booking) {
+  return state.classes.find((item) => String(item.id) === String(booking.aula_id));
+}
+
+function bookingStatusTone(status = 'Pendente') {
+  if (status === 'Aprovado') return 'ok';
+  if (status === 'Recusado') return 'bad';
+  return 'warn';
+}
+
+function renderBookings() {
+  const target = document.getElementById('bookingList');
+  if (!target) return;
+  const bookings = [...(state.bookings || [])].sort((a, b) => (
+    Number((b.status || 'Pendente') === 'Pendente') - Number((a.status || 'Pendente') === 'Pendente')
+    || String(b.id).localeCompare(String(a.id))
+  ));
+  const pending = bookings.filter((item) => (item.status || 'Pendente') === 'Pendente');
+  const approved = bookings.filter((item) => item.status === 'Aprovado');
+  const rejected = bookings.filter((item) => item.status === 'Recusado');
+  const summary = document.getElementById('bookingSummary');
+  if (summary) {
+    summary.innerHTML = `
+      <article class="mini-stat ${pending.length ? 'kpi-warn' : 'kpi-ok'}"><span>Aguardando</span><strong>${pending.length}</strong></article>
+      <article class="mini-stat kpi-ok"><span>Aprovados</span><strong>${approved.length}</strong></article>
+      <article class="mini-stat"><span>Recusados</span><strong>${rejected.length}</strong></article>
+      <article class="mini-stat"><span>Total</span><strong>${bookings.length}</strong></article>
+    `;
+  }
+  target.innerHTML = bookings.length ? bookings.map((booking) => {
+    const item = bookingClass(booking);
+    const status = booking.status || 'Pendente';
+    const full = item ? classStudentIds(item).length >= Number(item.capacidade || 8) : false;
+    return `
+      <article class="row-card booking-request booking-${cssToken(status)}">
+        <div>
+          <h3>${escapeHTML(booking.nome)}</h3>
+          <p class="meta">${escapeHTML(booking.telefone || 'sem WhatsApp')} - ${item ? `${formatDate(item.data)} as ${item.horario} - ${escapeHTML(item.turma || 'Turma')}` : 'aula removida'}</p>
+          <div class="pill-row">
+            <span class="pill ${bookingStatusTone(status)}">${escapeHTML(status)}</span>
+            ${item ? `<span class="pill ${full ? 'bad' : 'ok'}">${classStudentIds(item).length}/${item.capacidade || 8} vagas</span>` : ''}
+            ${booking.criado_em ? `<span class="pill">${formatDate(booking.criado_em)}</span>` : ''}
+          </div>
+          ${booking.observacao ? `<p class="meta">${escapeHTML(booking.observacao)}</p>` : ''}
+        </div>
+        <div class="actions">
+          ${booking.telefone ? `<a class="mini-btn" href="${whatsappUrl(booking.telefone, bookingReplyText(booking, item))}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+          ${status === 'Pendente' ? `<button class="mini-btn" data-booking-action="${booking.id}:approve">Aprovar</button><button class="mini-btn danger-mini" data-booking-action="${booking.id}:reject">Recusar</button>` : ''}
+        </div>
+      </article>
+    `;
+  }).join('') : empty('Nenhum pedido de aula ainda.');
+}
+
 function nextWaitLead() {
   return [...state.waitlist]
     .filter((item) => !['Convertido', 'Perdido'].includes(item.status || 'Novo'))
@@ -621,6 +696,7 @@ function renderFocusStrip() {
   const pending = state.students.filter((student) => student.status !== 'Pausado' && !isPaidForMonth(student, currentMonth()));
   const pendingValue = pending.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0);
   const lead = nextWaitLead();
+  const pendingBookings = (state.bookings || []).filter((item) => (item.status || 'Pendente') === 'Pendente');
   const cards = [
     {
       label: 'Proxima aula',
@@ -635,6 +711,13 @@ function renderFocusStrip() {
       text: pending.length ? `${money.format(pendingValue)} a receber neste mes` : 'Mensalidades em dia no mes.',
       action: 'payments',
       tone: pending.length ? 'danger' : 'ok'
+    },
+    {
+      label: 'Pedido de aula',
+      title: pendingBookings.length ? `${pendingBookings.length} aguardando` : 'Sem pedido aberto',
+      text: pendingBookings[0] ? `${pendingBookings[0].nome} quer entrar na agenda` : 'Aluno pode pedir aula pela tela inicial.',
+      action: 'bookings',
+      tone: pendingBookings.length ? 'warn' : 'ok'
     },
     {
       label: 'Interessado',
@@ -1288,6 +1371,7 @@ function openNextClass() {
 function handleQuickAction(action) {
   if (action === 'quick-pending') copyPendingCharges().catch((err) => toast(err.message));
   if (action === 'quick-next-class') openNextClass();
+  if (action === 'quick-bookings') setPage('bookings');
   if (action === 'quick-waitlist') openWaitlist();
   if (action === 'quick-experimental') {
     setPage('classes');
@@ -1327,6 +1411,141 @@ function fillClassStudents(selected = []) {
   select.innerHTML = state.students.filter((student) => student.status !== 'Pausado').map((student) => (
     `<option value="${student.id}" ${selectedSet.has(String(student.id)) ? 'selected' : ''}>${escapeHTML(student.nome)} - ${escapeHTML(student.plano_nome || 'sem plano')}</option>`
   )).join('');
+}
+
+function bookingReplyText(booking, item) {
+  const classText = item ? `${formatDate(item.data)} as ${item.horario}` : 'a aula solicitada';
+  return `Oi ${booking.nome}, tudo bem? Aqui e do Team Lucao Futevolei. Recebi seu pedido para ${classText} e vou confirmar por aqui.`;
+}
+
+function publicClassLabel(item) {
+  const used = Number(item.inscritos ?? classStudentIds(item).length);
+  const capacity = Number(item.capacidade || 8);
+  return `${formatDate(item.data)} ${item.horario} - ${item.turma || 'Turma'} (${used}/${capacity})`;
+}
+
+async function loadPublicClasses() {
+  if (location.protocol !== 'file:') {
+    try {
+      const res = await fetch('/api/public/classes');
+      const data = await res.json();
+      if (res.ok && data.ok) return data.items || [];
+    } catch {
+      // local demo fallback
+    }
+  }
+  return [...state.classes]
+    .filter((item) => item.status !== 'Cancelada' && item.data >= todayISO())
+    .sort(sortClass)
+    .slice(0, 20)
+    .map((item) => ({ ...item, inscritos: classStudentIds(item).length }));
+}
+
+async function renderPublicBooking() {
+  const select = document.getElementById('bookingClass');
+  const list = document.getElementById('bookingClassList');
+  if (!select || !list) return;
+  const classes = await loadPublicClasses();
+  select.innerHTML = classes.length
+    ? classes.map((item) => `<option value="${item.id}">${escapeHTML(publicClassLabel(item))}</option>`).join('')
+    : '<option value="">Sem horario disponivel</option>';
+  list.innerHTML = classes.length ? classes.map((item) => {
+    const used = Number(item.inscritos ?? classStudentIds(item).length);
+    const capacity = Number(item.capacidade || 8);
+    const available = Math.max(0, capacity - used);
+    return `
+      <button class="booking-class-card ${available ? '' : 'is-full'}" type="button" data-booking-class="${item.id}">
+        <strong>${formatDate(item.data)} ${escapeHTML(item.horario)}</strong>
+        <span>${escapeHTML(item.turma || 'Turma')} - ${escapeHTML(item.tipo || 'Regular')}</span>
+        <small>${available ? `${available} vaga(s) livres` : 'lotada'}</small>
+      </button>
+    `;
+  }).join('') : empty('Nenhuma aula disponivel agora.');
+}
+
+async function submitBooking(event) {
+  event.preventDefault();
+  const payload = {
+    nome: document.getElementById('bookingName').value.trim(),
+    telefone: document.getElementById('bookingPhone').value.trim(),
+    aula_id: document.getElementById('bookingClass').value,
+    observacao: document.getElementById('bookingNote').value.trim()
+  };
+  if (!payload.nome || !payload.aula_id) throw new Error('Informe nome e aula');
+  if (location.protocol !== 'file:') {
+    try {
+      const res = await fetch('/api/public/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.ok === false) throw new Error(data.error || 'Nao foi possivel enviar');
+      document.getElementById('bookingStatus').textContent = 'Pedido enviado. Aguarde a confirmacao pelo WhatsApp.';
+      event.target.reset();
+      await renderPublicBooking();
+      return;
+    } catch (err) {
+      if (await detectServer()) throw err;
+    }
+  }
+  state.bookings = state.bookings || [];
+  state.bookings.unshift({
+    id: uid(),
+    ...payload,
+    status: 'Pendente',
+    criado_em: todayISO(),
+    respondido_em: ''
+  });
+  saveLocalState();
+  document.getElementById('bookingStatus').textContent = 'Pedido salvo na demo. Entre no painel para aprovar.';
+  event.target.reset();
+  renderPublicBooking();
+}
+
+async function respondBooking(id, action, force = false) {
+  const booking = (state.bookings || []).find((item) => String(item.id) === String(id));
+  if (!booking) return;
+  const item = bookingClass(booking);
+  if (!item) throw new Error('Aula nao encontrada');
+  const approve = action === 'approve';
+  if (!approve && !confirm(`Recusar pedido de ${booking.nome}?`)) return;
+  if (approve && classStudentIds(item).length >= Number(item.capacidade || 8) && !force) {
+    if (!confirm('Aula lotada. Aprovar mesmo assim como fora da lista?')) return;
+    force = true;
+  }
+  if (apiMode) {
+    await api(`/api/bookings/${id}/respond`, { method: 'POST', body: JSON.stringify({ action, force }) });
+    await loadData();
+    toast(approve ? 'Pedido aprovado' : 'Pedido recusado');
+    return;
+  }
+  if (action === 'bookings') {
+    setPage('bookings');
+    return;
+  }
+  if (!approve) {
+    booking.status = 'Recusado';
+    booking.respondido_em = todayISO();
+    saveLocalState();
+    render();
+    toast('Pedido recusado');
+    return;
+  }
+  const digits = String(booking.telefone || '').replace(/\D/g, '');
+  const student = digits ? state.students.find((entry) => String(entry.telefone || '').replace(/\D/g, '').endsWith(digits.slice(-8))) : null;
+  if (student && !classStudentIds(item).map(String).includes(String(student.id))) {
+    item.aluno_ids = [...classStudentIds(item), student.id];
+    item.presencas = item.presencas || {};
+    item.presencas[student.id] = item.presencas[student.id] || false;
+  } else {
+    item.extra_presentes = [...classExtras(item), { id: `ag${booking.id}`, nome: booking.nome, tipo: 'Solicitado', criado_em: todayISO() }];
+  }
+  booking.status = 'Aprovado';
+  booking.respondido_em = todayISO();
+  saveLocalState();
+  render();
+  toast('Pedido aprovado');
 }
 
 function syncStudentFixedSchedule(student) {
@@ -1965,6 +2184,16 @@ function serverDemoPayload(next) {
         forma_pagamento: payment.forma_pagamento,
         observacao: 'Carga demo'
       })),
+      agendamentos: (next.bookings || []).map((booking) => ({
+        id: studentId(booking.id),
+        nome: booking.nome,
+        telefone: booking.telefone,
+        aula_id: studentId(booking.aula_id),
+        status: booking.status || 'Pendente',
+        observacao: booking.observacao || '',
+        criado_em: booking.criado_em || todayISO(),
+        respondido_em: booking.respondido_em || ''
+      })),
       lista_espera: next.waitlist.map((item) => ({
         ...item,
         id: studentId(item.id)
@@ -1998,6 +2227,17 @@ function resetLocal() {
 }
 
 function bindEvents() {
+  document.getElementById('bookingForm')?.addEventListener('submit', (event) => submitBooking(event).catch((err) => toast(err.message)));
+  document.getElementById('adminAccessBtn')?.addEventListener('click', () => {
+    showBooking(false);
+    showLogin(true);
+  });
+  document.getElementById('bookingClassList')?.addEventListener('click', (event) => {
+    const target = event.target.closest('[data-booking-class]');
+    if (!target) return;
+    document.getElementById('bookingClass').value = target.dataset.bookingClass;
+    document.getElementById('bookingName').focus();
+  });
   document.getElementById('loginForm').addEventListener('submit', (event) => {
     event.preventDefault();
     unlockApp(document.getElementById('loginPin').value).catch((err) => toast(err.message));
@@ -2075,7 +2315,7 @@ function bindEvents() {
   document.getElementById('themeBtn').addEventListener('click', toggleTheme);
   document.getElementById('logoutBtn').addEventListener('click', logout);
   document.body.addEventListener('click', (event) => {
-    const target = event.target.closest('[data-report-student],[data-edit-student],[data-delete-student],[data-edit-class],[data-delete-class],[data-duplicate-class],[data-class-status],[data-copy-class],[data-edit-plan],[data-delete-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-copy-charge],[data-edit-wait],[data-delete-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day],[data-more-page],[data-more-action]');
+    const target = event.target.closest('[data-report-student],[data-edit-student],[data-delete-student],[data-edit-class],[data-delete-class],[data-duplicate-class],[data-class-status],[data-copy-class],[data-edit-plan],[data-delete-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-copy-charge],[data-edit-wait],[data-delete-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day],[data-more-page],[data-more-action],[data-booking-action]');
     if (!target) return;
     if (target.dataset.morePage) setPage(target.dataset.morePage);
     if (target.dataset.moreAction === 'theme') toggleTheme();
@@ -2115,6 +2355,10 @@ function bindEvents() {
       updateWaitStatus(id, status).catch((err) => toast(err.message));
     }
     if (target.dataset.convertWait) convertWait(target.dataset.convertWait);
+    if (target.dataset.bookingAction) {
+      const [id, action] = target.dataset.bookingAction.split(':');
+      respondBooking(id, action).catch((err) => toast(err.message));
+    }
   });
 }
 
@@ -2122,19 +2366,23 @@ document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'da
 updateThemeButton();
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260602-glass6', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260603-booking1', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
+  showBooking(false);
   loadData().catch((err) => {
     if (/PIN|401/.test(err.message)) {
       localStorage.removeItem(PIN_KEY);
-      showLogin(true);
+      showBooking(true);
+      showLogin(false);
       return;
     }
-    document.getElementById('modeStatus').textContent = 'Local no navegador';
+    const modeStatus = document.getElementById('modeStatus');
+    if (modeStatus) modeStatus.textContent = 'Local no navegador';
     toast(err.message);
     render();
   });
 } else {
-  showLogin(true);
+  showLogin(false);
+  showBooking(true);
 }
