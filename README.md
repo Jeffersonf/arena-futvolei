@@ -25,6 +25,9 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Backup/importacao em JSON
 - Exportacao CSV de alunos, aulas, pagamentos e espera
 - Login simples por PIN no servidor
+- Primeira tela publica para o aluno pedir vaga em uma aula
+- Fila de pedidos para professor aprovar ou recusar
+- Limite de capacidade considerado antes de aceitar pedidos
 - PWA instalavel no celular
 - Fluxo pensado para uso rapido no iPhone
 - Layout otimizado para navegador mobile
@@ -108,13 +111,17 @@ Backups JSON ficam em `backups/`. O servidor cria um backup ao iniciar por padra
 Endpoints uteis no servidor:
 
 - `GET /health`: status publico.
+- `GET /api/public/classes`: aulas futuras disponiveis para pedido de vaga.
+- `POST /api/public/bookings`: cria pedido publico de aula.
+- `GET /api/bookings`: lista pedidos para o professor.
+- `POST /api/bookings/:id/respond`: aprova ou recusa um pedido.
 - `GET /api/backups`: lista backups.
 - `GET /api/backups/:filename`: baixa um backup especifico.
 - `POST /api/backups/create`: cria backup manual.
 - `GET /api/backup.json`: baixa snapshot JSON.
 - `GET /api/db/download`: baixa o SQLite.
 
-Todos os endpoints `/api/*`, exceto login, exigem header `X-Admin-Pin`.
+Todos os endpoints `/api/*`, exceto login e rotas `/api/public/*`, exigem header `X-Admin-Pin`.
 
 ## Apresentacao
 

@@ -2310,11 +2310,39 @@ select[multiple] {
   }
 
   .student-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
     padding: 12px;
     background: var(--panel2);
     box-shadow: var(--inner-highlight);
+  }
+
+  .student-row .student-main,
+  .student-row .student-payment,
+  .student-row .student-actions {
+    grid-column: 1 / -1;
+  }
+
+  .student-plan,
+  .student-frequency,
+  .student-payment {
+    min-height: 68px;
+    border: 1px solid color-mix(in srgb, var(--line) 64%, transparent);
+    border-radius: 12px;
+    padding: 9px;
+    background: color-mix(in srgb, var(--glass) 74%, transparent);
+  }
+
+  .student-payment {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 48px;
+  }
+
+  .student-payment .meta {
+    text-align: right;
   }
 
   .student-actions {
@@ -2489,6 +2517,19 @@ select[multiple] {
   .row-card .actions,
   .student-card .actions {
     margin-top: 2px;
+  }
+
+  .class-row .actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(82px, 1fr));
+    overflow: visible;
+    padding: 0;
+  }
+
+  .class-row .actions .mini-btn {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
   }
 
   .today-class-head {

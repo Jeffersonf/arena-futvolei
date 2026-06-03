@@ -1015,16 +1015,16 @@ function studentCard(student) {
         <button class="link-title compact-title" type="button" data-report-student="${student.id}">${escapeHTML(student.nome)}</button>
         <p class="meta">${escapeHTML(student.telefone || 'sem telefone')} - vence dia ${dueDay(student)}</p>
       </div>
-      <div>
+      <div class="student-plan">
         <strong>${escapeHTML(student.plano_nome || 'Sem plano')}</strong>
         <p class="meta">${money.format(Number(student.mensalidade || 0))}/mes - ${escapeHTML(student.nivel || 'Iniciante')}</p>
         <span class="pill ${student.status === 'Ativo' ? 'ok' : student.status === 'Experimental' ? 'warn' : ''}">${escapeHTML(student.status || 'Ativo')}</span>
       </div>
-      <div>
+      <div class="student-frequency">
         <strong>${weekly}/${target || '-'}</strong>
         <p class="meta">${escapeHTML(schedule)}</p>
       </div>
-      <div>
+      <div class="student-payment">
         <span class="pill ${paid ? 'ok' : 'bad'}">${paid ? 'em dia' : 'pendente'}</span>
         <p class="meta">${paid ? `pago ate ${formatDate(student.pago_ate)}` : 'sem registro do mes'}</p>
       </div>

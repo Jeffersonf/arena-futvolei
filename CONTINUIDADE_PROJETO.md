@@ -29,6 +29,9 @@ Mostre em 5 minutos, direto no fluxo real dele:
 7. Backup
    "Os dados podem ser salvos, evitando depender so de memoria, papel ou conversa."
 
+8. Agendamento do aluno
+   "A primeira tela pode ser usada pelo aluno para pedir uma vaga em uma aula. O professor ve esse pedido no painel e decide se aprova ou recusa."
+
 ## Como ajuda no dia a dia
 
 Hoje ele provavelmente perde tempo com coisas pequenas: lembrar quem pagou, quem faltou, qual turma esta cheia, quem pediu aula experimental e quem esta interessado. O sistema centraliza isso.
@@ -43,6 +46,8 @@ Na pratica, ajuda em:
 - Separar alunos ativos, experimentais e pausados.
 - Fazer backup dos dados.
 - Passar uma imagem mais profissional para a escola.
+- Receber pedidos de aula sem precisar organizar tudo no WhatsApp na hora.
+- Evitar passar da capacidade da turma sem perceber.
 
 ## O que ja tem
 
@@ -64,6 +69,10 @@ Na pratica, ajuda em:
 - Aula de hoje com horario destacado, ocupacao, presentes e avulsos.
 - Modal de presenca com resumo visual da aula.
 - QA visual local com screenshots mobile e desktop.
+- Primeira tela publica de agendamento para o aluno.
+- Pedidos de aula no painel administrativo.
+- Aprovar/recusar pedido com limite de capacidade.
+- Pedido aprovado entra na aula como aluno encontrado pelo telefone ou como solicitado fora da lista.
 
 ## O que precisa para apresentar
 
@@ -89,6 +98,8 @@ Na pratica, ajuda em:
 - Deploy online com backend para ele acessar do celular sem depender do seu PC.
 - Seguranca e backup automatico.
 - Area de aula experimental mais explicita.
+- Login real com usuario/senha e permissoes.
+- Notificacoes automaticas para novos pedidos de aula.
 
 ## Roadmap
 
@@ -102,6 +113,8 @@ Status: concluida localmente; falta publicar a rodada final no GitHub Pages.
 - Criar dados de exemplo realistas do Team Lucao.
 - Revisar planos, niveis e tipos de turma.
 - Melhorar tela mobile.
+- Criar primeira tela de agendamento do aluno.
+- Criar fila de pedidos para o professor.
 - Preparar roteiro de demonstracao.
 - Entrega: demo local funcionando em `http://127.0.0.1:4280/`.
 
@@ -116,6 +129,7 @@ Status: base pronta para validacao com ele.
 - Criar filtros em alunos, aulas e pagamentos.
 - Adicionar botao de WhatsApp em aluno e cobranca.
 - Melhorar lista de espera com status: novo, contatado, convertido.
+- Refinar pedidos de aula com filtros por status e aviso visual no dashboard.
 - Entrega: versao para teste real com dados dele.
 
 ### Fase 3: Operacao real
