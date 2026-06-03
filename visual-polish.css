@@ -8,7 +8,7 @@
   --line: rgba(255, 255, 255, .13);
   --muted: rgba(245, 247, 250, .64);
   --soft: rgba(255, 255, 255, .075);
-  --accent: #ff4050;
+  --accent: #f04452;
   --aqua: #5eead4;
   --warn: #f5c451;
   --bad: #fb7185;
@@ -145,8 +145,8 @@ body::before {
   border-color: color-mix(in srgb, var(--accent) 54%, var(--line));
   background:
     linear-gradient(180deg, rgba(255, 255, 255, .17), transparent),
-    linear-gradient(135deg, #ff4d5e, #e62d42);
-  box-shadow: 0 14px 28px rgba(255, 64, 80, .22), var(--inner-highlight);
+    linear-gradient(135deg, #f75a68, #d92f41);
+  box-shadow: 0 12px 24px rgba(240, 68, 82, .18), var(--inner-highlight);
 }
 
 .soft-btn,
@@ -163,15 +163,27 @@ body::before {
 .mini-stat span,
 .more-card span,
 .form-group legend {
-  color: color-mix(in srgb, var(--accent) 70%, #ffffff 30%);
+  color: color-mix(in srgb, var(--muted) 76%, #ffffff 24%);
   letter-spacing: .1em;
+}
+
+.section-label,
+.eyebrow,
+.panel-head span {
+  color: color-mix(in srgb, var(--muted) 72%, var(--accent) 28%);
+}
+
+.quick-action span,
+.focus-card span,
+.mini-stat span {
+  color: color-mix(in srgb, var(--muted) 70%, #ffffff 30%);
 }
 
 .focus-card,
 .quick-action:first-child {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, .065), rgba(255, 255, 255, .02)),
-    color-mix(in srgb, var(--panel) 91%, var(--accent) 4%);
+    color-mix(in srgb, var(--panel) 94%, var(--accent) 2%);
 }
 
 .focus-card,
@@ -183,7 +195,12 @@ body::before {
 
 .focus-live,
 .quick-action:first-child {
-  border-color: color-mix(in srgb, var(--accent) 22%, var(--line));
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--line));
+}
+
+.quick-action:first-child span,
+.focus-live span {
+  color: color-mix(in srgb, var(--accent) 60%, #ffffff 40%);
 }
 
 .focus-warn,
@@ -294,7 +311,7 @@ select:focus,
   }
 
   .app {
-    padding-top: 12px;
+    padding-top: 8px;
   }
 
   .sidebar {
@@ -312,9 +329,28 @@ select:focus,
     gap: 8px;
   }
 
+  .topbar {
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .mobile-top-brand {
+    min-height: 58px;
+    padding: 8px 10px;
+  }
+
+  .mobile-top-brand .brand-mark {
+    width: 38px;
+    height: 38px;
+  }
+
+  .global-search input {
+    min-height: 44px;
+  }
+
   .top-actions .primary-btn,
   .top-actions .soft-btn {
-    min-height: 44px;
+    min-height: 42px;
   }
 
   .mobile-top-brand,
