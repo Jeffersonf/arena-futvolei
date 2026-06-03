@@ -4,7 +4,7 @@ const fs = require('fs');
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
 const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260603-booking1';
-const expectedPolishVersion = process.env.VISUAL_POLISH_VERSION || '20260603-visual3';
+const expectedPolishVersion = process.env.VISUAL_POLISH_VERSION || '20260603-visual4';
 
 const cases = [
   { name: 'mobile-booking', viewport: { width: 390, height: 844 }, page: null },
