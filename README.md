@@ -20,6 +20,7 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Presenca em massa por aula
 - Contato rapido por WhatsApp
 - Historico recente de pagamentos
+- Fechamento mensal copiavel com receita, presenca, aulas, avulsos, pedidos e espera
 - Mensalidade marcada no mes filtrado
 - Lista de espera com conversao para aluno
 - Backup/importacao em JSON

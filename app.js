@@ -998,15 +998,32 @@ function renderWaitlist() {
 }
 
 function renderReports() {
-  const paidThisMonth = (state.payments || []).reduce((sum, item) => sum + Number(item.valor || 0), 0);
-  const pending = state.students.filter((student) => student.status !== 'Pausado' && !isPaid(student));
+  const month = selectedPaymentMonth();
+  const monthPayments = (state.payments || []).filter((item) => paymentMonth(item) === month);
+  const paidThisMonth = monthPayments.reduce((sum, item) => sum + Number(item.valor || 0), 0);
+  const activeStudents = state.students.filter((student) => student.status !== 'Pausado');
+  const pending = activeStudents.filter((student) => !isPaidForMonth(student, month));
   const active = state.students.filter((student) => student.status === 'Ativo').length;
+  const trial = state.students.filter((student) => student.status === 'Experimental').length;
+  const monthClasses = state.classes.filter((item) => String(item.data || '').startsWith(month) && item.status !== 'Cancelada');
+  const expectedRevenue = activeStudents.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0);
+  const pendingValue = pending.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0);
+  const monthExpectedAttendance = monthClasses.reduce((sum, item) => sum + classStudents(item).length, 0);
+  const monthPresent = monthClasses.reduce((sum, item) => (
+    sum + classStudents(item).filter((student) => item.presencas?.[student.aluno_id || student.id] || student.presente).length
+  ), 0);
+  const monthExtras = monthClasses.reduce((sum, item) => sum + classExtras(item).length, 0);
+  const attendanceRate = monthExpectedAttendance ? Math.round((monthPresent / monthExpectedAttendance) * 100) : 0;
+  const pendingBookings = (state.bookings || []).filter((item) => (item.status || 'Pendente') === 'Pendente').length;
+  const approvedBookings = (state.bookings || []).filter((item) => (item.status || '') === 'Aprovado').length;
+  const waitingOpen = state.waitlist.filter((item) => !['Convertido', 'Perdido'].includes(item.status || 'Novo')).length;
   const totalAttendances = state.classes.reduce((sum, item) => {
     const presencas = item.presencas || {};
     return sum + Object.values(presencas).filter(Boolean).length;
   }, 0);
   const reportItems = [
     ['Alunos ativos', active],
+    ['Experimentais', trial],
     ['Pendências', pending.length],
     ['Recebido no mês', money.format(paidThisMonth)],
     ['Presenças marcadas', totalAttendances]
@@ -1014,6 +1031,30 @@ function renderReports() {
   document.getElementById('reportGrid').innerHTML = reportItems.map(([label, value]) => `
     <article class="mini-stat"><span>${label}</span><strong>${escapeHTML(value)}</strong></article>
   `).join('');
+
+  document.getElementById('operationReport').innerHTML = `
+    <article class="operation-card">
+      <div>
+        <span class="section-label">Fechamento do mes</span>
+        <h3>${escapeHTML(month)}</h3>
+        <p class="meta">Resumo pronto para revisar a operacao e copiar para o professor.</p>
+      </div>
+      <div class="operation-grid">
+        <span><strong>${money.format(expectedRevenue)}</strong><small>previsao</small></span>
+        <span><strong>${money.format(paidThisMonth)}</strong><small>recebido</small></span>
+        <span><strong>${money.format(pendingValue)}</strong><small>a receber</small></span>
+        <span><strong>${attendanceRate}%</strong><small>presenca</small></span>
+        <span><strong>${monthClasses.length}</strong><small>aulas</small></span>
+        <span><strong>${monthExtras}</strong><small>avulsos</small></span>
+        <span><strong>${pendingBookings}/${approvedBookings}</strong><small>pedidos</small></span>
+        <span><strong>${waitingOpen}</strong><small>em espera</small></span>
+      </div>
+      <div class="actions">
+        <button class="mini-btn" data-copy-report="month">Copiar fechamento</button>
+        <button class="mini-btn" data-action="payments">Ver cobrancas</button>
+      </div>
+    </article>
+  `;
 
   const attendanceRows = state.students.map((student) => {
     let enrolled = 0;
@@ -1392,6 +1433,41 @@ async function copyPendingCharges() {
   const text = pendingChargeText();
   await copyText(text, 'Lista de cobranca copiada');
   setPage('payments');
+}
+
+function monthlyOperationText(month = selectedPaymentMonth()) {
+  const activeStudents = state.students.filter((student) => student.status !== 'Pausado');
+  const pending = activeStudents.filter((student) => !isPaidForMonth(student, month));
+  const monthPayments = (state.payments || []).filter((item) => paymentMonth(item) === month);
+  const monthClasses = state.classes.filter((item) => String(item.data || '').startsWith(month) && item.status !== 'Cancelada');
+  const expectedRevenue = activeStudents.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0);
+  const paidThisMonth = monthPayments.reduce((sum, item) => sum + Number(item.valor || 0), 0);
+  const pendingValue = pending.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0);
+  const expectedAttendance = monthClasses.reduce((sum, item) => sum + classStudents(item).length, 0);
+  const present = monthClasses.reduce((sum, item) => (
+    sum + classStudents(item).filter((student) => item.presencas?.[student.aluno_id || student.id] || student.presente).length
+  ), 0);
+  const rate = expectedAttendance ? Math.round((present / expectedAttendance) * 100) : 0;
+  const extras = monthClasses.reduce((sum, item) => sum + classExtras(item).length, 0);
+  const pendingBookings = (state.bookings || []).filter((item) => (item.status || 'Pendente') === 'Pendente').length;
+  const approvedBookings = (state.bookings || []).filter((item) => (item.status || '') === 'Aprovado').length;
+  const waitingOpen = state.waitlist.filter((item) => !['Convertido', 'Perdido'].includes(item.status || 'Novo')).length;
+  return [
+    `Fechamento Team Lucao - ${month}`,
+    `Alunos ativos: ${state.students.filter((student) => student.status === 'Ativo').length}`,
+    `Receita prevista: ${money.format(expectedRevenue)}`,
+    `Recebido: ${money.format(paidThisMonth)}`,
+    `A receber: ${money.format(pendingValue)} (${pending.length} aluno(s))`,
+    `Aulas no mes: ${monthClasses.length}`,
+    `Presencas: ${present}/${expectedAttendance} (${rate}%)`,
+    `Avulsos/fora da lista: ${extras}`,
+    `Pedidos pendentes/aprovados: ${pendingBookings}/${approvedBookings}`,
+    `Interessados em aberto: ${waitingOpen}`
+  ].join('\n');
+}
+
+async function copyMonthlyReport() {
+  await copyText(monthlyOperationText(), 'Fechamento copiado');
 }
 
 async function copyStudentCharge(studentId) {
@@ -2696,7 +2772,7 @@ function bindEvents() {
     toggleClassStudent(target.value, target.checked);
   });
   document.body.addEventListener('click', (event) => {
-    const target = event.target.closest('[data-action],[data-report-student],[data-edit-student],[data-sync-student],[data-delete-student],[data-edit-class],[data-delete-class],[data-duplicate-class],[data-class-status],[data-copy-class],[data-edit-plan],[data-delete-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-copy-charge],[data-edit-wait],[data-delete-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day],[data-more-page],[data-more-action],[data-booking-action]');
+    const target = event.target.closest('[data-action],[data-report-student],[data-edit-student],[data-sync-student],[data-delete-student],[data-edit-class],[data-delete-class],[data-duplicate-class],[data-class-status],[data-copy-class],[data-copy-report],[data-edit-plan],[data-delete-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-copy-charge],[data-edit-wait],[data-delete-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day],[data-more-page],[data-more-action],[data-booking-action]');
     if (!target) return;
     if (target.dataset.action && !target.closest('#quickActions')) handleQuickAction(target.dataset.action);
     if (target.dataset.morePage) setPage(target.dataset.morePage);
@@ -2714,6 +2790,7 @@ function bindEvents() {
       updateClassStatus(id, status).catch((err) => toast(err.message));
     }
     if (target.dataset.copyClass) copyClassRoster(target.dataset.copyClass).catch((err) => toast(err.message));
+    if (target.dataset.copyReport) copyMonthlyReport().catch((err) => toast(err.message));
     if (target.dataset.editPlan) openPlan(target.dataset.editPlan);
     if (target.dataset.deletePlan) deletePlan(target.dataset.deletePlan).catch((err) => toast(err.message));
     if (target.dataset.attendance) openAttendance(target.dataset.attendance);
@@ -2753,7 +2830,7 @@ document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'li
 updateThemeButton();
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260608-flow5', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260608-flow6', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
