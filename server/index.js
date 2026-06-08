@@ -454,16 +454,19 @@ app.post('/api/students/:id/pay', (req, res) => {
     const monthDueDate = String(req.body.vencimento || dueDateForMonth(student, reference)).slice(0, 10);
     const paidUntil = student.pago_ate && student.pago_ate > monthDueDate ? student.pago_ate : monthDueDate;
     const value = moneyNumber(req.body.valor ?? student.mensalidade);
+    const paidAt = String(req.body.pago_em || today()).slice(0, 10);
+    const method = String(req.body.forma_pagamento || 'Pix').trim() || 'Pix';
+    const note = String(req.body.observacao || 'Mensalidade marcada pelo painel').trim();
     run('UPDATE alunos SET pago_ate=? WHERE id=?', [paidUntil, student.id]);
     run('INSERT INTO pagamentos (aluno_id, referencia, valor, vencimento, pago_em, status, forma_pagamento, observacao) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [
       student.id,
       reference,
       value,
       monthDueDate,
-      today(),
+      paidAt,
       'PAGO',
-      req.body.forma_pagamento || 'manual',
-      req.body.observacao || 'Mensalidade marcada pelo painel'
+      method,
+      note
     ]);
     logAction('Pagamento', `${student.nome} pago até ${paidUntil}.`);
     res.json({ ok: true, paidUntil, item: row('SELECT * FROM alunos WHERE id=?', [student.id]) });

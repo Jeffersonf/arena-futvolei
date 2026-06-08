@@ -2116,6 +2116,14 @@ select[multiple] {
   background: var(--bad);
 }
 
+.payment-modal-student {
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line));
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--accent) 7%, var(--glass));
+  font-weight: 850;
+}
+
 .student-profile h2 {
   font-size: clamp(24px, 4vw, 34px);
 }

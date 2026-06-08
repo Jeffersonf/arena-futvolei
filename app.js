@@ -942,7 +942,7 @@ function renderPayments() {
     <article class="row-card compact-row">
       <div>
         <h3>${escapeHTML(item.aluno_nome || 'Pagamento')}</h3>
-        <p class="meta">${money.format(Number(item.valor || 0))} - ${formatDate(item.pago_em)} - ${escapeHTML(item.forma_pagamento || 'manual')}</p>
+        <p class="meta">${money.format(Number(item.valor || 0))} - ${formatDate(item.pago_em)} - ${escapeHTML(item.forma_pagamento || 'manual')}${item.observacao ? ` - ${escapeHTML(item.observacao)}` : ''}</p>
       </div>
     </article>
   `);
@@ -1236,7 +1236,10 @@ function openStudentReport(id) {
   const target = planWeeklyTarget(student);
   const nextClasses = summary.history.filter((item) => item.data >= todayISO()).slice(0, 6);
   const recentClasses = [...summary.history].filter((item) => item.data < todayISO()).reverse().slice(0, 6);
-  const payments = (state.payments || []).filter((item) => String(item.aluno_id) === String(id)).slice(0, 6);
+  const payments = (state.payments || [])
+    .filter((item) => String(item.aluno_id) === String(id))
+    .sort((a, b) => String(b.pago_em || b.vencimento || '').localeCompare(String(a.pago_em || a.vencimento || '')))
+    .slice(0, 6);
   const paid = isPaid(student);
   const plan = `${escapeHTML(student.plano_nome || 'sem plano')} - ${money.format(Number(student.mensalidade || 0))}/mes`;
   const scheduleText = [student.dia_fixo !== '' && student.dia_fixo !== null && student.dia_fixo !== undefined ? weekdayName(student.dia_fixo) : '', student.horario_fixo || '', student.turma_fixa || ''].filter(Boolean).join(' - ') || 'sem agenda fixa';
@@ -1293,7 +1296,7 @@ function openStudentReport(id) {
       <article class="row-card compact-row">
         <div>
           <h3>${money.format(Number(item.valor || 0))}</h3>
-          <p class="meta">${escapeHTML(item.referencia || '')} - ${formatDate(item.pago_em || item.vencimento)} - ${escapeHTML(item.forma_pagamento || 'manual')}</p>
+          <p class="meta">${escapeHTML(item.referencia || '')} - ${formatDate(item.pago_em || item.vencimento)} - ${escapeHTML(item.forma_pagamento || 'manual')}${item.observacao ? ` - ${escapeHTML(item.observacao)}` : ''}</p>
         </div>
       </article>
     `).join('') : empty('Sem pagamento registrado neste historico.')}</div>
@@ -2201,29 +2204,65 @@ async function toggleAttendance(classId, studentId) {
   openAttendance(classId);
 }
 
+function openPayment(studentId) {
+  const student = studentById(studentId);
+  if (!student) return;
+  const month = selectedPaymentMonth();
+  document.getElementById('paymentStudentId').value = student.id;
+  document.getElementById('paymentStudentName').textContent = `${student.nome} - ${escapeHTML(student.plano_nome || 'sem plano')}`;
+  document.getElementById('paymentReference').value = month;
+  document.getElementById('paymentPaidAt').value = todayISO();
+  document.getElementById('paymentValue').value = Number(student.mensalidade || 0).toFixed(2);
+  document.getElementById('paymentMethod').value = 'Pix';
+  document.getElementById('paymentNote').value = '';
+  openModal('paymentModal');
+}
+
 async function markPaid(studentId) {
   const student = studentById(studentId);
   if (!student) return;
   const month = selectedPaymentMonth();
-  const paidUntil = dueDateForMonth(student, month);
   const alreadyPaid = isPaidForMonth(student, month);
-  if (alreadyPaid) {
-    if (!confirm(`Marcar ${student.nome} como NAO pago em ${month}?`)) return;
-    if (apiMode) {
-      await api(`/api/students/${studentId}`, { method: 'PUT', body: JSON.stringify({ ...student, pago_ate: '' }) });
-      await loadData();
-    } else {
-      student.pago_ate = '';
-      state.payments = (state.payments || []).filter((item) => !(String(item.aluno_id) === String(student.id) && paymentMonth(item) === month));
-      saveLocalState();
-      render();
-    }
-    toast('Mensalidade marcada como nao paga');
+  if (!alreadyPaid) {
+    openPayment(studentId);
     return;
   }
-  if (!confirm(`Confirmar pagamento de ${student.nome} em ${month}?`)) return;
+  if (!confirm(`Marcar ${student.nome} como NAO pago em ${month}?`)) return;
   if (apiMode) {
-    await api(`/api/students/${studentId}/pay`, { method: 'POST', body: JSON.stringify({ referencia: month, vencimento: paidUntil }) });
+    await api(`/api/students/${studentId}`, { method: 'PUT', body: JSON.stringify({ ...student, pago_ate: '' }) });
+    await loadData();
+  } else {
+    student.pago_ate = '';
+    state.payments = (state.payments || []).filter((item) => !(String(item.aluno_id) === String(student.id) && paymentMonth(item) === month));
+    saveLocalState();
+    render();
+  }
+  toast('Mensalidade marcada como nao paga');
+}
+
+async function savePayment(event) {
+  event.preventDefault();
+  const studentId = document.getElementById('paymentStudentId').value;
+  const student = studentById(studentId);
+  if (!student) return;
+  const month = document.getElementById('paymentReference').value || selectedPaymentMonth();
+  const paidUntil = dueDateForMonth(student, month);
+  const paidAt = document.getElementById('paymentPaidAt').value || todayISO();
+  const value = Number(document.getElementById('paymentValue').value || student.mensalidade || 0);
+  const method = document.getElementById('paymentMethod').value || 'Pix';
+  const note = document.getElementById('paymentNote').value.trim();
+  if (apiMode) {
+    await api(`/api/students/${studentId}/pay`, {
+      method: 'POST',
+      body: JSON.stringify({
+        referencia: month,
+        vencimento: paidUntil,
+        pago_em: paidAt,
+        valor: value,
+        forma_pagamento: method,
+        observacao: note
+      })
+    });
     await loadData();
   } else {
     student.pago_ate = student.pago_ate && student.pago_ate > paidUntil ? student.pago_ate : paidUntil;
@@ -2233,15 +2272,17 @@ async function markPaid(studentId) {
       aluno_id: student.id,
       aluno_nome: student.nome,
       referencia: month,
-      valor: Number(student.mensalidade || 0),
+      valor: value,
       vencimento: paidUntil,
-      pago_em: todayISO(),
+      pago_em: paidAt,
       status: 'PAGO',
-      forma_pagamento: 'manual'
+      forma_pagamento: method,
+      observacao: note
     });
     saveLocalState();
     render();
   }
+  closeModal('paymentModal');
   toast('Mensalidade marcada como paga');
 }
 
@@ -2602,6 +2643,7 @@ function bindEvents() {
     if (target) handleFocusAction(target.dataset.focusAction);
   });
   document.getElementById('studentForm').addEventListener('submit', (event) => saveStudent(event).catch((err) => toast(err.message)));
+  document.getElementById('paymentForm').addEventListener('submit', (event) => savePayment(event).catch((err) => toast(err.message)));
   document.getElementById('classForm').addEventListener('submit', (event) => saveClass(event).catch((err) => toast(err.message)));
   document.getElementById('planForm').addEventListener('submit', (event) => savePlan(event).catch((err) => toast(err.message)));
   document.getElementById('waitlistForm').addEventListener('submit', (event) => saveWaitlist(event).catch((err) => toast(err.message)));
@@ -2711,7 +2753,7 @@ document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'li
 updateThemeButton();
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260608-flow4', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260608-flow5', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

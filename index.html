@@ -9,9 +9,9 @@
     <meta name="apple-mobile-web-app-title" content="TLF Gestao" />
     <title>Team Lucão Futevôlei</title>
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260608-flow4" />
-    <link rel="stylesheet" href="styles.css?v=20260608-flow4" />
-    <link rel="stylesheet" href="visual-polish.css?v=20260608-flow4" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260608-flow5" />
+    <link rel="stylesheet" href="styles.css?v=20260608-flow5" />
+    <link rel="stylesheet" href="visual-polish.css?v=20260608-flow5" />
   </head>
   <body>
     <div class="booking-wall" id="bookingWall" aria-hidden="true">
@@ -495,6 +495,33 @@
       </section>
     </div>
 
+    <div class="modal-wrap" id="paymentModal" aria-hidden="true">
+      <form class="modal" id="paymentForm">
+        <button class="close" type="button" data-close="paymentModal">x</button>
+        <h2>Registrar pagamento</h2>
+        <input type="hidden" id="paymentStudentId" />
+        <p class="muted payment-modal-student" id="paymentStudentName"></p>
+        <div class="form-row">
+          <label>Referencia<input id="paymentReference" type="month" required /></label>
+          <label>Pago em<input id="paymentPaidAt" type="date" required /></label>
+        </div>
+        <div class="form-row">
+          <label>Valor<input id="paymentValue" type="number" min="0" step="0.01" required /></label>
+          <label>Forma
+            <select id="paymentMethod">
+              <option value="Pix">Pix</option>
+              <option value="Dinheiro">Dinheiro</option>
+              <option value="Cartao">Cartao</option>
+              <option value="Transferencia">Transferencia</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </label>
+        </div>
+        <label>Observacao<input id="paymentNote" placeholder="Ex: pago antecipado, desconto, reposicao..." /></label>
+        <button class="primary-btn" type="submit">Confirmar pagamento</button>
+      </form>
+    </div>
+
     <div class="modal-wrap" id="classModal" aria-hidden="true">
       <form class="modal" id="classForm">
         <button class="close" type="button" data-close="classModal">x</button>
@@ -607,6 +634,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="app.js?v=20260608-flow4"></script>
+    <script src="app.js?v=20260608-flow5"></script>
   </body>
 </html>
