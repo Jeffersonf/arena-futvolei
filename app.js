@@ -236,11 +236,11 @@ function updateSystemNotice() {
   if (!notice) return;
   if (apiMode) {
     notice.className = 'system-notice online';
-    notice.innerHTML = '<strong>Operacao real</strong><span>Servidor Node + SQLite ativo. Dados compartilhados e backups podem ser usados.</span>';
+    notice.innerHTML = '<strong>Operacao real</strong><span>Servidor ativo, dados compartilhados e backups disponiveis.</span>';
     return;
   }
   notice.className = 'system-notice demo';
-  notice.innerHTML = '<strong>Modo demo/local</strong><span>Os dados ficam neste navegador. Para uso diario no iPhone, publique com backend Node e banco persistente.</span>';
+  notice.innerHTML = '<strong>Demo local</strong><span>Dados neste navegador. Para uso diario no iPhone, publique o servidor.</span>';
 }
 
 async function loadData() {
@@ -2822,7 +2822,7 @@ document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'li
 updateThemeButton();
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260608-flow9', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260608-flow10', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

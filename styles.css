@@ -1136,12 +1136,12 @@ h2 {
 .system-notice {
   display: none;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 10px;
+  gap: 8px;
   align-items: center;
-  margin: -6px 0 14px;
+  margin: -6px 0 12px;
   border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 10px 12px;
+  border-radius: 12px;
+  padding: 8px 10px;
   background: color-mix(in srgb, var(--glass-strong) 86%, transparent);
   color: var(--muted);
   box-shadow: var(--inner-highlight);
@@ -2303,8 +2303,7 @@ select[multiple] {
   }
 
   .system-notice {
-    grid-template-columns: 1fr;
-    margin-top: -2px;
+    margin-top: -4px;
   }
 
   .global-search {
@@ -2483,6 +2482,10 @@ select[multiple] {
     padding: 10px 11px;
     background: var(--panel2);
     box-shadow: var(--inner-highlight);
+  }
+
+  .system-notice {
+    display: none !important;
   }
 
   .mobile-top-brand .brand-mark {
