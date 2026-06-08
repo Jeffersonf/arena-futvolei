@@ -9,9 +9,9 @@
     <meta name="apple-mobile-web-app-title" content="TLF Gestao" />
     <title>Team Lucão Futevôlei</title>
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260608-flow11" />
-    <link rel="stylesheet" href="styles.css?v=20260608-flow11" />
-    <link rel="stylesheet" href="visual-polish.css?v=20260608-flow11" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260608-flow15" />
+    <link rel="stylesheet" href="styles.css?v=20260608-flow15" />
+    <link rel="stylesheet" href="visual-polish.css?v=20260608-flow15" />
   </head>
   <body>
     <div class="booking-wall" id="bookingWall" aria-hidden="true">
@@ -177,15 +177,15 @@
             <button class="soft-btn" type="button" data-open-student>+ Novo aluno</button>
           </div>
           <input class="search" id="studentSearch" placeholder="Buscar aluno, telefone ou plano..." />
-          <div class="filters">
+          <div class="filters student-filters">
             <select id="studentStatusFilter" aria-label="Filtrar por status">
-              <option value="">Todos os status</option>
+              <option value="">Status</option>
               <option value="Ativo">Ativos</option>
               <option value="Experimental">Experimentais</option>
               <option value="Pausado">Pausados</option>
             </select>
             <select id="studentPaymentFilter" aria-label="Filtrar por pagamento">
-              <option value="">Todos os pagamentos</option>
+              <option value="">Pagamento</option>
               <option value="paid">Em dia</option>
               <option value="pending">Pendentes</option>
             </select>
@@ -565,6 +565,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="app.js?v=20260608-flow11"></script>
+    <script src="app.js?v=20260608-flow15"></script>
   </body>
 </html>

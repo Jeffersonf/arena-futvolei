@@ -2572,6 +2572,10 @@ select[multiple] {
     grid-template-columns: 1fr;
   }
 
+  .student-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .student-list {
     gap: 8px;
   }
@@ -2581,8 +2585,8 @@ select[multiple] {
   }
 
   .student-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px;
     padding: 12px;
     background: var(--panel2);
     box-shadow: var(--inner-highlight);
@@ -2597,27 +2601,49 @@ select[multiple] {
   .student-plan,
   .student-frequency,
   .student-payment {
-    min-height: 68px;
-    border: 1px solid color-mix(in srgb, var(--line) 64%, transparent);
-    border-radius: 12px;
-    padding: 9px;
-    background: color-mix(in srgb, var(--glass) 74%, transparent);
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+  }
+
+  .student-plan {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    align-items: center;
+  }
+
+  .student-plan .meta {
+    flex: 1 1 100%;
+  }
+
+  .student-frequency {
+    justify-self: end;
+    text-align: right;
   }
 
   .student-payment {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 8px;
-    min-height: 48px;
   }
 
   .student-payment .meta {
-    text-align: right;
+    display: none;
   }
 
   .student-actions {
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    justify-content: stretch;
+  }
+
+  .student-actions .mini-btn {
+    min-width: 0;
+    justify-content: center;
   }
 
   .kpi-grid,

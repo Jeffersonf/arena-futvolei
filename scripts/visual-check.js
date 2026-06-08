@@ -3,14 +3,15 @@ const fs = require('fs');
 
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
-const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260608-flow11';
-const expectedPolishVersion = process.env.VISUAL_POLISH_VERSION || '20260608-flow11';
+const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260608-flow15';
+const expectedPolishVersion = process.env.VISUAL_POLISH_VERSION || '20260608-flow15';
 
 const cases = [
   { name: 'mobile-booking', viewport: { width: 390, height: 844 }, page: null },
   { name: 'mobile-student-confirm-public', viewport: { width: 390, height: 844 }, page: null, action: 'public-student-tab' },
   { name: 'desktop-booking', viewport: { width: 1440, height: 950 }, page: null },
   { name: 'mobile-dashboard', viewport: { width: 390, height: 844 }, page: 'dashboard' },
+  { name: 'mobile-students', viewport: { width: 390, height: 844 }, page: 'students' },
   { name: 'mobile-classes', viewport: { width: 390, height: 844 }, page: 'classes' },
   { name: 'mobile-payments', viewport: { width: 390, height: 844 }, page: 'payments' },
   { name: 'mobile-payment-modal', viewport: { width: 390, height: 844 }, page: 'payments', action: 'payment-modal' },
