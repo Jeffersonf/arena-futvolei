@@ -614,16 +614,6 @@ select {
   color: var(--muted);
 }
 
-.side-card {
-  display: none;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 14px;
-  background: var(--glass);
-  box-shadow: var(--inner-highlight), 0 0 0 1px var(--hairline);
-}
-
-.side-card span,
 .eyebrow,
 .panel-head span {
   display: block;
@@ -632,13 +622,6 @@ select {
   font-weight: 850;
   letter-spacing: .08em;
   text-transform: uppercase;
-}
-
-.side-card strong {
-  display: block;
-  margin-top: 8px;
-  font-size: 14px;
-  line-height: 1.35;
 }
 
 .theme-float {
@@ -1133,10 +1116,6 @@ h2 {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
   gap: 10px;
-}
-
-.side-card {
-  display: none;
 }
 
 .mode-chip {
@@ -2428,7 +2407,6 @@ select[multiple] {
   }
 
   .brand,
-  .side-card,
   .ghost-btn {
     display: none;
   }
