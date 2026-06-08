@@ -9,9 +9,9 @@
     <meta name="apple-mobile-web-app-title" content="TLF Gestao" />
     <title>Team Lucão Futevôlei</title>
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260608-confirm1" />
-    <link rel="stylesheet" href="styles.css?v=20260608-confirm1" />
-    <link rel="stylesheet" href="visual-polish.css?v=20260608-confirm1" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260608-flow1" />
+    <link rel="stylesheet" href="styles.css?v=20260608-flow1" />
+    <link rel="stylesheet" href="visual-polish.css?v=20260608-flow1" />
   </head>
   <body>
     <div class="booking-wall" id="bookingWall" aria-hidden="true">
@@ -115,7 +115,7 @@
       </div>
       <div class="side-card">
         <span>Modo</span>
-        <strong id="modeStatus">Carregando...</strong>
+        <strong>Carregando...</strong>
       </div>
       <button class="ghost-btn" id="logoutBtn" type="button">Sair</button>
     </aside>
@@ -141,6 +141,7 @@
             <input id="globalSearch" placeholder="Busca rapida..." autocomplete="off" />
             <div class="global-results" id="globalResults"></div>
           </div>
+          <span class="mode-chip" id="modeStatus">Carregando...</span>
           <button class="soft-btn" type="button" data-refresh>Atualizar</button>
           <button class="primary-btn" type="button" data-open-student>+ Novo aluno</button>
         </div>
@@ -596,6 +597,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="app.js?v=20260608-confirm1"></script>
+    <script src="app.js?v=20260608-flow1"></script>
   </body>
 </html>

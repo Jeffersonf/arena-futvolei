@@ -1156,6 +1156,31 @@ h2 {
   gap: 10px;
 }
 
+.side-card {
+  display: none;
+}
+
+.mode-chip {
+  display: inline-grid;
+  min-height: 38px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 12px;
+  background: color-mix(in srgb, var(--glass-strong) 86%, transparent);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
+  box-shadow: var(--inner-highlight);
+}
+
+.schedule-report-card {
+  margin: 10px 0;
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--line));
+  background: color-mix(in srgb, var(--panel) 92%, var(--accent) 5%);
+}
+
 .student-list {
   display: grid;
   gap: 8px;
@@ -2153,6 +2178,12 @@ select[multiple] {
   .top-actions > *,
   .data-actions > * {
     flex: 1 1 170px;
+  }
+
+  .mode-chip {
+    flex: 1 1 100%;
+    min-height: 34px;
+    justify-self: stretch;
   }
 
   .global-search {
