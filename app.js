@@ -1421,10 +1421,18 @@ function attendanceSummaryText(item) {
   const present = enrolled.filter((student) => item.presencas?.[student.aluno_id || student.id] || student.presente);
   const presentIds = new Set(present.map((student) => String(student.aluno_id || student.id)));
   const absent = enrolled.filter((student) => !presentIds.has(String(student.aluno_id || student.id)));
+  const confirmed = enrolled.filter((student) => (student.confirmado || student.confirmacao) === 'sim');
+  const declined = enrolled.filter((student) => (student.confirmado || student.confirmacao) === 'nao');
   const extras = classExtras(item);
   return [
     'Resumo de presenca - Team Lucao Futevolei',
     `${formatDate(item.data)} as ${item.horario} - ${item.turma || 'Turma'} (${classType(item)})`,
+    '',
+    `Confirmaram que vao (${confirmed.length}):`,
+    confirmed.length ? confirmed.map((student) => `- ${student.nome}`).join('\n') : '- nenhum',
+    '',
+    `Avisaram que nao vao (${declined.length}):`,
+    declined.length ? declined.map((student) => `- ${student.nome}`).join('\n') : '- nenhum',
     '',
     `Presentes (${present.length}):`,
     present.length ? present.map((student) => `- ${student.nome}`).join('\n') : '- nenhum marcado',
@@ -2046,30 +2054,47 @@ function openAttendance(classId) {
   const item = state.classes.find((entry) => String(entry.id) === String(classId));
   if (!item) return;
   activeAttendanceClassId = classId;
-  const ids = classStudentIds(item);
+  const enrolled = classStudents(item);
+  const ids = enrolled.map((student) => student.aluno_id || student.id);
   const extras = classExtras(item);
   const presentCount = ids.filter((id) => item.presencas?.[id] || item.presencas?.[String(id)]).length;
+  const confirmation = classConfirmationStats(item);
+  const absentLikely = enrolled.filter((student) => (student.confirmado || student.confirmacao) === 'nao').length;
   document.getElementById('attendanceTitle').innerHTML = `
     <span>${formatDate(item.data)} as ${escapeHTML(item.horario)} - ${escapeHTML(item.turma || 'Turma')}</span>
     <strong>${presentCount}/${ids.length} presentes</strong>
-    <small>${escapeHTML(classType(item))} - ${escapeHTML(item.status || 'Marcada')} - ${extras.length} fora da lista</small>
+    <small>${escapeHTML(classType(item))} - ${escapeHTML(item.status || 'Marcada')} - ${confirmation.yes} vao - ${absentLikely} nao vao - ${confirmation.open} sem resposta - ${extras.length} fora da lista</small>
   `;
-  document.getElementById('attendanceList').innerHTML = ids.map(studentById).filter(Boolean).map((student) => `
-    <div class="check-item ${item.presencas?.[student.id] ? 'checked-in' : ''}">
+  document.getElementById('attendanceList').innerHTML = enrolled.map((student) => {
+    const id = student.aluno_id || student.id;
+    const fullStudent = studentById(id) || student;
+    const present = Boolean(item.presencas?.[id] || item.presencas?.[String(id)] || student.presente);
+    const [confirmClass, confirmText] = confirmationLabel(student.confirmado || student.confirmacao || '');
+    const phone = fullStudent.telefone || student.telefone || '';
+    return `
+    <div class="check-item ${present ? 'checked-in' : ''} ${confirmClass === 'bad' ? 'likely-absent' : ''}">
       <div>
         <strong>${escapeHTML(student.nome)}</strong>
-        <p class="meta">${escapeHTML(student.plano_nome || 'sem plano')} - ${weeklyAttendanceCount(student.id, item.data)}/${planWeeklyTarget(student) || '-'} na semana</p>
+        <p class="meta">${escapeHTML(fullStudent.plano_nome || student.plano_nome || 'sem plano')} - ${weeklyAttendanceCount(id, item.data)}/${planWeeklyTarget(fullStudent) || '-'} na semana</p>
+        <div class="pill-row">
+          <span class="pill ${confirmClass}">${confirmText}</span>
+          ${phone ? `<a class="pill" href="${whatsappUrl(phone, `Oi ${student.nome}, tudo bem? Aqui e do Team Lucao Futevolei. Voce confirma a aula de hoje as ${item.horario}?`)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+        </div>
       </div>
-      <button class="mini-btn ${item.presencas?.[student.id] ? 'present' : ''}" data-toggle-attendance="${item.id}:${student.id}">
-        ${item.presencas?.[student.id] ? 'Presente' : 'Marcar'}
+      <button class="mini-btn ${present ? 'present' : ''}" data-toggle-attendance="${item.id}:${id}">
+        ${present ? 'Presente' : 'Marcar'}
       </button>
     </div>
-  `).join('') || empty('Nenhum aluno vinculado a esta aula.');
+  `;
+  }).join('') || empty('Nenhum aluno vinculado a esta aula.');
   document.getElementById('extraAttendanceList').innerHTML = extras.length ? extras.map((extra, index) => `
     <article class="row-card compact-row">
       <div>
         <h3>${escapeHTML(extra.nome || extra)}</h3>
         <p class="meta">${escapeHTML(extraType(extra))} - fora da lista prevista</p>
+      </div>
+      <div class="actions">
+        <button class="mini-btn danger-mini" data-remove-extra="${item.id}:${index}">Remover</button>
       </div>
     </article>
   `).join('') : empty('Nenhum avulso marcado.');
@@ -2092,6 +2117,12 @@ async function updateClassStatus(id, status) {
   item.status = status;
   await saveClassItem(item);
   toast(`Aula ${status.toLowerCase()}`);
+}
+
+async function finishAttendance() {
+  if (!activeAttendanceClassId) return;
+  await updateClassStatus(activeAttendanceClassId, 'Finalizada');
+  closeModal('attendanceModal');
 }
 
 async function addExtraAttendance(event) {
@@ -2559,6 +2590,7 @@ function bindEvents() {
   document.getElementById('markAllPresent').addEventListener('click', () => setClassAttendance(activeAttendanceClassId, true).catch((err) => toast(err.message)));
   document.getElementById('clearAttendance').addEventListener('click', () => setClassAttendance(activeAttendanceClassId, false).catch((err) => toast(err.message)));
   document.getElementById('copyAttendance').addEventListener('click', () => copyAttendanceSummary().catch((err) => toast(err.message)));
+  document.getElementById('finishAttendance').addEventListener('click', () => finishAttendance().catch((err) => toast(err.message)));
   document.getElementById('studentSearch').addEventListener('input', renderStudents);
   document.getElementById('globalSearch').addEventListener('input', renderGlobalResults);
   document.getElementById('globalResults').addEventListener('click', (event) => {
@@ -2660,7 +2692,7 @@ document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'li
 updateThemeButton();
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260608-flow2', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260608-flow3', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

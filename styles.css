@@ -2111,6 +2111,19 @@ select[multiple] {
   background: color-mix(in srgb, var(--panel) 90%, var(--ok) 6%);
 }
 
+.check-item.likely-absent:not(.checked-in) {
+  border-color: color-mix(in srgb, var(--bad) 34%, var(--line));
+  background: color-mix(in srgb, var(--panel) 92%, var(--bad) 5%);
+}
+
+.check-item .pill-row {
+  margin-top: 8px;
+}
+
+.check-item a.pill {
+  text-decoration: none;
+}
+
 .check-item button.present {
   border-color: color-mix(in srgb, var(--ok) 45%, var(--line));
   background: color-mix(in srgb, var(--ok) 18%, var(--soft));

@@ -6,8 +6,8 @@ Use este checklist quando a rodada local estiver aprovada e for hora de publicar
 
 - Live local: `http://127.0.0.1:4280/`
 - PIN da demo: `1234`
-- Versao atual dos assets: `20260608-flow2`
-- Service worker atual: `team-lucao-v52`
+- Versao atual dos assets: `20260608-flow3`
+- Service worker atual: `team-lucao-v53`
 
 ## Antes de publicar
 
@@ -43,6 +43,7 @@ npm run visual:check
 - Buscar aulas como aluno pelo WhatsApp e marcar `Vou` / `Nao vou`.
 - Abrir `Pedidos` e aprovar/recusar um pedido.
 - Abrir uma aula de hoje e marcar presenca.
+- Conferir no modal de presenca: confirmar status dos alunos, copiar resumo e finalizar aula.
 - Clicar no nome de um aluno e abrir a ficha.
 - Abrir Cobrar e copiar uma cobranca.
 - Abrir Espera e ver interessados com prioridade.
