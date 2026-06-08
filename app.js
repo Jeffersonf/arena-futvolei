@@ -232,17 +232,31 @@ async function detectServer() {
   }
 }
 
+function updateSystemNotice() {
+  const notice = document.getElementById('systemNotice');
+  if (!notice) return;
+  if (apiMode) {
+    notice.className = 'system-notice online';
+    notice.innerHTML = '<strong>Operacao real</strong><span>Servidor Node + SQLite ativo. Dados compartilhados e backups podem ser usados.</span>';
+    return;
+  }
+  notice.className = 'system-notice demo';
+  notice.innerHTML = '<strong>Modo demo/local</strong><span>Os dados ficam neste navegador. Para uso diario no iPhone, publique com backend Node e banco persistente.</span>';
+}
+
 async function loadData() {
   apiMode = await detectServer();
   if (!apiMode) {
     const modeStatus = document.getElementById('modeStatus');
     if (modeStatus) modeStatus.textContent = 'Local no navegador';
+    updateSystemNotice();
     render();
     restorePage();
     return;
   }
   const modeStatus = document.getElementById('modeStatus');
   if (modeStatus) modeStatus.textContent = 'Servidor Node + SQLite';
+  updateSystemNotice();
   const [students, classes, plans, waitlist, payments, bookings] = await Promise.all([
     api('/api/students'),
     api('/api/classes'),
@@ -1587,6 +1601,11 @@ async function renderPublicBooking() {
   const select = document.getElementById('bookingClass');
   const list = document.getElementById('bookingClassList');
   if (!select || !list) return;
+  const hasServer = await detectServer();
+  const bookingStatus = document.getElementById('bookingStatus');
+  const studentStatus = document.getElementById('studentConfirmStatus');
+  if (!hasServer && bookingStatus && !bookingStatus.textContent) bookingStatus.textContent = 'Modo demo: pedido fica salvo apenas neste navegador.';
+  if (!hasServer && studentStatus && !studentStatus.textContent) studentStatus.textContent = 'Modo demo: confirmacao real precisa do servidor online.';
   const classes = await loadPublicClasses();
   select.innerHTML = classes.length
     ? classes.map((item) => `<option value="${item.id}">${escapeHTML(publicClassLabel(item))}</option>`).join('')
@@ -2692,7 +2711,7 @@ document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'li
 updateThemeButton();
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260608-flow3', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260608-flow4', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
@@ -2705,10 +2724,13 @@ if (localStorage.getItem(PIN_KEY)) {
     }
     const modeStatus = document.getElementById('modeStatus');
     if (modeStatus) modeStatus.textContent = 'Local no navegador';
+    apiMode = false;
+    updateSystemNotice();
     toast(err.message);
     render();
   });
 } else {
   showLogin(false);
   showBooking(true);
+  updateSystemNotice();
 }

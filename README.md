@@ -113,6 +113,8 @@ Endpoints uteis no servidor:
 - `GET /health`: status publico.
 - `GET /api/public/classes`: aulas futuras disponiveis para pedido de vaga.
 - `POST /api/public/bookings`: cria pedido publico de aula.
+- `GET /api/public/student-classes`: aluno busca proximas aulas pelo WhatsApp.
+- `POST /api/public/student-confirm`: aluno confirma se vai ou nao vai.
 - `GET /api/bookings`: lista pedidos para o professor.
 - `POST /api/bookings/:id/respond`: aprova ou recusa um pedido.
 - `GET /api/backups`: lista backups.
@@ -130,3 +132,15 @@ O roteiro para apresentar a ideia, explicar o valor no dia a dia e mostrar o roa
 O checklist pratico para ensaiar a demo esta em `CHECKLIST_DEMO.md`.
 
 O checklist para fechar a rodada local e publicar no GitHub Pages esta em `FECHAMENTO_PUBLICACAO.md`.
+
+## GitHub Pages x uso real
+
+GitHub Pages serve para demonstrar a interface e validar o fluxo visual. Para operacao diaria, use o backend Node:
+
+- pedidos publicos de vaga compartilhados;
+- confirmacao do aluno pelo link;
+- presenca e mensalidade salvas entre dispositivos;
+- backup automatico;
+- acesso confiavel pelo iPhone do professor.
+
+Sem backend online, o app mostra `Modo demo/local` e salva dados apenas no navegador atual.

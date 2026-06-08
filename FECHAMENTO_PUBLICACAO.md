@@ -6,8 +6,8 @@ Use este checklist quando a rodada local estiver aprovada e for hora de publicar
 
 - Live local: `http://127.0.0.1:4280/`
 - PIN da demo: `1234`
-- Versao atual dos assets: `20260608-flow3`
-- Service worker atual: `team-lucao-v53`
+- Versao atual dos assets: `20260608-flow4`
+- Service worker atual: `team-lucao-v54`
 
 ## Antes de publicar
 
@@ -51,11 +51,21 @@ npm run visual:check
 
 ## Publicacao
 
+### Demo estatica
+
 1. Confirmar worktree limpo ou somente com mudancas intencionais.
 2. Fazer push para `main`.
 3. Aguardar o GitHub Pages atualizar.
 4. Verificar se o HTML publicado contem a versao atual dos assets.
 5. Abrir `https://jeffersonf.github.io/arena-futvolei/` no iPhone.
+
+### Operacao real
+
+1. Publicar o backend Node com `DB_PATH` e `BACKUPS_DIR` em disco persistente.
+2. Configurar `ADMIN_PIN` fora do codigo.
+3. Abrir o link do servidor no iPhone.
+4. Confirmar que o topo mostra `Servidor Node + SQLite`.
+5. Testar pedido publico, confirmacao do aluno, presenca e backup manual.
 
 ## Depois de publicar
 

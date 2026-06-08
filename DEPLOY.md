@@ -57,6 +57,19 @@ No painel do provedor, configure manualmente `ADMIN_PIN`.
 - Testar acesso pelo iPhone.
 - Salvar o link na tela inicial do iPhone.
 
+## Teste de aceite no iPhone
+
+1. Abrir o link do servidor, nao o GitHub Pages.
+2. Entrar com o PIN real.
+3. Criar um aluno com agenda fixa.
+4. Sincronizar proximas aulas pela ficha do aluno.
+5. Abrir a aula do dia e marcar presenca.
+6. Abrir a tela publica `Sou aluno`, buscar pelo WhatsApp e confirmar `Vou`.
+7. Voltar ao painel e conferir a confirmacao na aula.
+8. Criar backup manual e baixar o arquivo.
+
+Se qualquer passo depender de dados compartilhados entre aparelhos, ele precisa passar pelo servidor Node.
+
 ## Observacoes
 
 GitHub Pages continua servindo bem para demo, mas uso real precisa do servidor Node para persistir dados em SQLite e fazer backup automatico. Sem servidor, o modo local usa `localStorage` do navegador.

@@ -1175,6 +1175,46 @@ h2 {
   box-shadow: var(--inner-highlight);
 }
 
+.system-notice {
+  display: none;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  margin: -6px 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--glass-strong) 86%, transparent);
+  color: var(--muted);
+  box-shadow: var(--inner-highlight);
+}
+
+.system-notice.demo,
+.system-notice.online {
+  display: grid;
+}
+
+.system-notice strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.system-notice span {
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.system-notice.demo {
+  border-color: color-mix(in srgb, var(--warn) 34%, var(--line));
+  background: color-mix(in srgb, var(--warn) 9%, var(--glass-strong));
+}
+
+.system-notice.online {
+  border-color: color-mix(in srgb, var(--ok) 28%, var(--line));
+  background: color-mix(in srgb, var(--ok) 7%, var(--glass-strong));
+}
+
 .schedule-report-card {
   margin: 10px 0;
   border-color: color-mix(in srgb, var(--accent) 24%, var(--line));
@@ -2288,6 +2328,11 @@ select[multiple] {
     flex: 1 1 100%;
     min-height: 34px;
     justify-self: stretch;
+  }
+
+  .system-notice {
+    grid-template-columns: 1fr;
+    margin-top: -2px;
   }
 
   .global-search {
