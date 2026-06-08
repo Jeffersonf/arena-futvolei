@@ -9,9 +9,9 @@
     <meta name="apple-mobile-web-app-title" content="TLF Gestao" />
     <title>Team Lucão Futevôlei</title>
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260608-flow1" />
-    <link rel="stylesheet" href="styles.css?v=20260608-flow1" />
-    <link rel="stylesheet" href="visual-polish.css?v=20260608-flow1" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260608-flow2" />
+    <link rel="stylesheet" href="styles.css?v=20260608-flow2" />
+    <link rel="stylesheet" href="visual-polish.css?v=20260608-flow2" />
   </head>
   <body>
     <div class="booking-wall" id="bookingWall" aria-hidden="true">
@@ -527,7 +527,15 @@
             </select>
           </label>
         </div>
-        <label>Alunos da aula<select id="classStudents" multiple></select></label>
+        <label class="native-class-select">Alunos da aula<select id="classStudents" multiple></select></label>
+        <div class="class-students-picker">
+          <div class="section-label">Alunos da aula</div>
+          <div class="class-picker-head">
+            <input id="classStudentSearch" placeholder="Buscar aluno para adicionar..." autocomplete="off" />
+            <span id="classStudentCount">0 selecionados</span>
+          </div>
+          <div class="class-student-list" id="classStudentChecklist"></div>
+        </div>
         <label>Repetir por semanas<input id="classRepeatWeeks" type="number" min="1" max="12" step="1" value="1" /></label>
         <button class="primary-btn" type="submit">Salvar aula</button>
       </form>
@@ -597,6 +605,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="app.js?v=20260608-flow1"></script>
+    <script src="app.js?v=20260608-flow2"></script>
   </body>
 </html>

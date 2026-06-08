@@ -293,6 +293,16 @@ function dueDateForMonth(student = {}, month = todayISO().slice(0, 7)) {
   return `${month}-${String(Math.min(dueDay(student), lastDay)).padStart(2, '0')}`;
 }
 
+function paymentUrgency(student = {}, month = currentMonth()) {
+  if (isPaidForMonth(student, month)) return { label: 'em dia', className: 'ok', days: 0 };
+  const due = dueDateForMonth(student, month);
+  const days = daysBetween(due, todayISO());
+  if (days > 0) return { label: `${days} dia(s) atrasado`, className: 'bad', days };
+  if (days === 0) return { label: 'vence hoje', className: 'warn', days };
+  if (days >= -3) return { label: `vence em ${Math.abs(days)} dia(s)`, className: 'warn', days };
+  return { label: `vence ${formatDate(due)}`, className: '', days };
+}
+
 function classStudentIds(item = {}) {
   return item.aluno_ids || (item.alunos || []).map((entry) => entry.aluno_id || entry.id);
 }
@@ -868,6 +878,11 @@ function renderPayments() {
   const paidThisMonth = monthPayments.reduce((sum, item) => sum + Number(item.valor || 0), 0);
   const activeStudents = state.students.filter((student) => student.status !== 'Pausado');
   const pending = activeStudents.filter((student) => !isPaidForMonth(student, month));
+  const overdue = pending.filter((student) => paymentUrgency(student, month).days > 0);
+  const dueSoon = pending.filter((student) => {
+    const days = paymentUrgency(student, month).days;
+    return days <= 0 && days >= -3;
+  });
   const expected = activeStudents.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0);
   const receiveRate = expected ? Math.round((paidThisMonth / expected) * 100) : 0;
   const query = document.getElementById('paymentSearch')?.value.trim().toLowerCase() || '';
@@ -877,6 +892,8 @@ function renderPayments() {
     <article class="mini-stat"><span>Previsao do mes</span><strong>${money.format(expected)}</strong></article>
     <article class="mini-stat ${receiveRate >= 80 ? 'kpi-ok' : pending.length ? 'kpi-warn' : ''}"><span>Recebimento</span><strong>${receiveRate}%</strong></article>
     <article class="mini-stat ${pending.length ? 'kpi-bad' : 'kpi-ok'}"><span>Pendências</span><strong>${pending.length}</strong></article>
+    <article class="mini-stat ${overdue.length ? 'kpi-bad' : 'kpi-ok'}"><span>Atrasadas</span><strong>${overdue.length}</strong></article>
+    <article class="mini-stat ${dueSoon.length ? 'kpi-warn' : ''}"><span>Cobrar agora</span><strong>${dueSoon.length}</strong></article>
     <article class="mini-stat ${pending.length ? 'kpi-bad' : 'kpi-ok'}"><span>A receber</span><strong>${money.format(pending.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0))}</strong></article>
   `;
   const visibleStudents = state.students.filter((student) => {
@@ -885,23 +902,28 @@ function renderPayments() {
     const matchesFilter = !filter || (filter === 'paid' ? isPaidForMonth(student, month) : !isPaidForMonth(student, month));
     return matchesQuery && matchesFilter;
   }).sort((a, b) => Number(isPaidForMonth(a, month)) - Number(isPaidForMonth(b, month)) || a.nome.localeCompare(b.nome));
-  const rows = visibleStudents.map((student) => `
-    <article class="row-card payment-row ${isPaidForMonth(student, month) ? 'payment-paid' : 'payment-pending'}">
+  const rows = visibleStudents.map((student) => {
+    const paid = isPaidForMonth(student, month);
+    const urgency = paymentUrgency(student, month);
+    return `
+    <article class="row-card payment-row ${paid ? 'payment-paid' : 'payment-pending'}">
       <div>
         <button class="link-title compact-title" type="button" data-report-student="${student.id}">${escapeHTML(student.nome)}</button>
         <p class="meta">${escapeHTML(student.plano_nome || 'sem plano')} - ${money.format(Number(student.mensalidade || 0))} - pago até ${student.pago_ate ? formatDate(student.pago_ate) : 'sem registro'}</p>
         <div class="pill-row">
-          <span class="pill ${isPaidForMonth(student, month) ? 'ok' : 'bad'}">${isPaidForMonth(student, month) ? 'em dia' : 'pendente'}</span>
+          <span class="pill ${paid ? 'ok' : 'bad'}">${paid ? 'em dia' : 'pendente'}</span>
+          <span class="pill ${urgency.className}">${escapeHTML(urgency.label)}</span>
           <span class="pill">vence dia ${dueDay(student)}</span>
         </div>
       </div>
       <div class="actions">
         ${student.telefone ? `<a class="mini-btn" href="${whatsappUrl(student.telefone, `Oi ${student.nome}, tudo bem? Passando para lembrar da mensalidade do Team Lucão Futevôlei.`)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
         <button class="mini-btn" data-copy-charge="${student.id}">Copiar cobranca</button>
-        <button class="mini-btn" data-pay="${student.id}">${isPaidForMonth(student, month) ? 'Marcar nao pago' : 'Marcar pago'}</button>
+        <button class="mini-btn" data-pay="${student.id}">${paid ? 'Marcar nao pago' : 'Marcar pago'}</button>
       </div>
     </article>
-  `);
+  `;
+  });
   const history = monthPayments.slice(0, 8).map((item) => `
     <article class="row-card compact-row">
       <div>
@@ -1294,6 +1316,8 @@ function openClass(id = '') {
   document.getElementById('classStatus').value = item.status || 'Marcada';
   document.getElementById('classRepeatWeeks').value = item.id ? 1 : 4;
   document.getElementById('classRepeatWeeks').disabled = Boolean(item.id);
+  const classSearch = document.getElementById('classStudentSearch');
+  if (classSearch) classSearch.value = '';
   fillClassStudents(item.aluno_ids || []);
   openModal('classModal');
 }
@@ -1478,6 +1502,49 @@ function fillClassStudents(selected = []) {
   select.innerHTML = state.students.filter((student) => student.status !== 'Pausado').map((student) => (
     `<option value="${student.id}" ${selectedSet.has(String(student.id)) ? 'selected' : ''}>${escapeHTML(student.nome)} - ${escapeHTML(student.plano_nome || 'sem plano')}</option>`
   )).join('');
+  renderClassStudentChecklist();
+}
+
+function selectedClassStudentIds() {
+  return [...document.getElementById('classStudents')?.selectedOptions || []].map((option) => String(option.value));
+}
+
+function renderClassStudentChecklist() {
+  const list = document.getElementById('classStudentChecklist');
+  const count = document.getElementById('classStudentCount');
+  const select = document.getElementById('classStudents');
+  if (!list || !select) return;
+  const selected = new Set(selectedClassStudentIds());
+  const query = document.getElementById('classStudentSearch')?.value.trim().toLowerCase() || '';
+  const students = state.students
+    .filter((student) => student.status !== 'Pausado')
+    .filter((student) => {
+      const haystack = `${student.nome} ${student.telefone} ${student.plano_nome} ${student.nivel}`.toLowerCase();
+      return selected.has(String(student.id)) || !query || haystack.includes(query);
+    })
+    .sort((a, b) => Number(selected.has(String(b.id))) - Number(selected.has(String(a.id))) || a.nome.localeCompare(b.nome))
+    .slice(0, query ? 30 : 18);
+  if (count) count.textContent = `${selected.size} selecionado(s)`;
+  list.innerHTML = students.length ? students.map((student) => {
+    const checked = selected.has(String(student.id));
+    const schedule = [student.dia_fixo !== '' && student.dia_fixo !== null && student.dia_fixo !== undefined ? weekdayName(student.dia_fixo) : '', student.horario_fixo || ''].filter(Boolean).join(' ');
+    return `
+      <label class="class-student-option ${checked ? 'selected' : ''}">
+        <input type="checkbox" value="${student.id}" ${checked ? 'checked' : ''} data-class-student-check />
+        <span>
+          <strong>${escapeHTML(student.nome)}</strong>
+          <small>${escapeHTML(student.plano_nome || 'sem plano')}${schedule ? ` - ${escapeHTML(schedule)}` : ''}</small>
+        </span>
+      </label>
+    `;
+  }).join('') : empty('Nenhum aluno encontrado.');
+}
+
+function toggleClassStudent(studentId, checked) {
+  const option = [...document.getElementById('classStudents')?.options || []].find((item) => String(item.value) === String(studentId));
+  if (!option) return;
+  option.selected = checked;
+  renderClassStudentChecklist();
 }
 
 function bookingReplyText(booking, item) {
@@ -2518,6 +2585,7 @@ function bindEvents() {
   document.getElementById('classDateFilter').addEventListener('change', renderClasses);
   document.getElementById('classTypeFilter').addEventListener('change', renderClasses);
   document.getElementById('classStatusFilter').addEventListener('change', renderClasses);
+  document.getElementById('classStudentSearch')?.addEventListener('input', renderClassStudentChecklist);
   document.getElementById('waitStatusFilter').addEventListener('change', renderWaitlist);
   document.getElementById('importFile').addEventListener('change', (event) => {
     importBackup(event.target.files[0]).catch((err) => toast(err.message));
@@ -2529,6 +2597,11 @@ function bindEvents() {
   });
   document.getElementById('themeBtn').addEventListener('click', toggleTheme);
   document.getElementById('logoutBtn').addEventListener('click', logout);
+  document.getElementById('classStudentChecklist')?.addEventListener('change', (event) => {
+    const target = event.target.closest('[data-class-student-check]');
+    if (!target) return;
+    toggleClassStudent(target.value, target.checked);
+  });
   document.body.addEventListener('click', (event) => {
     const target = event.target.closest('[data-action],[data-report-student],[data-edit-student],[data-sync-student],[data-delete-student],[data-edit-class],[data-delete-class],[data-duplicate-class],[data-class-status],[data-copy-class],[data-edit-plan],[data-delete-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-copy-charge],[data-edit-wait],[data-delete-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day],[data-more-page],[data-more-action],[data-booking-action]');
     if (!target) return;
@@ -2587,7 +2660,7 @@ document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'li
 updateThemeButton();
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260608-flow1', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260608-flow2', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

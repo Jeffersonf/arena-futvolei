@@ -1862,6 +1862,89 @@ label {
   background: color-mix(in srgb, var(--panel) 88%, var(--accent) 5%);
 }
 
+.native-class-select {
+  display: none;
+}
+
+.class-students-picker {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.class-picker-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.class-picker-head input {
+  min-height: 44px;
+}
+
+.class-picker-head span {
+  min-height: 38px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
+  background: var(--soft);
+}
+
+.class-student-list {
+  display: grid;
+  gap: 8px;
+  max-height: 320px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.class-student-option {
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--glass);
+  color: var(--text);
+}
+
+.class-student-option.selected {
+  border-color: color-mix(in srgb, var(--ok) 38%, var(--line));
+  background: color-mix(in srgb, var(--ok) 10%, var(--glass-strong));
+}
+
+.class-student-option input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+
+.class-student-option span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.class-student-option strong,
+.class-student-option small {
+  overflow-wrap: anywhere;
+}
+
+.class-student-option small {
+  color: var(--muted);
+}
+
 input,
 select {
   width: 100%;
@@ -2164,6 +2247,14 @@ select[multiple] {
 
   .extra-attendance {
     grid-template-columns: 1fr;
+  }
+
+  .class-picker-head {
+    grid-template-columns: 1fr;
+  }
+
+  .class-picker-head span {
+    justify-self: stretch;
   }
 
   .topbar {
