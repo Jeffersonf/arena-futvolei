@@ -1052,6 +1052,8 @@ function renderReports() {
       <div class="actions">
         <button class="mini-btn" data-copy-report="month">Copiar fechamento</button>
         <button class="mini-btn" data-action="payments">Ver cobrancas</button>
+        <button class="mini-btn" data-backup>Backup JSON</button>
+        <button class="mini-btn" data-server-backup>Backup servidor</button>
       </div>
     </article>
   `;
@@ -1557,6 +1559,12 @@ function openNextClass() {
 }
 
 function handleQuickAction(action) {
+  if (action === 'payments') {
+    setPage('payments');
+    document.getElementById('paymentStatusFilter').value = 'pending';
+    renderPayments();
+    return;
+  }
   if (action === 'quick-pending') copyPendingCharges().catch((err) => toast(err.message));
   if (action === 'quick-next-class') openNextClass();
   if (action === 'quick-bookings') setPage('bookings');
@@ -2830,7 +2838,7 @@ document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'li
 updateThemeButton();
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260608-flow6', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260608-flow7', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

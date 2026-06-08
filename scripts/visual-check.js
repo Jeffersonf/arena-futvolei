@@ -3,8 +3,8 @@ const fs = require('fs');
 
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
-const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260608-flow6';
-const expectedPolishVersion = process.env.VISUAL_POLISH_VERSION || '20260608-flow6';
+const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260608-flow7';
+const expectedPolishVersion = process.env.VISUAL_POLISH_VERSION || '20260608-flow7';
 
 const cases = [
   { name: 'mobile-booking', viewport: { width: 390, height: 844 }, page: null },
@@ -13,9 +13,12 @@ const cases = [
   { name: 'mobile-dashboard', viewport: { width: 390, height: 844 }, page: 'dashboard' },
   { name: 'mobile-classes', viewport: { width: 390, height: 844 }, page: 'classes' },
   { name: 'mobile-payments', viewport: { width: 390, height: 844 }, page: 'payments' },
+  { name: 'mobile-payment-modal', viewport: { width: 390, height: 844 }, page: 'payments', action: 'payment-modal' },
   { name: 'mobile-bookings', viewport: { width: 390, height: 844 }, page: 'bookings' },
   { name: 'mobile-student-report', viewport: { width: 390, height: 844 }, page: 'students', action: 'student-report' },
   { name: 'mobile-attendance', viewport: { width: 390, height: 844 }, page: 'classes', action: 'attendance' },
+  { name: 'mobile-reports', viewport: { width: 390, height: 844 }, page: 'reports' },
+  { name: 'mobile-class-modal', viewport: { width: 390, height: 844 }, page: 'classes', action: 'class-modal' },
   { name: 'mobile-more', viewport: { width: 390, height: 844 }, page: 'more' },
   { name: 'desktop-dashboard', viewport: { width: 1440, height: 950 }, page: 'dashboard' },
   { name: 'desktop-students', viewport: { width: 1440, height: 950 }, page: 'students' },
@@ -39,6 +42,14 @@ async function runCaseAction(page, action) {
   if (action === 'student-report') {
     await page.locator('#page-students.active .student-row [data-report-student]').first().click();
     await page.waitForSelector('#studentReportModal.open', { timeout: 5000 });
+  }
+  if (action === 'payment-modal') {
+    await page.locator('#page-payments.active [data-pay]').first().click();
+    await page.waitForSelector('#paymentModal.open', { timeout: 5000 });
+  }
+  if (action === 'class-modal') {
+    await page.locator('#page-classes.active [data-open-class]').first().click();
+    await page.waitForSelector('#classModal.open', { timeout: 5000 });
   }
   if (action === 'attendance') {
     await page.locator('#page-classes.active [data-attendance]').first().click();
