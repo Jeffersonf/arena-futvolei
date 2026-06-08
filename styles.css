@@ -2488,6 +2488,12 @@ select[multiple] {
     display: none !important;
   }
 
+  html:not([data-page="dashboard"]) .top-actions .mode-chip,
+  html:not([data-page="dashboard"]) .top-actions [data-refresh],
+  html:not([data-page="dashboard"]) .top-actions [data-open-student] {
+    display: none;
+  }
+
   .mobile-top-brand .brand-mark {
     width: 42px;
     height: 42px;
