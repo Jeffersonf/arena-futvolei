@@ -9,9 +9,9 @@
     <meta name="apple-mobile-web-app-title" content="TLF Gestao" />
     <title>Team Lucão Futevôlei</title>
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260608-flow15" />
-    <link rel="stylesheet" href="styles.css?v=20260608-flow15" />
-    <link rel="stylesheet" href="visual-polish.css?v=20260608-flow15" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260608-flow17" />
+    <link rel="stylesheet" href="styles.css?v=20260608-flow17" />
+    <link rel="stylesheet" href="visual-polish.css?v=20260608-flow17" />
   </head>
   <body>
     <div class="booking-wall" id="bookingWall" aria-hidden="true">
@@ -371,6 +371,25 @@
         <h2>Aluno</h2>
         <input type="hidden" id="studentId" />
         <label>Nome<input id="studentName" required placeholder="Ex: Ana Souza" /></label>
+        <fieldset class="form-group schedule-group">
+          <legend>Agenda fixa</legend>
+          <div class="form-row">
+            <label>Dia fixo
+              <select id="studentFixedDay">
+                <option value="">Sem dia fixo</option>
+                <option value="1">Segunda</option>
+                <option value="2">Terca</option>
+                <option value="3">Quarta</option>
+                <option value="4">Quinta</option>
+                <option value="5">Sexta</option>
+                <option value="6">Sabado</option>
+                <option value="0">Domingo</option>
+              </select>
+            </label>
+            <label>Horario fixo<input id="studentFixedTime" type="time" /></label>
+          </div>
+          <label>Turma fixa<input id="studentFixedGroup" placeholder="Ex: Iniciantes 18h" /></label>
+        </fieldset>
         <label>Telefone<input id="studentPhone" placeholder="(15) 99999-9999" /></label>
         <label>Email<input id="studentEmail" type="email" placeholder="aluno@email.com" /></label>
         <div class="form-row">
@@ -396,25 +415,6 @@
           </select>
         </label>
         <label>Observação<input id="studentNote" placeholder="Restrições, objetivo, responsável..." /></label>
-        <fieldset class="form-group schedule-group">
-          <legend>Agenda fixa</legend>
-          <div class="form-row">
-            <label>Dia fixo
-              <select id="studentFixedDay">
-                <option value="">Sem dia fixo</option>
-                <option value="1">Segunda</option>
-                <option value="2">Terca</option>
-                <option value="3">Quarta</option>
-                <option value="4">Quinta</option>
-                <option value="5">Sexta</option>
-                <option value="6">Sabado</option>
-                <option value="0">Domingo</option>
-              </select>
-            </label>
-            <label>Horario fixo<input id="studentFixedTime" type="time" /></label>
-          </div>
-          <label>Turma fixa<input id="studentFixedGroup" placeholder="Ex: Iniciantes 18h" /></label>
-        </fieldset>
         <button class="primary-btn" type="submit">Salvar aluno</button>
       </form>
     </div>
@@ -565,6 +565,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="app.js?v=20260608-flow15"></script>
+    <script src="app.js?v=20260608-flow17"></script>
   </body>
 </html>

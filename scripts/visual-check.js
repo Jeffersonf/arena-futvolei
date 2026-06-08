@@ -3,8 +3,8 @@ const fs = require('fs');
 
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
-const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260608-flow15';
-const expectedPolishVersion = process.env.VISUAL_POLISH_VERSION || '20260608-flow15';
+const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260608-flow17';
+const expectedPolishVersion = process.env.VISUAL_POLISH_VERSION || '20260608-flow17';
 
 const cases = [
   { name: 'mobile-booking', viewport: { width: 390, height: 844 }, page: null },
@@ -16,6 +16,7 @@ const cases = [
   { name: 'mobile-payments', viewport: { width: 390, height: 844 }, page: 'payments' },
   { name: 'mobile-payment-modal', viewport: { width: 390, height: 844 }, page: 'payments', action: 'payment-modal' },
   { name: 'mobile-bookings', viewport: { width: 390, height: 844 }, page: 'bookings' },
+  { name: 'mobile-student-modal', viewport: { width: 390, height: 844 }, page: 'students', action: 'student-modal' },
   { name: 'mobile-student-report', viewport: { width: 390, height: 844 }, page: 'students', action: 'student-report' },
   { name: 'mobile-attendance', viewport: { width: 390, height: 844 }, page: 'classes', action: 'attendance' },
   { name: 'mobile-reports', viewport: { width: 390, height: 844 }, page: 'reports' },
@@ -43,6 +44,10 @@ async function runCaseAction(page, action) {
   if (action === 'student-report') {
     await page.locator('#page-students.active .student-row [data-report-student]').first().click();
     await page.waitForSelector('#studentReportModal.open', { timeout: 5000 });
+  }
+  if (action === 'student-modal') {
+    await page.locator('#page-students.active .student-row [data-edit-student]').first().click();
+    await page.waitForSelector('#studentModal.open', { timeout: 5000 });
   }
   if (action === 'payment-modal') {
     await page.locator('#page-payments.active [data-pay]').first().click();
