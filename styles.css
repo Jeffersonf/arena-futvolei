@@ -693,31 +693,11 @@ select {
   min-width: 0;
 }
 
-.top-actions,
-.data-actions {
+.top-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
-}
-
-.data-actions {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-}
-
-.data-actions .soft-btn,
-.data-actions .file-btn {
-  justify-content: center;
-  min-height: 48px;
-  text-align: center;
-  white-space: normal;
-  line-height: 1.15;
-}
-
-.data-actions .danger-soft {
-  border-color: color-mix(in srgb, var(--bad) 34%, var(--line));
-  background: color-mix(in srgb, var(--soft) 84%, var(--bad) 10%);
 }
 
 .mobile-top-brand {
@@ -974,8 +954,7 @@ h2 {
 .today-summary,
 .quick-action,
 .focus-card,
-.more-card,
-.roadmap-card {
+.more-card {
   background-image: none;
 }
 
@@ -1422,7 +1401,6 @@ h2 {
 }
 
 .finance-summary,
-.roadmap-grid,
 .report-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -1430,8 +1408,7 @@ h2 {
   margin-bottom: 14px;
 }
 
-.mini-stat,
-.roadmap-card {
+.mini-stat {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 14px;
@@ -1441,7 +1418,6 @@ h2 {
 }
 
 .mini-stat span,
-.roadmap-card span,
 .section-label {
   display: block;
   color: var(--accent);
@@ -1728,46 +1704,6 @@ h2 {
   font-weight: 800;
 }
 
-.roadmap-card {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 16px;
-  background: var(--glass);
-  box-shadow: var(--shadow-soft), var(--inner-highlight);
-}
-
-.roadmap-card h3 {
-  margin-top: 8px;
-}
-
-.roadmap-card p {
-  margin-top: 8px;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.45;
-}
-
-.roadmap-card.done {
-  border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
-}
-
-.roadmap-card.done::after {
-  content: "feito";
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  border: 1px solid color-mix(in srgb, var(--ok) 42%, var(--line));
-  border-radius: 999px;
-  padding: 3px 8px;
-  color: var(--ok);
-  background: color-mix(in srgb, var(--ok) 14%, var(--glass));
-  box-shadow: var(--inner-highlight);
-  font-size: 10px;
-  font-weight: 850;
-  text-transform: uppercase;
-}
 
 .mobile-only-page {
   display: none;
@@ -2373,13 +2309,11 @@ select[multiple] {
     display: grid;
   }
 
-  .top-actions,
-  .data-actions {
+  .top-actions {
     justify-content: flex-start;
   }
 
-  .top-actions > *,
-  .data-actions > * {
+  .top-actions > * {
     flex: 1 1 170px;
   }
 
@@ -2403,7 +2337,6 @@ select[multiple] {
   .focus-strip,
   .student-grid,
   .finance-summary,
-  .roadmap-grid,
   .report-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2647,7 +2580,6 @@ select[multiple] {
   .student-grid,
   .student-list,
   .filters,
-  .roadmap-grid,
   .more-grid,
   .form-row {
     grid-template-columns: 1fr;
@@ -2801,8 +2733,7 @@ select[multiple] {
   .today-class,
   .calendar-day,
   .today-summary,
-  .mini-stat,
-  .roadmap-card {
+  .mini-stat {
     box-shadow: var(--inner-highlight);
   }
 

@@ -5,7 +5,6 @@ const PIN_KEY = 'tlf_admin_pin';
 const PAGE_KEY = 'tlf_last_page';
 const VISUAL_THEME_VERSION = 'ios-light-20260603';
 const MOBILE_MORE_PAGES = ['waitlist', 'plans', 'reports'];
-const REMOVED_PAGES = ['roadmap', 'data'];
 const PAGE_TITLES = {
   dashboard: ['operacao de hoje', 'Painel do dia'],
   bookings: ['alunos', 'Pedidos de aula'],
@@ -490,10 +489,9 @@ function updateTopbar(page) {
 }
 
 function setPage(page) {
-  if (REMOVED_PAGES.includes(page)) page = 'dashboard';
   const isMobile = window.matchMedia('(max-width: 620px)').matches;
   if (page === 'more' && !isMobile) page = 'dashboard';
-  if (!document.getElementById(`page-${page}`)) return;
+  if (!document.getElementById(`page-${page}`)) page = 'dashboard';
   const moreActive = isMobile && MOBILE_MORE_PAGES.includes(page);
   document.querySelectorAll('.page').forEach((el) => el.classList.toggle('active', el.id === `page-${page}`));
   document.querySelectorAll('.nav-item').forEach((el) => {
@@ -510,7 +508,7 @@ function setPage(page) {
 
 function restorePage() {
   const saved = localStorage.getItem(PAGE_KEY) || 'dashboard';
-  setPage((saved === 'more' && !window.matchMedia('(max-width: 620px)').matches) || REMOVED_PAGES.includes(saved) ? 'dashboard' : saved);
+  setPage(saved === 'more' && !window.matchMedia('(max-width: 620px)').matches ? 'dashboard' : saved);
 }
 
 function toggleTheme() {
@@ -544,7 +542,6 @@ function render() {
   renderPlans();
   renderWaitlist();
   renderReports();
-  renderDataSummary();
   fillClassStudents();
   renderGlobalResults();
 }
@@ -1102,19 +1099,6 @@ function renderReports() {
       <div class="pill-row"><span class="pill bad">${escapeHTML(item.tag)}</span></div>
     </article>
   `).join('') : empty('Nenhum ponto de atenção agora.');
-}
-
-function renderDataSummary() {
-  const rows = [
-    ['Modo atual', apiMode ? 'Servidor Node + SQLite' : 'Local no navegador'],
-    ['Alunos', state.students.length],
-    ['Aulas', state.classes.length],
-    ['Planos', state.plans.length],
-    ['Espera', state.waitlist.length]
-  ];
-  document.getElementById('dataSummary').innerHTML = rows.map(([label, value]) => `
-    <article class="row-card"><div><h3>${escapeHTML(label)}</h3><p class="meta">${escapeHTML(value)}</p></div></article>
-  `).join('');
 }
 
 function studentCard(student) {
@@ -2764,7 +2748,7 @@ function bindEvents() {
   document.getElementById('classStatusFilter').addEventListener('change', renderClasses);
   document.getElementById('classStudentSearch')?.addEventListener('input', renderClassStudentChecklist);
   document.getElementById('waitStatusFilter').addEventListener('change', renderWaitlist);
-  document.getElementById('importFile').addEventListener('change', (event) => {
+  document.getElementById('importFile')?.addEventListener('change', (event) => {
     importBackup(event.target.files[0]).catch((err) => toast(err.message));
     event.target.value = '';
   });
@@ -2838,7 +2822,7 @@ document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'li
 updateThemeButton();
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260608-flow7', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260608-flow8', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
