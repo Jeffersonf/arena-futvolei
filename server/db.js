@@ -133,6 +133,8 @@ function ensureSchema() {
       aula_id INTEGER NOT NULL,
       aluno_id INTEGER NOT NULL,
       presente INTEGER DEFAULT 0,
+      confirmado TEXT DEFAULT '',
+      confirmado_em TEXT DEFAULT '',
       observacao TEXT DEFAULT '',
       UNIQUE(aula_id, aluno_id),
       FOREIGN KEY(aula_id) REFERENCES aulas(id) ON DELETE CASCADE,
@@ -213,6 +215,14 @@ function ensureSchema() {
   }
   if (!classColumns.includes('extras')) {
     run("ALTER TABLE aulas ADD COLUMN extras TEXT DEFAULT '[]'");
+  }
+
+  const classStudentColumns = tableColumns('aula_alunos');
+  if (!classStudentColumns.includes('confirmado')) {
+    run("ALTER TABLE aula_alunos ADD COLUMN confirmado TEXT DEFAULT ''");
+  }
+  if (!classStudentColumns.includes('confirmado_em')) {
+    run("ALTER TABLE aula_alunos ADD COLUMN confirmado_em TEXT DEFAULT ''");
   }
 
   const plans = scalar('SELECT COUNT(*) AS total FROM planos');

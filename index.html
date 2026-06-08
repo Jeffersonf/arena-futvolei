@@ -9,9 +9,9 @@
     <meta name="apple-mobile-web-app-title" content="TLF Gestao" />
     <title>Team Lucão Futevôlei</title>
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260603-booking1" />
-    <link rel="stylesheet" href="styles.css?v=20260603-booking1" />
-    <link rel="stylesheet" href="visual-polish.css?v=20260603-visual12" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260608-confirm1" />
+    <link rel="stylesheet" href="styles.css?v=20260608-confirm1" />
+    <link rel="stylesheet" href="visual-polish.css?v=20260608-confirm1" />
   </head>
   <body>
     <div class="booking-wall" id="bookingWall" aria-hidden="true">
@@ -21,28 +21,50 @@
             <img src="assets/team-lucao-logo.png" alt="" />
           </span>
           <div>
-            <p class="eyebrow">agendamento de aula</p>
+            <p class="eyebrow">agenda da escola</p>
             <h1>Team Lucao Futevolei</h1>
-            <p>Escolha um horario disponivel e envie seu pedido. O professor confirma pelo painel.</p>
+            <p>Peça uma vaga ou confirme as aulas em que voce ja esta marcado.</p>
           </div>
         </div>
+        <div class="booking-tabs" role="tablist" aria-label="Agenda publica">
+          <button class="active" type="button" data-public-tab="guest">Quero agendar</button>
+          <button type="button" data-public-tab="student">Sou aluno</button>
+        </div>
         <div class="booking-layout">
-          <form class="booking-form" id="bookingForm">
-            <label>Nome<input id="bookingName" autocomplete="name" placeholder="Seu nome" required /></label>
-            <label>WhatsApp<input id="bookingPhone" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" /></label>
-            <label>Aula<select id="bookingClass" required></select></label>
-            <label>Observacao<input id="bookingNote" placeholder="Nivel, reposicao, experimental..." /></label>
-            <button class="primary-btn" type="submit">Pedir vaga</button>
-            <p class="booking-status" id="bookingStatus"></p>
-          </form>
-          <div class="booking-board">
-            <div class="panel-head compact-head">
-              <div>
-                <span>proximos horarios</span>
-                <h2>Aulas disponiveis</h2>
+          <div class="booking-pane active" data-public-pane="guest">
+            <form class="booking-form" id="bookingForm">
+              <label>Nome<input id="bookingName" autocomplete="name" placeholder="Seu nome" required /></label>
+              <label>WhatsApp<input id="bookingPhone" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" /></label>
+              <label>Aula<select id="bookingClass" required></select></label>
+              <label>Observacao<input id="bookingNote" placeholder="Nivel, reposicao, experimental..." /></label>
+              <button class="primary-btn" type="submit">Pedir vaga</button>
+              <p class="booking-status" id="bookingStatus"></p>
+            </form>
+            <div class="booking-board">
+              <div class="panel-head compact-head">
+                <div>
+                  <span>proximos horarios</span>
+                  <h2>Aulas disponiveis</h2>
+                </div>
               </div>
+              <div class="booking-class-list" id="bookingClassList"></div>
             </div>
-            <div class="booking-class-list" id="bookingClassList"></div>
+          </div>
+          <div class="booking-pane" data-public-pane="student">
+            <form class="booking-form student-confirm-form" id="studentLookupForm">
+              <label>Seu WhatsApp<input id="studentLookupPhone" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" required /></label>
+              <button class="primary-btn" type="submit">Ver minhas aulas</button>
+              <p class="booking-status" id="studentConfirmStatus"></p>
+            </form>
+            <div class="booking-board">
+              <div class="panel-head compact-head">
+                <div>
+                  <span>confirmacao rapida</span>
+                  <h2>Minhas proximas aulas</h2>
+                </div>
+              </div>
+              <div class="student-confirm-list" id="studentClassList"></div>
+            </div>
           </div>
         </div>
         <button class="soft-btn admin-entry" id="adminAccessBtn" type="button">Acesso professor</button>
@@ -574,6 +596,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="app.js?v=20260603-booking4"></script>
+    <script src="app.js?v=20260608-confirm1"></script>
   </body>
 </html>

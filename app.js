@@ -161,6 +161,7 @@ function demoState() {
 let apiMode = false;
 let state = loadLocalState();
 let activeAttendanceClassId = '';
+let publicStudentLookup = { telefone: '', student: null, items: [] };
 
 function loadLocalState() {
   try {
@@ -297,7 +298,12 @@ function classStudentIds(item = {}) {
 }
 
 function classStudents(item = {}) {
-  return (item.alunos || classStudentIds(item).map(studentById)).filter(Boolean);
+  if (item.alunos) return item.alunos;
+  return classStudentIds(item).map((id) => {
+    const student = studentById(id);
+    if (!student) return null;
+    return { ...student, confirmado: item.confirmacoes?.[id] || '' };
+  }).filter(Boolean);
 }
 
 function classExtras(item = {}) {
@@ -316,6 +322,10 @@ function classExtras(item = {}) {
 
 function classType(item = {}) {
   return item.tipo || item.tipo_aula || item.type || 'Regular';
+}
+
+function phoneDigits(value = '') {
+  return String(value || '').replace(/\D/g, '');
 }
 
 function extraType(extra = {}) {
@@ -1090,10 +1100,13 @@ function rosterPerson(student, dateIso, present = false) {
   const fullStudent = studentById(id) || student;
   const count = weeklyAttendanceCount(id, dateIso);
   const target = planWeeklyTarget(fullStudent);
+  const confirmation = student.confirmado || student.confirmacao || '';
+  const confirmationText = confirmation === 'sim' ? 'vai' : confirmation === 'nao' ? 'nao vai' : 'sem resposta';
+  const confirmationClass = confirmation === 'sim' ? 'confirm-yes' : confirmation === 'nao' ? 'confirm-no' : '';
   return `
-    <span class="roster-person ${present ? 'present' : ''}">
+    <span class="roster-person ${present ? 'present' : ''} ${confirmationClass}">
       <button type="button" data-report-student="${id}">${escapeHTML(student.nome)}</button>
-      <small>${count}/${target || '-'} na semana</small>
+      <small>${count}/${target || '-'} na semana - ${confirmationText}</small>
     </span>
   `;
 }
@@ -1510,6 +1523,118 @@ async function submitBooking(event) {
   document.getElementById('bookingStatus').textContent = 'Pedido salvo na demo. Entre no painel para aprovar.';
   event.target.reset();
   renderPublicBooking();
+}
+
+function setPublicTab(tab = 'guest') {
+  document.querySelectorAll('[data-public-tab]').forEach((button) => {
+    button.classList.toggle('active', button.dataset.publicTab === tab);
+  });
+  document.querySelectorAll('[data-public-pane]').forEach((pane) => {
+    pane.classList.toggle('active', pane.dataset.publicPane === tab);
+  });
+  if (tab === 'student') renderStudentConfirmList();
+}
+
+function renderStudentConfirmList() {
+  const list = document.getElementById('studentClassList');
+  if (!list) return;
+  if (!publicStudentLookup.telefone) {
+    list.innerHTML = empty('Digite seu WhatsApp para ver as aulas em que voce ja esta na lista.');
+    return;
+  }
+  const student = publicStudentLookup.student;
+  const items = publicStudentLookup.items || [];
+  if (!items.length) {
+    list.innerHTML = empty('Nenhuma aula futura encontrada para esse WhatsApp.');
+    return;
+  }
+  list.innerHTML = `
+    <div class="student-confirm-head">
+      <span class="pill ok">${escapeHTML(student?.nome || 'Aluno')}</span>
+      <small>${escapeHTML(student?.plano_nome || 'Plano nao informado')}</small>
+    </div>
+    ${items.map((item) => {
+      const yes = item.confirmado === 'sim';
+      const no = item.confirmado === 'nao';
+      return `
+        <article class="student-confirm-card ${yes ? 'confirm-yes' : no ? 'confirm-no' : ''}">
+          <div>
+            <strong>${formatDate(item.data)} as ${escapeHTML(item.horario)}</strong>
+            <span>${escapeHTML(item.turma || 'Turma')} - ${escapeHTML(item.tipo || 'Regular')}</span>
+            <small>${item.confirmado ? `Resposta: ${yes ? 'vou' : 'nao vou'}` : 'Ainda sem resposta'}</small>
+          </div>
+          <div class="confirm-choice">
+            <button class="mini-btn ${yes ? 'active' : ''}" type="button" data-student-confirm="${item.id}:sim">Vou</button>
+            <button class="mini-btn ${no ? 'active danger' : ''}" type="button" data-student-confirm="${item.id}:nao">Nao vou</button>
+          </div>
+        </article>
+      `;
+    }).join('')}
+  `;
+}
+
+function localStudentClassesByPhone(telefone = '') {
+  const digits = phoneDigits(telefone).slice(-8);
+  const student = state.students.find((item) => phoneDigits(item.telefone).endsWith(digits));
+  if (!student) return { student: null, items: [] };
+  const items = state.classes
+    .filter((item) => item.status !== 'Cancelada' && item.data >= todayISO() && classStudentIds(item).some((id) => String(id) === String(student.id)))
+    .sort(sortClass)
+    .slice(0, 30)
+    .map((item) => ({ ...item, confirmado: item.confirmacoes?.[student.id] || '' }));
+  return { student, items };
+}
+
+async function loadStudentConfirmations(telefone) {
+  const status = document.getElementById('studentConfirmStatus');
+  publicStudentLookup = { telefone, student: null, items: [] };
+  if (status) status.textContent = 'Buscando suas aulas...';
+  if (location.protocol !== 'file:') {
+    try {
+      const res = await fetch(`/api/public/student-classes?telefone=${encodeURIComponent(telefone)}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.ok === false) throw new Error(data.error || 'Nao foi possivel buscar');
+      publicStudentLookup = { telefone, student: data.student, items: data.items || [] };
+      if (status) status.textContent = data.items?.length ? 'Escolha em quais aulas voce vai.' : 'Nenhuma aula futura encontrada.';
+      renderStudentConfirmList();
+      return;
+    } catch (err) {
+      if (await detectServer()) throw err;
+    }
+  }
+  const local = localStudentClassesByPhone(telefone);
+  publicStudentLookup = { telefone, student: local.student, items: local.items };
+  if (status) status.textContent = local.student ? 'Modo demo local.' : 'Aluno nao encontrado na demo.';
+  renderStudentConfirmList();
+}
+
+async function submitStudentConfirmation(classId, confirmado) {
+  const telefone = publicStudentLookup.telefone || document.getElementById('studentLookupPhone')?.value.trim();
+  if (!telefone) throw new Error('Informe seu WhatsApp');
+  if (location.protocol !== 'file:') {
+    try {
+      const res = await fetch('/api/public/student-confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telefone, aula_id: classId, confirmado })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.ok === false) throw new Error(data.error || 'Nao foi possivel confirmar');
+      await loadStudentConfirmations(telefone);
+      document.getElementById('studentConfirmStatus').textContent = confirmado === 'sim' ? 'Confirmado: voce vai.' : 'Confirmado: voce nao vai.';
+      return;
+    } catch (err) {
+      if (await detectServer()) throw err;
+    }
+  }
+  const local = localStudentClassesByPhone(telefone);
+  if (!local.student) throw new Error('Aluno nao encontrado');
+  const classItem = state.classes.find((item) => String(item.id) === String(classId));
+  if (!classItem) throw new Error('Aula nao encontrada');
+  classItem.confirmacoes = { ...(classItem.confirmacoes || {}), [local.student.id]: confirmado };
+  saveLocalState();
+  publicStudentLookup = { telefone, student: local.student, items: localStudentClassesByPhone(telefone).items };
+  renderStudentConfirmList();
 }
 
 async function respondBooking(id, action, force = false) {
@@ -2237,6 +2362,21 @@ function resetLocal() {
 
 function bindEvents() {
   document.getElementById('bookingForm')?.addEventListener('submit', (event) => submitBooking(event).catch((err) => toast(err.message)));
+  document.querySelectorAll('[data-public-tab]').forEach((button) => button.addEventListener('click', () => setPublicTab(button.dataset.publicTab)));
+  document.getElementById('studentLookupForm')?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    loadStudentConfirmations(document.getElementById('studentLookupPhone').value.trim()).catch((err) => {
+      document.getElementById('studentConfirmStatus').textContent = err.message;
+    });
+  });
+  document.getElementById('studentClassList')?.addEventListener('click', (event) => {
+    const target = event.target.closest('[data-student-confirm]');
+    if (!target) return;
+    const [classId, confirmed] = target.dataset.studentConfirm.split(':');
+    submitStudentConfirmation(classId, confirmed).catch((err) => {
+      document.getElementById('studentConfirmStatus').textContent = err.message;
+    });
+  });
   document.getElementById('adminAccessBtn')?.addEventListener('click', () => {
     showBooking(false);
     showLogin(true);
@@ -2380,7 +2520,7 @@ document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'li
 updateThemeButton();
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260603-booking1', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260608-confirm1', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

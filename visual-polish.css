@@ -446,6 +446,22 @@ select:focus,
   background: color-mix(in srgb, var(--ok) 13%, transparent);
 }
 
+.roster-person.confirm-yes,
+.student-confirm-card.confirm-yes {
+  border-color: color-mix(in srgb, var(--ok) 38%, var(--line));
+  background: color-mix(in srgb, var(--ok) 10%, var(--glass-strong));
+}
+
+.roster-person.confirm-no,
+.student-confirm-card.confirm-no {
+  border-color: color-mix(in srgb, var(--bad) 32%, var(--line));
+  background: color-mix(in srgb, var(--bad) 8%, var(--glass-strong));
+}
+
+.booking-tabs button.active {
+  background: linear-gradient(180deg, var(--text), color-mix(in srgb, var(--text) 88%, var(--accent)));
+}
+
 .wide-modal .close {
   z-index: 3;
 }
@@ -1064,6 +1080,16 @@ html[data-theme="light"]:not([data-page="dashboard"]) .topbar {
   background:
     radial-gradient(circle at top, rgba(255, 255, 255, .9), transparent 26rem),
     linear-gradient(135deg, #f8fafc, #e9edf2);
+}
+
+[data-theme="light"] .booking-tabs,
+[data-theme="light"] .student-confirm-card {
+  background: rgba(255, 255, 255, .72);
+}
+
+[data-theme="light"] .booking-tabs button.active {
+  background: #111316;
+  color: #ffffff;
 }
 
 [data-theme="light"] .theme-float {

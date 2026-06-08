@@ -3,11 +3,12 @@ const fs = require('fs');
 
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
-const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260603-booking4';
-const expectedPolishVersion = process.env.VISUAL_POLISH_VERSION || '20260603-visual12';
+const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260608-confirm1';
+const expectedPolishVersion = process.env.VISUAL_POLISH_VERSION || '20260608-confirm1';
 
 const cases = [
   { name: 'mobile-booking', viewport: { width: 390, height: 844 }, page: null },
+  { name: 'mobile-student-confirm-public', viewport: { width: 390, height: 844 }, page: null, action: 'public-student-tab' },
   { name: 'desktop-booking', viewport: { width: 1440, height: 950 }, page: null },
   { name: 'mobile-dashboard', viewport: { width: 390, height: 844 }, page: 'dashboard' },
   { name: 'mobile-classes', viewport: { width: 390, height: 844 }, page: 'classes' },
@@ -32,6 +33,9 @@ async function login(page) {
 }
 
 async function runCaseAction(page, action) {
+  if (action === 'public-student-tab') {
+    await page.locator('[data-public-tab="student"]').click();
+  }
   if (action === 'student-report') {
     await page.locator('#page-students.active .student-row [data-report-student]').first().click();
     await page.waitForSelector('#studentReportModal.open', { timeout: 5000 });
@@ -62,8 +66,8 @@ async function runCaseAction(page, action) {
       await login(page);
       await page.evaluate((target) => window.localStorage.setItem('tlf_last_page', target), item.page);
       await page.reload({ waitUntil: 'networkidle' });
-      if (item.action) await runCaseAction(page, item.action);
     }
+    if (item.action) await runCaseAction(page, item.action);
     await page.screenshot({ path: `${outDir}/${item.name}.png`, fullPage: false });
     const issueCount = await page.evaluate(() => {
       function hasHorizontalScroller(node) {

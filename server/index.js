@@ -56,6 +56,25 @@ function currentMonth() {
   return new Date().toISOString().slice(0, 7);
 }
 
+function phoneDigits(value = '') {
+  return String(value || '').replace(/\D/g, '');
+}
+
+function phoneSql() {
+  return "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(COALESCE(telefone, ''), '(', ''), ')', ''), '-', ''), ' ', ''), '+', '')";
+}
+
+function findStudentByPhone(value = '') {
+  const digits = phoneDigits(value);
+  if (digits.length < 8) {
+    const err = new Error('Informe pelo menos 8 numeros do WhatsApp');
+    err.status = 400;
+    throw err;
+  }
+  const key = digits.slice(-8);
+  return row(`SELECT * FROM alunos WHERE ${phoneSql()} LIKE ? ORDER BY id DESC LIMIT 1`, [`%${key}`]);
+}
+
 function dueDateForMonth(student = {}, month = currentMonth()) {
   const [year, monthNumber] = String(month || currentMonth()).slice(0, 7).split('-').map(Number);
   const lastDay = new Date(year, monthNumber, 0).getDate();
@@ -251,6 +270,51 @@ app.post('/api/public/bookings', (req, res) => {
     const result = insertRow('agendamentos', payload);
     logAction('Agendamento', `${payload.nome} solicitou aula ${classItem.id}.`);
     res.json({ ok: true, item: row('SELECT * FROM agendamentos WHERE id=?', [result.id]) });
+  } catch (err) {
+    jsonError(res, err);
+  }
+});
+app.get('/api/public/student-classes', (req, res) => {
+  try {
+    const student = findStudentByPhone(req.query.telefone || req.query.phone || '');
+    if (!student) throw new Error('Aluno nao encontrado para esse WhatsApp');
+    const items = rows(`
+      SELECT a.id, a.data, a.horario, a.turma, a.tipo, a.professor, a.capacidade, a.status,
+        aa.confirmado, aa.confirmado_em, aa.presente,
+        (SELECT COUNT(*) FROM aula_alunos WHERE aula_id=a.id) AS inscritos
+      FROM aula_alunos aa
+      JOIN aulas a ON a.id=aa.aula_id
+      WHERE aa.aluno_id=? AND a.status != 'Cancelada' AND a.data >= ?
+      ORDER BY a.data, a.horario
+      LIMIT 30
+    `, [student.id, today()]);
+    res.json({
+      ok: true,
+      student: { id: student.id, nome: student.nome, plano_nome: student.plano_nome },
+      items
+    });
+  } catch (err) {
+    jsonError(res, err);
+  }
+});
+app.post('/api/public/student-confirm', (req, res) => {
+  try {
+    const student = findStudentByPhone(req.body.telefone || req.body.phone || '');
+    if (!student) throw new Error('Aluno nao encontrado para esse WhatsApp');
+    const classId = Number(req.body.aula_id || req.body.class_id || 0);
+    const confirmValue = String(req.body.confirmado || req.body.confirmation || '').toLowerCase();
+    if (!['sim', 'nao'].includes(confirmValue)) throw new Error('Resposta invalida');
+    const link = row('SELECT * FROM aula_alunos WHERE aula_id=? AND aluno_id=?', [classId, student.id]);
+    if (!link) throw new Error('Essa aula nao esta vinculada a este aluno');
+    const now = new Date().toISOString();
+    run('UPDATE aula_alunos SET confirmado=?, confirmado_em=? WHERE aula_id=? AND aluno_id=?', [
+      confirmValue,
+      now,
+      classId,
+      student.id
+    ]);
+    logAction('Confirmacao aluno', `${student.nome} respondeu ${confirmValue} na aula ${classId}.`);
+    res.json({ ok: true, item: row('SELECT * FROM aula_alunos WHERE aula_id=? AND aluno_id=?', [classId, student.id]) });
   } catch (err) {
     jsonError(res, err);
   }

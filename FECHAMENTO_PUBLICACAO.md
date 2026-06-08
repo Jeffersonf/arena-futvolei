@@ -6,8 +6,8 @@ Use este checklist quando a rodada local estiver aprovada e for hora de publicar
 
 - Live local: `http://127.0.0.1:4280/`
 - PIN da demo: `1234`
-- Versao atual dos assets: `20260603-booking4` / `20260603-visual12`
-- Service worker atual: `team-lucao-v49`
+- Versao atual dos assets: `20260608-confirm1`
+- Service worker atual: `team-lucao-v50`
 
 ## Antes de publicar
 
@@ -26,6 +26,7 @@ npm run visual:check
 3. Conferir no navegador:
 
 - Tela publica de agendamento mobile.
+- Aba publica `Sou aluno` para confirmar presenca futura.
 - Login/PIN mobile pelo botao `Acesso professor`.
 - Dashboard mobile.
 - Aulas mobile.
@@ -39,6 +40,7 @@ npm run visual:check
 
 - Entrar com PIN `1234`.
 - Enviar um pedido de aula pela primeira tela.
+- Buscar aulas como aluno pelo WhatsApp e marcar `Vou` / `Nao vou`.
 - Abrir `Pedidos` e aprovar/recusar um pedido.
 - Abrir uma aula de hoje e marcar presenca.
 - Clicar no nome de um aluno e abrir a ficha.
@@ -60,4 +62,5 @@ npm run visual:check
 - Entrar com PIN `1234`.
 - Verificar se o rodape mobile mostra `Inicio`, `Pedidos`, `Alunos`, `Aulas`, `Cobrar`, `Espera`, `Mais`.
 - Confirmar que a tela publica de agendamento aparece antes do PIN.
+- Confirmar que a aba `Sou aluno` abre no iPhone e nao estoura a largura.
 - Confirmar que `Aulas`, `Cobrar` e ficha do aluno carregam com o design novo.
