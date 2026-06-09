@@ -826,7 +826,7 @@ select:focus,
   }
 
   .attendance-actions {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 7px;
   }
 
@@ -836,7 +836,15 @@ select:focus,
   }
 
   .extra-attendance {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  }
+
+  .extra-attendance input {
+    grid-column: 1 / -1;
+  }
+
+  .extra-attendance .soft-btn {
+    grid-column: auto;
   }
 
   .check-item {

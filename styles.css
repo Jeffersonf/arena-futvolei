@@ -2916,8 +2916,28 @@ select[multiple] {
   }
 
   .attendance-actions {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     margin-top: 4px;
+  }
+
+  .attendance-actions .soft-btn {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+    white-space: normal;
+  }
+
+  .extra-attendance {
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  }
+
+  .extra-attendance input {
+    grid-column: 1 / -1;
+  }
+
+  .extra-attendance .soft-btn {
+    min-width: 0;
+    justify-content: center;
   }
 
   .section-label {
