@@ -228,7 +228,6 @@ async function loadData() {
     const modeStatus = document.getElementById('modeStatus');
     if (modeStatus) modeStatus.textContent = 'Local no navegador';
     updateSystemNotice();
-    render();
     restorePage();
     return;
   }
@@ -251,7 +250,6 @@ async function loadData() {
     payments: payments.items || [],
     bookings: bookings.items || []
   };
-  render();
   restorePage();
 }
 
@@ -440,10 +438,6 @@ function daysBetween(dateIso, endIso = todayISO()) {
   return Math.max(0, Math.floor((end - start) / 86400000));
 }
 
-function phoneDigits(value) {
-  return String(value || '').replace(/\D/g, '');
-}
-
 function whatsappUrl(phone, text = '') {
   const digits = phoneDigits(phone);
   if (!digits) return '';
@@ -467,6 +461,13 @@ function updateTopbar(page) {
   if (titleEl) titleEl.textContent = title;
 }
 
+function currentPage() {
+  return document.documentElement.dataset.page
+    || document.querySelector('.page.active')?.id?.replace('page-', '')
+    || localStorage.getItem(PAGE_KEY)
+    || 'dashboard';
+}
+
 function setPage(page) {
   const isMobile = window.matchMedia('(max-width: 620px)').matches;
   if (page === 'more' && !isMobile) page = 'dashboard';
@@ -483,6 +484,7 @@ function setPage(page) {
   localStorage.setItem(PAGE_KEY, page);
   document.getElementById('globalResults').classList.remove('open');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  renderPage(page);
 }
 
 function restorePage() {
@@ -507,21 +509,38 @@ function logout() {
   showLogin(true);
 }
 
-function render() {
-  renderPlanOptions();
+function updatePerformanceMode() {
+  const mobile = window.matchMedia('(max-width: 620px)').matches;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.documentElement.dataset.perf = mobile || reducedMotion ? 'lite' : 'full';
+}
+
+function renderDashboard() {
   renderFocusStrip();
   renderKpis();
   renderQuickActions();
   renderTodayClasses();
   renderPending();
-  renderStudents();
-  renderClasses();
-  renderBookings();
-  renderPayments();
-  renderPlans();
-  renderWaitlist();
-  renderReports();
-  fillClassStudents();
+}
+
+function renderPage(page = currentPage()) {
+  const renderers = {
+    dashboard: renderDashboard,
+    students: renderStudents,
+    classes: renderClasses,
+    bookings: renderBookings,
+    payments: renderPayments,
+    plans: renderPlans,
+    waitlist: renderWaitlist,
+    reports: renderReports,
+    more: () => {}
+  };
+  (renderers[page] || renderDashboard)();
+}
+
+function render() {
+  renderPlanOptions();
+  renderPage();
   renderGlobalResults();
 }
 
@@ -2571,10 +2590,12 @@ if (localStorage.getItem('fv_visual_theme_version') !== VISUAL_THEME_VERSION) {
   localStorage.setItem('fv_visual_theme_version', VISUAL_THEME_VERSION);
 }
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'light';
+updatePerformanceMode();
 updateThemeButton();
 bindEvents();
+window.addEventListener('resize', updatePerformanceMode);
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260609-flow23', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260609-flow24', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
