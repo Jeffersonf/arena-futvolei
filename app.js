@@ -22,27 +22,6 @@ const currentMonth = () => todayISO().slice(0, 7);
 const selectedPaymentMonth = () => document.getElementById('paymentMonth')?.value || currentMonth();
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
-const starter = {
-  students: [
-    { id: 's1', nome: 'Ana Souza', telefone: '(15) 99999-0001', email: '', plano_nome: '2x semana', mensalidade: 220, status: 'Ativo', nivel: 'Intermediário', observacao: 'Prefere turma da noite', pago_ate: todayISO() },
-    { id: 's2', nome: 'Bruno Lima', telefone: '(15) 99999-0002', email: '', plano_nome: '1x semana', mensalidade: 160, status: 'Experimental', nivel: 'Iniciante', observacao: 'Aula experimental', pago_ate: '' }
-  ],
-  plans: [
-    { id: 'p1', nome: '1x semana', preco: 160, aulas_semana: 1, descricao: 'Plano inicial', ativo: 1 },
-    { id: 'p2', nome: '2x semana', preco: 220, aulas_semana: 2, descricao: 'Mais ritmo e evolução', ativo: 1 },
-    { id: 'p3', nome: 'Livre', preco: 300, aulas_semana: 4, descricao: 'Acesso amplo as turmas', ativo: 1 },
-    { id: 'p4', nome: 'Avulso', preco: 60, aulas_semana: 0, descricao: 'Aula avulsa', ativo: 1 }
-  ],
-  classes: [
-    { id: 'c1', data: todayISO(), horario: '18:30', turma: 'Iniciantes', professor: 'Jefferson', tipo: 'Regular', capacidade: 8, status: 'Marcada', aluno_ids: ['s1', 's2'], presencas: { s1: true, s2: false }, extra_presentes: [] }
-  ],
-  payments: [],
-  bookings: [],
-  waitlist: [
-    { id: 'w1', nome: 'Carla Mendes', telefone: '(15) 99999-0003', preferencia: 'Noite - iniciante', status: 'Novo', observacao: 'Pediu informacoes pelo WhatsApp', data_cadastro: todayISO() }
-  ]
-};
-
 function demoState() {
   const today = todayISO();
   const plans = [
@@ -2354,37 +2333,6 @@ async function savePayment(event) {
   toast('Mensalidade marcada como paga');
 }
 
-async function deleteStudent(id) {
-  const student = studentById(id);
-  if (!student || !confirm(`Remover ${student.nome}?`)) return;
-  if (apiMode) {
-    await api(`/api/students/${id}`, { method: 'DELETE' });
-    await loadData();
-  } else {
-    state.students = state.students.filter((item) => String(item.id) !== String(id));
-    state.classes.forEach((item) => {
-      item.aluno_ids = (item.aluno_ids || []).filter((studentId) => String(studentId) !== String(id));
-      if (item.presencas) delete item.presencas[id];
-    });
-    saveLocalState();
-    render();
-  }
-  toast('Aluno removido');
-}
-
-async function deleteClass(id) {
-  if (!confirm('Remover esta aula?')) return;
-  if (apiMode) {
-    await api(`/api/classes/${id}`, { method: 'DELETE' });
-    await loadData();
-  } else {
-    state.classes = state.classes.filter((item) => String(item.id) !== String(id));
-    saveLocalState();
-    render();
-  }
-  toast('Aula removida');
-}
-
 async function duplicateClass(id) {
   const item = state.classes.find((entry) => String(entry.id) === String(id));
   if (!item) return;
@@ -2408,19 +2356,6 @@ async function duplicateClass(id) {
     render();
   }
   toast('Aula duplicada para a próxima semana');
-}
-
-async function deletePlan(id) {
-  if (!confirm('Remover este plano? Alunos existentes continuam com o nome do plano salvo.')) return;
-  if (apiMode) {
-    await api(`/api/tables/planos/${id}`, { method: 'DELETE' });
-    await loadData();
-  } else {
-    state.plans = state.plans.filter((item) => String(item.id) !== String(id));
-    saveLocalState();
-    render();
-  }
-  toast('Plano removido');
 }
 
 async function deleteWait(id) {
@@ -2470,72 +2405,6 @@ async function downloadBackup() {
   URL.revokeObjectURL(a.href);
 }
 
-function csvCell(value) {
-  return `"${String(value ?? '').replace(/"/g, '""')}"`;
-}
-
-function downloadText(filename, text, type = 'text/plain;charset=utf-8') {
-  const blob = new Blob([text], { type });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
-function exportCsv(kind) {
-  const configs = {
-    students: {
-      filename: `team-lucao-alunos-${todayISO()}.csv`,
-      headers: ['nome', 'telefone', 'email', 'plano', 'mensalidade', 'dia_vencimento', 'status', 'nivel', 'pago_ate', 'observacao'],
-      rows: state.students.map((student) => [
-        student.nome,
-        student.telefone,
-        student.email,
-        student.plano_nome,
-        student.mensalidade,
-        dueDay(student),
-        student.status,
-        student.nivel,
-        student.pago_ate,
-        student.observacao
-      ])
-    },
-    payments: {
-      filename: `team-lucao-pagamentos-${todayISO()}.csv`,
-      headers: ['aluno', 'referencia', 'valor', 'vencimento', 'pago_em', 'status', 'forma_pagamento'],
-      rows: (state.payments || []).map((item) => [
-        item.aluno_nome || studentById(item.aluno_id)?.nome || '',
-        item.referencia,
-        item.valor,
-        item.vencimento,
-        item.pago_em,
-        item.status,
-        item.forma_pagamento
-      ])
-    },
-    classes: {
-      filename: `team-lucao-aulas-${todayISO()}.csv`,
-      headers: ['data', 'horario', 'turma', 'tipo', 'professor', 'capacidade', 'status', 'alunos', 'presencas', 'fora_da_lista'],
-      rows: state.classes.map((item) => {
-        const enrolled = (item.alunos || (item.aluno_ids || []).map(studentById)).filter(Boolean);
-        const present = enrolled.filter((student) => item.presencas?.[student.aluno_id || student.id] || student.presente).length;
-        return [item.data, item.horario, item.turma, classType(item), item.professor, item.capacidade, item.status, enrolled.length, present, classExtras(item).length];
-      })
-    },
-    waitlist: {
-      filename: `team-lucao-espera-${todayISO()}.csv`,
-      headers: ['nome', 'telefone', 'preferencia', 'status', 'data_cadastro', 'observacao'],
-      rows: state.waitlist.map((item) => [item.nome, item.telefone, item.preferencia, item.status, item.data_cadastro, item.observacao])
-    }
-  };
-  const config = configs[kind];
-  if (!config) return;
-  const csv = [config.headers, ...config.rows].map((row) => row.map(csvCell).join(',')).join('\n');
-  downloadText(config.filename, csv, 'text/csv;charset=utf-8');
-  toast('CSV exportado');
-}
-
 async function createServerBackup() {
   if (!apiMode) {
     toast('Backup em servidor só com npm start');
@@ -2543,113 +2412,6 @@ async function createServerBackup() {
   }
   const res = await api('/api/backups/create', { method: 'POST', body: JSON.stringify({}) });
   toast(`Backup criado: ${res.filename}`);
-}
-
-async function importBackup(file) {
-  if (!file) return;
-  const payload = JSON.parse(await file.text());
-  if (!confirm('Importar backup? Isso vai mesclar os dados do arquivo com os dados atuais.')) return;
-  if (apiMode) {
-    await api('/api/import', { method: 'POST', body: JSON.stringify({ ...payload, mode: 'merge' }) });
-    await loadData();
-  } else {
-    const data = payload.data || payload;
-    state = {
-      students: data.students || data.alunos || state.students,
-      plans: data.plans || data.planos || state.plans,
-      classes: data.classes || data.aulas || state.classes,
-      waitlist: data.waitlist || data.lista_espera || state.waitlist,
-      payments: data.payments || data.pagamentos || state.payments || []
-    };
-    saveLocalState();
-    render();
-  }
-  toast('Backup importado');
-}
-
-function serverDemoPayload(next) {
-  const studentId = (id) => Number(String(id).replace(/\D/g, ''));
-  return {
-    app: 'TeamLucaoFutevolei.AdminState',
-    version: 1,
-    data: {
-      planos: next.plans.map((plan) => ({ ...plan, id: studentId(plan.id) })),
-      alunos: next.students.map((student) => ({
-        ...student,
-        id: studentId(student.id),
-        dia_vencimento: dueDay(student),
-        plano_id: student.plano_id ? studentId(student.plano_id) : null
-      })),
-      aulas: next.classes.map((item) => ({
-        id: studentId(item.id),
-        data: item.data,
-        horario: item.horario,
-        turma: item.turma,
-        tipo: classType(item),
-        professor: item.professor,
-        capacidade: item.capacidade,
-        status: item.status,
-        extras: JSON.stringify(classExtras(item)),
-        observacao: ''
-      })),
-      aula_alunos: next.classes.flatMap((item) => (item.aluno_ids || []).map((studentIdValue, index) => ({
-        id: studentId(`${item.id}${index + 1}`),
-        aula_id: studentId(item.id),
-        aluno_id: studentId(studentIdValue),
-        presente: item.presencas?.[studentIdValue] ? 1 : 0,
-        observacao: ''
-      }))),
-      pagamentos: next.payments.map((payment) => ({
-        id: studentId(payment.id),
-        aluno_id: studentId(payment.aluno_id),
-        referencia: payment.referencia,
-        valor: payment.valor,
-        vencimento: payment.vencimento,
-        pago_em: payment.pago_em,
-        status: payment.status,
-        forma_pagamento: payment.forma_pagamento,
-        observacao: 'Carga demo'
-      })),
-      agendamentos: (next.bookings || []).map((booking) => ({
-        id: studentId(booking.id),
-        nome: booking.nome,
-        telefone: booking.telefone,
-        aula_id: studentId(booking.aula_id),
-        status: booking.status || 'Pendente',
-        observacao: booking.observacao || '',
-        criado_em: booking.criado_em || todayISO(),
-        respondido_em: booking.respondido_em || ''
-      })),
-      lista_espera: next.waitlist.map((item) => ({
-        ...item,
-        id: studentId(item.id)
-      })),
-      disponibilidade: [],
-      logs: []
-    }
-  };
-}
-
-async function loadDemoData() {
-  if (!confirm('Carregar dados ficticios de demo? Isso substitui os dados atuais.')) return;
-  const next = demoState();
-  if (apiMode) {
-    await api('/api/import?mode=replace', { method: 'POST', body: JSON.stringify(serverDemoPayload(next)) });
-    await loadData();
-  } else {
-    state = next;
-    saveLocalState();
-    render();
-  }
-  toast('Demo realista carregada');
-}
-
-function resetLocal() {
-  if (!confirm('Resetar dados locais deste navegador?')) return;
-  localStorage.removeItem(STORE_KEY);
-  state = structuredClone(starter);
-  render();
-  toast('Dados locais resetados');
 }
 
 function bindEvents() {
@@ -2690,12 +2452,9 @@ function bindEvents() {
   document.querySelectorAll('[data-open-waitlist]').forEach((button) => button.addEventListener('click', () => openWaitlist()));
   document.querySelectorAll('[data-close]').forEach((button) => button.addEventListener('click', () => closeModal(button.dataset.close)));
   document.querySelectorAll('[data-refresh]').forEach((button) => button.addEventListener('click', () => loadData().then(() => toast('Dados atualizados')).catch((err) => toast(err.message))));
-  document.querySelectorAll('[data-load-demo]').forEach((button) => button.addEventListener('click', () => loadDemoData().catch((err) => toast(err.message))));
   document.querySelectorAll('[data-backup]').forEach((button) => button.addEventListener('click', () => downloadBackup().catch((err) => toast(err.message))));
-  document.querySelectorAll('[data-export]').forEach((button) => button.addEventListener('click', () => exportCsv(button.dataset.export)));
   document.querySelectorAll('[data-copy-pending]').forEach((button) => button.addEventListener('click', () => copyPendingCharges().catch((err) => toast(err.message))));
   document.querySelectorAll('[data-server-backup]').forEach((button) => button.addEventListener('click', () => createServerBackup().catch((err) => toast(err.message))));
-  document.querySelectorAll('[data-reset-local]').forEach((button) => button.addEventListener('click', resetLocal));
   document.querySelectorAll('[data-clear-class-filter]').forEach((button) => button.addEventListener('click', () => {
     document.getElementById('classDateFilter').value = '';
     document.getElementById('classTypeFilter').value = '';
@@ -2748,10 +2507,6 @@ function bindEvents() {
   document.getElementById('classStatusFilter').addEventListener('change', renderClasses);
   document.getElementById('classStudentSearch')?.addEventListener('input', renderClassStudentChecklist);
   document.getElementById('waitStatusFilter').addEventListener('change', renderWaitlist);
-  document.getElementById('importFile')?.addEventListener('change', (event) => {
-    importBackup(event.target.files[0]).catch((err) => toast(err.message));
-    event.target.value = '';
-  });
   document.getElementById('studentPlan').addEventListener('change', (event) => {
     const plan = planById(event.target.value);
     if (plan) document.getElementById('studentFee').value = plan.preco || '';
@@ -2764,7 +2519,7 @@ function bindEvents() {
     toggleClassStudent(target.value, target.checked);
   });
   document.body.addEventListener('click', (event) => {
-    const target = event.target.closest('[data-action],[data-report-student],[data-edit-student],[data-sync-student],[data-delete-student],[data-edit-class],[data-delete-class],[data-duplicate-class],[data-class-status],[data-copy-class],[data-copy-report],[data-edit-plan],[data-delete-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-copy-charge],[data-edit-wait],[data-delete-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day],[data-more-page],[data-more-action],[data-booking-action]');
+    const target = event.target.closest('[data-action],[data-report-student],[data-edit-student],[data-sync-student],[data-edit-class],[data-duplicate-class],[data-class-status],[data-copy-class],[data-copy-report],[data-edit-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-copy-charge],[data-edit-wait],[data-delete-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day],[data-more-page],[data-more-action],[data-booking-action]');
     if (!target) return;
     if (target.dataset.action && !target.closest('#quickActions')) handleQuickAction(target.dataset.action);
     if (target.dataset.morePage) setPage(target.dataset.morePage);
@@ -2773,9 +2528,7 @@ function bindEvents() {
     if (target.dataset.reportStudent) openStudentReport(target.dataset.reportStudent);
     if (target.dataset.editStudent) openStudent(target.dataset.editStudent);
     if (target.dataset.syncStudent) syncStudentScheduleAction(target.dataset.syncStudent).catch((err) => toast(err.message));
-    if (target.dataset.deleteStudent) deleteStudent(target.dataset.deleteStudent).catch((err) => toast(err.message));
     if (target.dataset.editClass) openClass(target.dataset.editClass);
-    if (target.dataset.deleteClass) deleteClass(target.dataset.deleteClass).catch((err) => toast(err.message));
     if (target.dataset.duplicateClass) duplicateClass(target.dataset.duplicateClass).catch((err) => toast(err.message));
     if (target.dataset.classStatus) {
       const [id, status] = target.dataset.classStatus.split(':');
@@ -2784,7 +2537,6 @@ function bindEvents() {
     if (target.dataset.copyClass) copyClassRoster(target.dataset.copyClass).catch((err) => toast(err.message));
     if (target.dataset.copyReport) copyMonthlyReport().catch((err) => toast(err.message));
     if (target.dataset.editPlan) openPlan(target.dataset.editPlan);
-    if (target.dataset.deletePlan) deletePlan(target.dataset.deletePlan).catch((err) => toast(err.message));
     if (target.dataset.attendance) openAttendance(target.dataset.attendance);
     if (target.dataset.toggleAttendance) {
       const [classId, studentId] = target.dataset.toggleAttendance.split(':');
@@ -2822,7 +2574,7 @@ document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'li
 updateThemeButton();
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260609-flow22', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260609-flow23', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

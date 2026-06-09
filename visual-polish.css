@@ -562,7 +562,40 @@ select:focus,
 
 @media (max-width: 620px) {
   body::before {
-    background: linear-gradient(180deg, rgba(255, 255, 255, .045), transparent 42vh);
+    display: none;
+  }
+
+  .sidebar,
+  .theme-float,
+  .topbar,
+  .panel,
+  .row-card,
+  .student-row,
+  .today-class,
+  .calendar-day,
+  .today-summary,
+  .modal,
+  .booking-shell,
+  .booking-form,
+  .booking-board,
+  .booking-class-card,
+  .mobile-top-brand,
+  .global-results {
+    backdrop-filter: none;
+  }
+
+  .panel,
+  .row-card,
+  .student-row,
+  .today-class,
+  .calendar-day,
+  .today-summary,
+  .mini-stat,
+  .booking-form,
+  .booking-board,
+  .booking-class-card,
+  .mobile-top-brand {
+    box-shadow: var(--inner-highlight);
   }
 
   .app {

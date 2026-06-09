@@ -23,8 +23,7 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Fechamento mensal copiavel com receita, presenca, aulas, avulsos, pedidos e espera
 - Mensalidade marcada no mes filtrado
 - Lista de espera com conversao para aluno
-- Backup/importacao em JSON
-- Exportacao CSV de alunos, aulas, pagamentos e espera
+- Backup JSON pelo painel operacional
 - Login simples por PIN no servidor
 - Primeira tela publica para o aluno pedir vaga em uma aula
 - Fila de pedidos para professor aprovar ou recusar
