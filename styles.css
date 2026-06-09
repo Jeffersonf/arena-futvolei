@@ -2653,6 +2653,19 @@ select[multiple] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .payment-summary .payment-secondary {
+    display: none;
+  }
+
+  .payment-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .payment-filters input:nth-child(2),
+  .payment-filters .soft-btn {
+    grid-column: 1 / -1;
+  }
+
   .focus-strip {
     display: flex;
     gap: 8px;

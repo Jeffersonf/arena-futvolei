@@ -899,9 +899,9 @@ function renderPayments() {
   const query = document.getElementById('paymentSearch')?.value.trim().toLowerCase() || '';
   const filter = document.getElementById('paymentStatusFilter')?.value || '';
   document.getElementById('financeSummary').innerHTML = `
-    <article class="mini-stat kpi-ok"><span>Recebido no mês</span><strong>${money.format(paidThisMonth)}</strong></article>
-    <article class="mini-stat"><span>Previsao do mes</span><strong>${money.format(expected)}</strong></article>
-    <article class="mini-stat ${receiveRate >= 80 ? 'kpi-ok' : pending.length ? 'kpi-warn' : ''}"><span>Recebimento</span><strong>${receiveRate}%</strong></article>
+    <article class="mini-stat kpi-ok payment-secondary"><span>Recebido no mês</span><strong>${money.format(paidThisMonth)}</strong></article>
+    <article class="mini-stat payment-secondary"><span>Previsao do mes</span><strong>${money.format(expected)}</strong></article>
+    <article class="mini-stat payment-secondary ${receiveRate >= 80 ? 'kpi-ok' : pending.length ? 'kpi-warn' : ''}"><span>Recebimento</span><strong>${receiveRate}%</strong></article>
     <article class="mini-stat ${pending.length ? 'kpi-bad' : 'kpi-ok'}"><span>Pendências</span><strong>${pending.length}</strong></article>
     <article class="mini-stat ${overdue.length ? 'kpi-bad' : 'kpi-ok'}"><span>Atrasadas</span><strong>${overdue.length}</strong></article>
     <article class="mini-stat ${dueSoon.length ? 'kpi-warn' : ''}"><span>Cobrar agora</span><strong>${dueSoon.length}</strong></article>
@@ -2822,7 +2822,7 @@ document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'li
 updateThemeButton();
 bindEvents();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260609-flow19', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260609-flow21', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
