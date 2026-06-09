@@ -3,14 +3,15 @@ const fs = require('fs');
 
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
-const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260609-flow24';
-const expectedPolishVersion = process.env.VISUAL_POLISH_VERSION || '20260609-flow24';
+const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260609-flow25';
+const expectedPolishVersion = process.env.VISUAL_POLISH_VERSION || '20260609-flow25';
 
 const cases = [
   { name: 'mobile-booking', viewport: { width: 390, height: 844 }, page: null },
   { name: 'mobile-student-confirm-public', viewport: { width: 390, height: 844 }, page: null, action: 'public-student-tab' },
   { name: 'desktop-booking', viewport: { width: 1440, height: 950 }, page: null },
   { name: 'mobile-dashboard', viewport: { width: 390, height: 844 }, page: 'dashboard' },
+  { name: 'mobile-actions', viewport: { width: 390, height: 844 }, page: 'actions' },
   { name: 'mobile-students', viewport: { width: 390, height: 844 }, page: 'students' },
   { name: 'mobile-classes', viewport: { width: 390, height: 844 }, page: 'classes' },
   { name: 'mobile-payments', viewport: { width: 390, height: 844 }, page: 'payments' },
@@ -23,6 +24,7 @@ const cases = [
   { name: 'mobile-class-modal', viewport: { width: 390, height: 844 }, page: 'classes', action: 'class-modal' },
   { name: 'mobile-more', viewport: { width: 390, height: 844 }, page: 'more' },
   { name: 'desktop-dashboard', viewport: { width: 1440, height: 950 }, page: 'dashboard' },
+  { name: 'desktop-actions', viewport: { width: 1440, height: 950 }, page: 'actions' },
   { name: 'desktop-students', viewport: { width: 1440, height: 950 }, page: 'students' },
   { name: 'desktop-bookings', viewport: { width: 1440, height: 950 }, page: 'bookings' },
   { name: 'desktop-student-report', viewport: { width: 1440, height: 950 }, page: 'students', action: 'student-report' },

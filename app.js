@@ -4,9 +4,10 @@ const STORE_KEY = 'fv_school_state_v2';
 const PIN_KEY = 'tlf_admin_pin';
 const PAGE_KEY = 'tlf_last_page';
 const VISUAL_THEME_VERSION = 'ios-light-20260603';
-const MOBILE_MORE_PAGES = ['waitlist', 'plans', 'reports'];
+const MOBILE_MORE_PAGES = ['actions', 'waitlist', 'plans', 'reports'];
 const PAGE_TITLES = {
   dashboard: ['operacao de hoje', 'Painel do dia'],
+  actions: ['historico', 'Central de acoes'],
   bookings: ['alunos', 'Pedidos de aula'],
   students: ['cadastro', 'Alunos'],
   classes: ['agenda', 'Aulas'],
@@ -126,13 +127,20 @@ function demoState() {
     { id: 'ag2', nome: 'Marina Lins', telefone: '(15) 99222-0002', aula_id: classes[4]?.id, status: 'Pendente', observacao: 'Reposicao de sabado', criado_em: today, respondido_em: '' },
     { id: 'ag3', nome: 'Julia Moraes', telefone: '(15) 99222-0003', aula_id: classes[2]?.id, status: 'Aprovado', observacao: 'Confirmada pelo professor', criado_em: addDaysIso(today, -1), respondido_em: today }
   ].filter((item) => item.aula_id);
+  const logs = [
+    { id: 'l1', data_hora: `${today}T12:01:00`, ator: 'Aluno', acao: 'Confirmacao aluno', detalhe: 'Marina Lopes confirmou presenca na aula Kids das 18:00.' },
+    { id: 'l2', data_hora: `${today}T12:05:00`, ator: 'Professor', acao: 'Pagamento', detalhe: 'Ana Souza teve mensalidade marcada como paga.' },
+    { id: 'l3', data_hora: `${today}T12:10:00`, ator: 'Aluno', acao: 'Pedido de aula', detalhe: 'Rafael Brito solicitou aula experimental.' },
+    { id: 'l4', data_hora: `${today}T12:16:00`, ator: 'Professor', acao: 'Presenca', detalhe: 'Presencas atualizadas na turma Kids.' }
+  ];
   return {
     students,
     plans,
     classes,
     payments,
     bookings,
-    waitlist
+    waitlist,
+    logs
   };
 }
 
@@ -234,13 +242,14 @@ async function loadData() {
   const modeStatus = document.getElementById('modeStatus');
   if (modeStatus) modeStatus.textContent = 'Servidor Node + SQLite';
   updateSystemNotice();
-  const [students, classes, plans, waitlist, payments, bookings] = await Promise.all([
+  const [students, classes, plans, waitlist, payments, bookings, logs] = await Promise.all([
     api('/api/students'),
     api('/api/classes'),
     api('/api/plans'),
     api('/api/waitlist'),
     api('/api/payments'),
-    api('/api/bookings')
+    api('/api/bookings'),
+    api('/api/tables/logs?limit=80')
   ]);
   state = {
     students: students.items || [],
@@ -248,7 +257,8 @@ async function loadData() {
     plans: plans.items || [],
     waitlist: waitlist.items || [],
     payments: payments.items || [],
-    bookings: bookings.items || []
+    bookings: bookings.items || [],
+    logs: logs.rows || []
   };
   restorePage();
 }
@@ -405,6 +415,56 @@ function formatDate(value) {
   return `${day}/${month}/${year}`;
 }
 
+function formatActionTime(value) {
+  if (!value) return '--:--';
+  const text = String(value);
+  const iso = text.match(/T(\d{2}):(\d{2})/);
+  if (iso) return `${iso[1]}:${iso[2]}`;
+  const br = text.match(/(\d{1,2}):(\d{2})/);
+  if (br) return `${br[1].padStart(2, '0')}:${br[2]}`;
+  return text.slice(0, 5);
+}
+
+function actionActor(item = {}) {
+  if (item.ator) return item.ator;
+  const action = String(item.acao || '').toLowerCase();
+  if (action.includes('confirmacao aluno') || action.includes('pedido') || action.includes('agendamento')) return 'Aluno';
+  if (action.includes('api') || action.includes('backup') || action.includes('sistema')) return 'Sistema';
+  return 'Professor';
+}
+
+function actionTone(actor = '') {
+  if (actor === 'Aluno') return 'student';
+  if (actor === 'Sistema') return 'system';
+  return 'teacher';
+}
+
+function sortedActions(limit = 80) {
+  return [...(state.logs || [])]
+    .sort((a, b) => {
+      const timeA = Date.parse(a.data_hora || '');
+      const timeB = Date.parse(b.data_hora || '');
+      if (Number.isFinite(timeA) && Number.isFinite(timeB)) return timeB - timeA;
+      const idA = Number(a.id || 0);
+      const idB = Number(b.id || 0);
+      if (Number.isFinite(idA) && Number.isFinite(idB)) return idB - idA;
+      return String(b.data_hora || b.id || '').localeCompare(String(a.data_hora || a.id || ''));
+    })
+    .slice(0, limit);
+}
+
+function recordAction(actor, action, detail) {
+  state.logs = state.logs || [];
+  state.logs.unshift({
+    id: uid(),
+    data_hora: new Date().toISOString(),
+    ator: actor,
+    acao: action,
+    detalhe: detail
+  });
+  state.logs = state.logs.slice(0, 120);
+}
+
 function weekdayName(value) {
   const names = ['Domingo', 'Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sabado'];
   return names[Number(value)] || '';
@@ -521,11 +581,13 @@ function renderDashboard() {
   renderQuickActions();
   renderTodayClasses();
   renderPending();
+  renderDashboardActions();
 }
 
 function renderPage(page = currentPage()) {
   const renderers = {
     dashboard: renderDashboard,
+    actions: renderActions,
     students: renderStudents,
     classes: renderClasses,
     bookings: renderBookings,
@@ -602,6 +664,53 @@ function renderPending() {
     `).join('')}
     ${students.length > visible.length ? `<button class="soft-btn dashboard-more-btn" type="button" data-action="quick-pending">Ver ${students.length - visible.length} restante(s)</button>` : ''}
   ` : empty('Sem pendencias por enquanto.');
+}
+
+function actionRow(item) {
+  const actor = actionActor(item);
+  return `
+    <article class="action-item action-${actionTone(actor)}">
+      <time>${escapeHTML(formatActionTime(item.data_hora))}</time>
+      <div>
+        <div class="action-line">
+          <strong>${escapeHTML(actor)}</strong>
+          <span>${escapeHTML(item.acao || 'Acao')}</span>
+        </div>
+        <p>${escapeHTML(item.detalhe || 'Movimento registrado no sistema.')}</p>
+      </div>
+    </article>
+  `;
+}
+
+function renderDashboardActions() {
+  const target = document.getElementById('dashboardActions');
+  if (!target) return;
+  const items = sortedActions(6);
+  target.innerHTML = items.length ? items.map(actionRow).join('') : empty('Nenhuma acao registrada ainda.');
+}
+
+function renderActions() {
+  const filter = document.getElementById('actionActorFilter')?.value || '';
+  const query = document.getElementById('actionSearch')?.value.trim().toLowerCase() || '';
+  const all = sortedActions(80);
+  const items = all.filter((item) => {
+    const actor = actionActor(item);
+    const haystack = `${actor} ${item.acao || ''} ${item.detalhe || ''}`.toLowerCase();
+    return (!filter || actor === filter) && (!query || haystack.includes(query));
+  });
+  const professor = all.filter((item) => actionActor(item) === 'Professor').length;
+  const aluno = all.filter((item) => actionActor(item) === 'Aluno').length;
+  const system = all.filter((item) => actionActor(item) === 'Sistema').length;
+  const summary = document.getElementById('actionSummary');
+  if (summary) {
+    summary.innerHTML = `
+      <article class="mini-stat"><span>Total</span><strong>${all.length}</strong></article>
+      <article class="mini-stat action-mini-teacher"><span>Professor</span><strong>${professor}</strong></article>
+      <article class="mini-stat action-mini-student"><span>Aluno</span><strong>${aluno}</strong></article>
+      <article class="mini-stat action-mini-system"><span>Sistema</span><strong>${system}</strong></article>
+    `;
+  }
+  document.getElementById('actionList').innerHTML = items.length ? items.map(actionRow).join('') : empty('Nenhuma acao nesse filtro.');
 }
 
 function renderStudents() {
@@ -1547,6 +1656,10 @@ function handleQuickAction(action) {
     renderPayments();
     return;
   }
+  if (action === 'actions') {
+    setPage('actions');
+    return;
+  }
   if (action === 'quick-pending') copyPendingCharges().catch((err) => toast(err.message));
   if (action === 'quick-next-class') openNextClass();
   if (action === 'quick-bookings') setPage('bookings');
@@ -1727,6 +1840,7 @@ async function submitBooking(event) {
     criado_em: todayISO(),
     respondido_em: ''
   });
+  recordAction('Aluno', 'Pedido de aula', `${payload.nome} solicitou vaga pelo formulario publico.`);
   saveLocalState();
   document.getElementById('bookingStatus').textContent = 'Pedido salvo na demo. Entre no painel para aprovar.';
   event.target.reset();
@@ -1840,6 +1954,7 @@ async function submitStudentConfirmation(classId, confirmado) {
   const classItem = state.classes.find((item) => String(item.id) === String(classId));
   if (!classItem) throw new Error('Aula nao encontrada');
   classItem.confirmacoes = { ...(classItem.confirmacoes || {}), [local.student.id]: confirmado };
+  recordAction('Aluno', 'Confirmacao aluno', `${local.student.nome} respondeu ${confirmado === 'sim' ? 'vou' : 'nao vou'} na aula ${classItem.horario} - ${classItem.turma || 'Turma'}.`);
   saveLocalState();
   publicStudentLookup = { telefone, student: local.student, items: localStudentClassesByPhone(telefone).items };
   renderStudentConfirmList();
@@ -1869,6 +1984,7 @@ async function respondBooking(id, action, force = false) {
   if (!approve) {
     booking.status = 'Recusado';
     booking.respondido_em = todayISO();
+    recordAction('Professor', 'Pedido recusado', `${booking.nome} foi recusado na aula ${item.horario} - ${item.turma || 'Turma'}.`);
     saveLocalState();
     render();
     toast('Pedido recusado');
@@ -1885,6 +2001,7 @@ async function respondBooking(id, action, force = false) {
   }
   booking.status = 'Aprovado';
   booking.respondido_em = todayISO();
+  recordAction('Professor', 'Pedido aprovado', `${booking.nome} foi aprovado na aula ${item.horario} - ${item.turma || 'Turma'}.`);
   saveLocalState();
   render();
   toast('Pedido aprovado');
@@ -1993,6 +2110,7 @@ async function syncStudentScheduleAction(studentId) {
     await loadData();
   } else {
     linked = syncStudentFixedSchedule(student);
+    recordAction('Professor', 'Agenda fixa', `${student.nome} teve agenda fixa sincronizada: ${linked || 0} aula(s).`);
     saveLocalState();
     render();
   }
@@ -2031,6 +2149,7 @@ async function saveStudent(event) {
     if (index >= 0) state.students[index] = next;
     else state.students.push(next);
     const linked = syncStudentFixedSchedule(next);
+    recordAction('Professor', id ? 'Aluno atualizado' : 'Aluno cadastrado', `${next.nome} ${id ? 'teve cadastro atualizado' : 'foi cadastrado'}${linked ? ` e vinculado a ${linked} aula(s).` : '.'}`);
     saveLocalState();
     render();
     if (linked) toast(`${linked} aula(s) vinculada(s)`);
@@ -2081,6 +2200,7 @@ async function saveClass(event) {
     } else {
       classPayloads.forEach((item) => state.classes.push({ ...item, id: uid() }));
     }
+    recordAction('Professor', id ? 'Aula atualizada' : 'Aula criada', `${payload.horario} - ${payload.turma || 'Turma'} em ${formatDate(payload.data)}.`);
     saveLocalState();
     render();
   }
@@ -2131,6 +2251,7 @@ async function saveWaitlist(event) {
     const index = state.waitlist.findIndex((item) => String(item.id) === String(next.id));
     if (index >= 0) state.waitlist[index] = next;
     else state.waitlist.unshift(next);
+    recordAction('Professor', id ? 'Espera atualizada' : 'Interessado cadastrado', `${next.nome} entrou/atualizou a lista de espera.`);
     saveLocalState();
     render();
   }
@@ -2203,6 +2324,7 @@ async function updateClassStatus(id, status) {
   const item = state.classes.find((entry) => String(entry.id) === String(id));
   if (!item) return;
   item.status = status;
+  if (!apiMode) recordAction('Professor', 'Status da aula', `${item.horario} - ${item.turma || 'Turma'} mudou para ${status}.`);
   await saveClassItem(item);
   toast(`Aula ${status.toLowerCase()}`);
 }
@@ -2222,6 +2344,7 @@ async function addExtraAttendance(event) {
   if (!name) return;
   const type = document.getElementById('extraAttendanceType').value || 'Avulso';
   item.extra_presentes = [...classExtras(item), { id: uid(), nome: name, tipo: type, criado_em: todayISO() }];
+  recordAction('Professor', 'Fora da lista', `${name} entrou como ${type} na aula ${item.horario} - ${item.turma || 'Turma'}.`);
   input.value = '';
   document.getElementById('extraAttendanceType').value = 'Avulso';
   await saveClassItem(item);
@@ -2233,7 +2356,9 @@ async function removeExtraAttendance(classId, index) {
   const item = state.classes.find((entry) => String(entry.id) === String(classId));
   if (!item) return;
   item.extra_presentes = [...classExtras(item)];
+  const removed = item.extra_presentes[Number(index)];
   item.extra_presentes.splice(Number(index), 1);
+  recordAction('Professor', 'Fora da lista removido', `${removed?.nome || 'Pessoa'} foi removido(a) da aula ${item.horario} - ${item.turma || 'Turma'}.`);
   await saveClassItem(item);
   openAttendance(classId);
   toast('Avulso removido');
@@ -2244,6 +2369,7 @@ async function setClassAttendance(classId, present) {
   if (!item) return;
   item.presencas = item.presencas || {};
   classStudentIds(item).forEach((studentId) => { item.presencas[studentId] = present; });
+  if (!apiMode) recordAction('Professor', 'Presenca em massa', `${item.turma || 'Turma'} teve presencas ${present ? 'marcadas' : 'limpas'}.`);
   if (apiMode) {
     await api(`/api/classes/${classId}/attendance`, { method: 'PUT', body: JSON.stringify({ attendance: item.presencas }) });
     await loadData();
@@ -2260,6 +2386,8 @@ async function toggleAttendance(classId, studentId) {
   if (!item) return;
   item.presencas = item.presencas || {};
   item.presencas[studentId] = !item.presencas[studentId];
+  const student = studentById(studentId);
+  if (!apiMode) recordAction('Professor', 'Presenca', `${student?.nome || 'Aluno'} foi ${item.presencas[studentId] ? 'marcado presente' : 'desmarcado'} na aula ${item.horario} - ${item.turma || 'Turma'}.`);
   if (apiMode) {
     await api(`/api/classes/${classId}/attendance`, { method: 'PUT', body: JSON.stringify({ attendance: item.presencas }) });
     await loadData();
@@ -2300,6 +2428,7 @@ async function markPaid(studentId) {
   } else {
     student.pago_ate = '';
     state.payments = (state.payments || []).filter((item) => !(String(item.aluno_id) === String(student.id) && paymentMonth(item) === month));
+    recordAction('Professor', 'Pagamento reaberto', `${student.nome} foi marcado como nao pago em ${month}.`);
     saveLocalState();
     render();
   }
@@ -2345,6 +2474,7 @@ async function savePayment(event) {
       forma_pagamento: method,
       observacao: note
     });
+    recordAction('Professor', 'Pagamento', `${student.nome} pagou ${money.format(value)} via ${method} em ${month}.`);
     saveLocalState();
     render();
   }
@@ -2371,6 +2501,7 @@ async function duplicateClass(id) {
     await loadData();
   } else {
     state.classes.push({ ...next, id: uid() });
+    recordAction('Professor', 'Aula duplicada', `${item.turma || 'Turma'} foi duplicada para ${formatDate(next.data)}.`);
     saveLocalState();
     render();
   }
@@ -2382,7 +2513,9 @@ async function deleteWait(id) {
     await api(`/api/waitlist/${id}`, { method: 'DELETE' });
     await loadData();
   } else {
+    const removed = state.waitlist.find((item) => String(item.id) === String(id));
     state.waitlist = state.waitlist.filter((item) => String(item.id) !== String(id));
+    recordAction('Professor', 'Espera removida', `${removed?.nome || 'Interessado'} saiu da lista de espera.`);
     saveLocalState();
     render();
   }
@@ -2397,6 +2530,7 @@ async function updateWaitStatus(id, status) {
     await api(`/api/waitlist/${id}`, { method: 'PUT', body: JSON.stringify(item) });
     await loadData();
   } else {
+    recordAction('Professor', 'Status da espera', `${item.nome} mudou para ${status}.`);
     saveLocalState();
     render();
   }
@@ -2407,7 +2541,10 @@ function convertWait(id) {
   const item = state.waitlist.find((entry) => String(entry.id) === String(id));
   if (!item) return;
   item.status = 'Convertido';
-  if (!apiMode) saveLocalState();
+  if (!apiMode) {
+    recordAction('Professor', 'Interessado convertido', `${item.nome} virou aluno em preparo.`);
+    saveLocalState();
+  }
   openStudent();
   document.getElementById('studentName').value = item.nome || '';
   document.getElementById('studentPhone').value = item.telefone || '';
@@ -2521,6 +2658,8 @@ function bindEvents() {
   document.getElementById('paymentMonth').addEventListener('change', renderPayments);
   document.getElementById('paymentSearch').addEventListener('input', renderPayments);
   document.getElementById('paymentStatusFilter').addEventListener('change', renderPayments);
+  document.getElementById('actionSearch')?.addEventListener('input', renderActions);
+  document.getElementById('actionActorFilter')?.addEventListener('change', renderActions);
   document.getElementById('classDateFilter').addEventListener('change', renderClasses);
   document.getElementById('classTypeFilter').addEventListener('change', renderClasses);
   document.getElementById('classStatusFilter').addEventListener('change', renderClasses);
@@ -2595,7 +2734,7 @@ updateThemeButton();
 bindEvents();
 window.addEventListener('resize', updatePerformanceMode);
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260609-flow24', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260609-flow25', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

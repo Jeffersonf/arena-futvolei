@@ -9,9 +9,9 @@
     <meta name="apple-mobile-web-app-title" content="TLF Gestao" />
     <title>Team Lucão Futevôlei</title>
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260609-flow24" />
-    <link rel="stylesheet" href="styles.css?v=20260609-flow24" />
-    <link rel="stylesheet" href="visual-polish.css?v=20260609-flow24" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260609-flow25" />
+    <link rel="stylesheet" href="styles.css?v=20260609-flow25" />
+    <link rel="stylesheet" href="visual-polish.css?v=20260609-flow25" />
   </head>
   <body>
     <div class="booking-wall" id="bookingWall" aria-hidden="true">
@@ -99,6 +99,7 @@
       <nav class="nav" aria-label="Menu principal">
         <span class="nav-label">Operacao</span>
         <button class="nav-item active" data-page="dashboard">Início</button>
+        <button class="nav-item secondary-nav" data-page="actions"><span>•</span> Ações</button>
         <button class="nav-item" data-page="bookings"><span>✓</span> Pedidos</button>
         <button class="nav-item" data-page="students"><span>👥</span> Alunos</button>
         <button class="nav-item" data-page="classes"><span>📅</span> Aulas</button>
@@ -164,6 +165,38 @@
             </div>
             <div class="list" id="pendingList"></div>
           </section>
+        </div>
+        <section class="panel action-panel">
+          <div class="panel-head">
+            <div>
+              <span>historico</span>
+              <h2>Últimas ações</h2>
+            </div>
+            <button class="soft-btn" type="button" data-action="actions">Ver central</button>
+          </div>
+          <div class="action-feed compact-feed" id="dashboardActions"></div>
+        </section>
+      </section>
+
+      <section class="page" id="page-actions">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <span>historico</span>
+              <h2>Central de ações</h2>
+            </div>
+          </div>
+          <div class="finance-summary" id="actionSummary"></div>
+          <div class="filters action-filters">
+            <input id="actionSearch" placeholder="Buscar ação, aluno ou detalhe..." />
+            <select id="actionActorFilter" aria-label="Filtrar ações por origem">
+              <option value="">Todos</option>
+              <option value="Professor">Professor</option>
+              <option value="Aluno">Aluno</option>
+              <option value="Sistema">Sistema</option>
+            </select>
+          </div>
+          <div class="action-feed" id="actionList"></div>
         </div>
       </section>
 
@@ -339,6 +372,11 @@
               <span>oferta</span>
               <strong>Planos</strong>
               <small>Valores e aulas por semana.</small>
+            </button>
+            <button class="more-card" type="button" data-more-page="actions">
+              <span>historico</span>
+              <strong>Ações</strong>
+              <small>Aluno, professor e sistema.</small>
             </button>
             <button class="more-card" type="button" data-more-page="waitlist">
               <span>demanda</span>
@@ -565,6 +603,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="app.js?v=20260609-flow24"></script>
+    <script src="app.js?v=20260609-flow25"></script>
   </body>
 </html>
