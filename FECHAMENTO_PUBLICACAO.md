@@ -66,6 +66,7 @@ npm run visual:check
 3. Abrir o link do servidor no iPhone.
 4. Confirmar que o topo mostra `Servidor Node + SQLite`.
 5. Testar pedido publico, confirmacao do aluno, presenca e backup manual.
+6. Seguir o roteiro completo de aceite em `OPERACAO_REAL.md`.
 
 ## Depois de publicar
 

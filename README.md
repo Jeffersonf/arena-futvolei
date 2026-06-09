@@ -134,6 +134,8 @@ O checklist pratico para ensaiar a demo esta em `CHECKLIST_DEMO.md`.
 
 O checklist para fechar a rodada local e publicar no GitHub Pages esta em `FECHAMENTO_PUBLICACAO.md`.
 
+O guia para colocar em operacao real com servidor, iPhone e backups esta em `OPERACAO_REAL.md`.
+
 ## GitHub Pages x uso real
 
 GitHub Pages serve para demonstrar a interface e validar o fluxo visual. Para operacao diaria, use o backend Node:
