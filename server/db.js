@@ -71,10 +71,18 @@ function normalizeTable(table) {
   return table;
 }
 
-function logAction(action, detail = '') {
+function inferLogActor(action = '', detail = '') {
+  const text = `${action} ${detail}`.toLowerCase();
+  if (text.includes('confirmacao aluno') || text.includes('solicitou aula')) return 'Aluno';
+  if (text.includes('backup') || text.includes('importacao')) return 'Sistema';
+  return 'Professor';
+}
+
+function logAction(action, detail = '', actor = '') {
   if (!tableExists('logs')) return;
-  run('INSERT INTO logs (data_hora, acao, detalhe) VALUES (?, ?, ?)', [
+  run('INSERT INTO logs (data_hora, ator, acao, detalhe) VALUES (?, ?, ?, ?)', [
     new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+    String(actor || inferLogActor(action, detail)),
     String(action || 'Sistema'),
     String(detail || '')
   ]);
@@ -185,10 +193,27 @@ function ensureSchema() {
     CREATE TABLE IF NOT EXISTS logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       data_hora TEXT,
+      ator TEXT DEFAULT '',
       acao TEXT,
       detalhe TEXT
     );
   `);
+
+  const logColumns = tableColumns('logs');
+  if (!logColumns.includes('ator')) {
+    run("ALTER TABLE logs ADD COLUMN ator TEXT DEFAULT ''");
+    run(`
+      UPDATE logs
+      SET ator = CASE
+        WHEN LOWER(COALESCE(acao, '') || ' ' || COALESCE(detalhe, '')) LIKE '%confirmacao aluno%' THEN 'Aluno'
+        WHEN LOWER(COALESCE(detalhe, '')) LIKE '%solicitou aula%' THEN 'Aluno'
+        WHEN LOWER(COALESCE(acao, '') || ' ' || COALESCE(detalhe, '')) LIKE '%backup%' THEN 'Sistema'
+        WHEN LOWER(COALESCE(acao, '') || ' ' || COALESCE(detalhe, '')) LIKE '%importacao%' THEN 'Sistema'
+        ELSE 'Professor'
+      END
+      WHERE COALESCE(ator, '') = ''
+    `);
+  }
 
   const waitlistColumns = tableColumns('lista_espera');
   if (!waitlistColumns.includes('status')) {
@@ -349,7 +374,7 @@ function insertRow(tableName, payload = {}) {
     throw err;
   }
   const result = run(`INSERT INTO ${table} (${columns.join(',')}) VALUES (${columns.map(() => '?').join(',')})`, columns.map((col) => payload[col]));
-  logAction('API', `Registro criado em ${table}.`);
+  logAction('API', `Registro criado em ${table}.`, 'Professor');
   return { ok: true, table, id: Number(result.lastInsertRowid) };
 }
 
@@ -363,14 +388,14 @@ function updateRow(tableName, id, payload = {}) {
     throw err;
   }
   run(`UPDATE ${table} SET ${editable.map((col) => `${col}=?`).join(',')} WHERE id=?`, [...editable.map((col) => payload[col]), id]);
-  logAction('API', `Registro ${id} atualizado em ${table}.`);
+  logAction('API', `Registro ${id} atualizado em ${table}.`, 'Professor');
   return { ok: true, table, id: Number(id) };
 }
 
 function deleteRow(tableName, id) {
   const table = normalizeTable(tableName);
   run(`DELETE FROM ${table} WHERE id=?`, [id]);
-  logAction('API', `Registro ${id} removido de ${table}.`);
+  logAction('API', `Registro ${id} removido de ${table}.`, 'Professor');
   return { ok: true, table, id: Number(id) };
 }
 
@@ -400,7 +425,7 @@ function restoreState(payload, mode = 'merge') {
       });
     }
     db.exec('COMMIT');
-    logAction('Backup', `Importacao concluida em modo ${mode}.`);
+    logAction('Backup', `Importacao concluida em modo ${mode}.`, 'Sistema');
     return { ok: true, imported };
   } catch (err) {
     db.exec('ROLLBACK');

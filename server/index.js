@@ -268,7 +268,7 @@ app.post('/api/public/bookings', (req, res) => {
     };
     if (!payload.nome) throw new Error('Informe seu nome');
     const result = insertRow('agendamentos', payload);
-    logAction('Agendamento', `${payload.nome} solicitou aula ${classItem.id}.`);
+    logAction('Pedido de aula', `${payload.nome} solicitou aula ${classItem.id}.`, 'Aluno');
     res.json({ ok: true, item: row('SELECT * FROM agendamentos WHERE id=?', [result.id]) });
   } catch (err) {
     jsonError(res, err);
@@ -313,7 +313,7 @@ app.post('/api/public/student-confirm', (req, res) => {
       classId,
       student.id
     ]);
-    logAction('Confirmacao aluno', `${student.nome} respondeu ${confirmValue} na aula ${classId}.`);
+    logAction('Confirmacao aluno', `${student.nome} respondeu ${confirmValue} na aula ${classId}.`, 'Aluno');
     res.json({ ok: true, item: row('SELECT * FROM aula_alunos WHERE aula_id=? AND aluno_id=?', [classId, student.id]) });
   } catch (err) {
     jsonError(res, err);
@@ -468,7 +468,7 @@ app.post('/api/students/:id/pay', (req, res) => {
       method,
       note
     ]);
-    logAction('Pagamento', `${student.nome} pago até ${paidUntil}.`);
+    logAction('Pagamento', `${student.nome} pago até ${paidUntil}.`, 'Professor');
     res.json({ ok: true, paidUntil, item: row('SELECT * FROM alunos WHERE id=?', [student.id]) });
   } catch (err) {
     jsonError(res, err);
@@ -525,7 +525,7 @@ app.put('/api/classes/:id/attendance', (req, res) => {
     Object.entries(attendance).forEach(([studentId, present]) => {
       run('UPDATE aula_alunos SET presente=? WHERE aula_id=? AND aluno_id=?', [present ? 1 : 0, req.params.id, studentId]);
     });
-    logAction('Presença', `Presenças atualizadas na aula ${req.params.id}.`);
+    logAction('Presença', `Presenças atualizadas na aula ${req.params.id}.`, 'Professor');
     res.json({ ok: true, item: classWithStudents(classItem) });
   } catch (err) {
     jsonError(res, err);
@@ -563,7 +563,7 @@ app.post('/api/bookings/:id/respond', (req, res) => {
     if (!['approve', 'reject'].includes(action)) throw new Error('Acao invalida');
     if (action === 'reject') {
       run("UPDATE agendamentos SET status='Recusado', respondido_em=? WHERE id=?", [today(), booking.id]);
-      logAction('Agendamento', `${booking.nome} recusado na aula ${booking.aula_id}.`);
+      logAction('Pedido recusado', `${booking.nome} recusado na aula ${booking.aula_id}.`, 'Professor');
       return res.json({ ok: true, item: row('SELECT * FROM agendamentos WHERE id=?', [booking.id]) });
     }
     const currentIds = classItem.aluno_ids || [];
@@ -580,7 +580,7 @@ app.post('/api/bookings/:id/respond', (req, res) => {
       run('UPDATE aulas SET extras=? WHERE id=?', [JSON.stringify(extras), classItem.id]);
     }
     run("UPDATE agendamentos SET status='Aprovado', respondido_em=? WHERE id=?", [today(), booking.id]);
-    logAction('Agendamento', `${booking.nome} aprovado na aula ${booking.aula_id}.`);
+    logAction('Pedido aprovado', `${booking.nome} aprovado na aula ${booking.aula_id}.`, 'Professor');
     return res.json({ ok: true, item: row('SELECT * FROM agendamentos WHERE id=?', [booking.id]) });
   } catch (err) {
     return jsonError(res, err);
@@ -643,7 +643,7 @@ app.put('/api/availability', (req, res) => {
     (req.body.items || []).forEach((item) => {
       run('INSERT OR REPLACE INTO disponibilidade (dia, inicio, fim) VALUES (?, ?, ?)', [Number(item.dia), item.inicio, item.fim]);
     });
-    logAction('Agenda', 'Disponibilidade atualizada.');
+    logAction('Agenda', 'Disponibilidade atualizada.', 'Professor');
     res.json({ ok: true, items: rows('SELECT * FROM disponibilidade ORDER BY dia') });
   } catch (err) {
     jsonError(res, err);

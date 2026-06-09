@@ -15,6 +15,7 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Copia rapida da lista da aula e do resumo de presenca
 - Dashboard do dia com pendencias
 - Central de acoes com historico de professor, aluno e sistema
+- Origem da acao persistida no servidor para separar aluno, professor e sistema
 - Filtros de alunos e aulas
 - Acoes rapidas no dashboard
 - Busca rapida por aluno/interessado

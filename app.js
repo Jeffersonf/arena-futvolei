@@ -427,9 +427,9 @@ function formatActionTime(value) {
 
 function actionActor(item = {}) {
   if (item.ator) return item.ator;
-  const action = String(item.acao || '').toLowerCase();
-  if (action.includes('confirmacao aluno') || action.includes('pedido') || action.includes('agendamento')) return 'Aluno';
-  if (action.includes('api') || action.includes('backup') || action.includes('sistema')) return 'Sistema';
+  const text = `${item.acao || ''} ${item.detalhe || ''}`.toLowerCase();
+  if (text.includes('confirmacao aluno') || text.includes('solicitou aula')) return 'Aluno';
+  if (text.includes('backup') || text.includes('importacao') || text.includes('sistema')) return 'Sistema';
   return 'Professor';
 }
 
@@ -2734,7 +2734,7 @@ updateThemeButton();
 bindEvents();
 window.addEventListener('resize', updatePerformanceMode);
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260609-flow25', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260609-flow26', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
