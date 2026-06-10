@@ -150,6 +150,7 @@ let state = loadLocalState();
 let activeAttendanceClassId = '';
 let publicStudentLookup = { telefone: '', student: null, items: [] };
 let actionRefreshTimer = null;
+let renderFrame = 0;
 
 function loadLocalState() {
   try {
@@ -162,6 +163,19 @@ function loadLocalState() {
 
 function saveLocalState() {
   localStorage.setItem(STORE_KEY, JSON.stringify(state));
+}
+
+function scheduleRender() {
+  if (renderFrame) return;
+  renderFrame = requestAnimationFrame(() => {
+    renderFrame = 0;
+    render();
+  });
+}
+
+function saveAndRender() {
+  saveLocalState();
+  scheduleRender();
 }
 
 function syncLocalStateFromStorage() {
@@ -2018,8 +2032,7 @@ async function respondBooking(id, action, force = false) {
     booking.status = 'Recusado';
     booking.respondido_em = todayISO();
     recordAction('Professor', 'Pedido recusado', `${booking.nome} foi recusado na aula ${item.horario} - ${item.turma || 'Turma'}.`);
-    saveLocalState();
-    render();
+    saveAndRender();
     toast('Pedido recusado');
     return;
   }
@@ -2035,8 +2048,7 @@ async function respondBooking(id, action, force = false) {
   booking.status = 'Aprovado';
   booking.respondido_em = todayISO();
   recordAction('Professor', 'Pedido aprovado', `${booking.nome} foi aprovado na aula ${item.horario} - ${item.turma || 'Turma'}.`);
-  saveLocalState();
-  render();
+  saveAndRender();
   toast('Pedido aprovado');
 }
 
@@ -2144,8 +2156,7 @@ async function syncStudentScheduleAction(studentId) {
   } else {
     linked = syncStudentFixedSchedule(student);
     recordAction('Professor', 'Agenda fixa', `${student.nome} teve agenda fixa sincronizada: ${linked || 0} aula(s).`);
-    saveLocalState();
-    render();
+    saveAndRender();
   }
   toast(linked ? `${linked} aula(s) vinculada(s)` : 'Agenda fixa ja estava sincronizada');
   openStudentReport(studentId);
@@ -2183,8 +2194,7 @@ async function saveStudent(event) {
     else state.students.push(next);
     const linked = syncStudentFixedSchedule(next);
     recordAction('Professor', id ? 'Aluno atualizado' : 'Aluno cadastrado', `${next.nome} ${id ? 'teve cadastro atualizado' : 'foi cadastrado'}${linked ? ` e vinculado a ${linked} aula(s).` : '.'}`);
-    saveLocalState();
-    render();
+    saveAndRender();
     if (linked) toast(`${linked} aula(s) vinculada(s)`);
   }
   closeModal('studentModal');
@@ -2234,8 +2244,7 @@ async function saveClass(event) {
       classPayloads.forEach((item) => state.classes.push({ ...item, id: uid() }));
     }
     recordAction('Professor', id ? 'Aula atualizada' : 'Aula criada', `${payload.horario} - ${payload.turma || 'Turma'} em ${formatDate(payload.data)}.`);
-    saveLocalState();
-    render();
+    saveAndRender();
   }
   closeModal('classModal');
   toast(repeatWeeks > 1 ? `${repeatWeeks} aulas criadas` : 'Aula salva');
@@ -2259,8 +2268,7 @@ async function savePlan(event) {
     const index = state.plans.findIndex((plan) => String(plan.id) === String(next.id));
     if (index >= 0) state.plans[index] = next;
     else state.plans.push(next);
-    saveLocalState();
-    render();
+    saveAndRender();
   }
   closeModal('planModal');
   toast('Plano salvo');
@@ -2285,8 +2293,7 @@ async function saveWaitlist(event) {
     if (index >= 0) state.waitlist[index] = next;
     else state.waitlist.unshift(next);
     recordAction('Professor', id ? 'Espera atualizada' : 'Interessado cadastrado', `${next.nome} entrou/atualizou a lista de espera.`);
-    saveLocalState();
-    render();
+    saveAndRender();
   }
   closeModal('waitlistModal');
   toast('Interessado salvo');
@@ -2348,8 +2355,7 @@ async function saveClassItem(item) {
     await api(`/api/classes/${item.id}`, { method: 'PUT', body: JSON.stringify(item) });
     await loadData();
   } else {
-    saveLocalState();
-    render();
+    saveAndRender();
   }
 }
 
@@ -2407,8 +2413,7 @@ async function setClassAttendance(classId, present) {
     await api(`/api/classes/${classId}/attendance`, { method: 'PUT', body: JSON.stringify({ attendance: item.presencas }) });
     await loadData();
   } else {
-    saveLocalState();
-    render();
+    saveAndRender();
   }
   openAttendance(classId);
   toast(present ? 'Turma marcada presente' : 'Presenças limpas');
@@ -2425,8 +2430,7 @@ async function toggleAttendance(classId, studentId) {
     await api(`/api/classes/${classId}/attendance`, { method: 'PUT', body: JSON.stringify({ attendance: item.presencas }) });
     await loadData();
   } else {
-    saveLocalState();
-    render();
+    saveAndRender();
   }
   openAttendance(classId);
 }
@@ -2462,8 +2466,7 @@ async function markPaid(studentId) {
     student.pago_ate = '';
     state.payments = (state.payments || []).filter((item) => !(String(item.aluno_id) === String(student.id) && paymentMonth(item) === month));
     recordAction('Professor', 'Pagamento reaberto', `${student.nome} foi marcado como nao pago em ${month}.`);
-    saveLocalState();
-    render();
+    saveAndRender();
   }
   toast('Mensalidade marcada como nao paga');
 }
@@ -2508,8 +2511,7 @@ async function savePayment(event) {
       observacao: note
     });
     recordAction('Professor', 'Pagamento', `${student.nome} pagou ${money.format(value)} via ${method} em ${month}.`);
-    saveLocalState();
-    render();
+    saveAndRender();
   }
   closeModal('paymentModal');
   toast('Mensalidade marcada como paga');
@@ -2535,8 +2537,7 @@ async function duplicateClass(id) {
   } else {
     state.classes.push({ ...next, id: uid() });
     recordAction('Professor', 'Aula duplicada', `${item.turma || 'Turma'} foi duplicada para ${formatDate(next.data)}.`);
-    saveLocalState();
-    render();
+    saveAndRender();
   }
   toast('Aula duplicada para a próxima semana');
 }
@@ -2549,8 +2550,7 @@ async function deleteWait(id) {
     const removed = state.waitlist.find((item) => String(item.id) === String(id));
     state.waitlist = state.waitlist.filter((item) => String(item.id) !== String(id));
     recordAction('Professor', 'Espera removida', `${removed?.nome || 'Interessado'} saiu da lista de espera.`);
-    saveLocalState();
-    render();
+    saveAndRender();
   }
   toast('Removido da lista de espera');
 }
@@ -2564,8 +2564,7 @@ async function updateWaitStatus(id, status) {
     await loadData();
   } else {
     recordAction('Professor', 'Status da espera', `${item.nome} mudou para ${status}.`);
-    saveLocalState();
-    render();
+    saveAndRender();
   }
   toast('Status atualizado');
 }
@@ -2774,7 +2773,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260609-flow28', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260610-flow29', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
