@@ -151,6 +151,7 @@ let activeAttendanceClassId = '';
 let publicStudentLookup = { telefone: '', student: null, items: [] };
 let actionRefreshTimer = null;
 let renderFrame = 0;
+const scheduledUiWork = new Map();
 
 function loadLocalState() {
   try {
@@ -176,6 +177,15 @@ function scheduleRender() {
 function saveAndRender() {
   saveLocalState();
   scheduleRender();
+}
+
+function scheduleUiWork(key, fn) {
+  if (scheduledUiWork.has(key)) return;
+  const frame = requestAnimationFrame(() => {
+    scheduledUiWork.delete(key);
+    fn();
+  });
+  scheduledUiWork.set(key, frame);
 }
 
 function syncLocalStateFromStorage() {
@@ -2603,6 +2613,12 @@ async function createServerBackup() {
 }
 
 function bindEvents() {
+  const renderStudentsLater = () => scheduleUiWork('students', renderStudents);
+  const renderPaymentsLater = () => scheduleUiWork('payments', renderPayments);
+  const renderActionsLater = () => scheduleUiWork('actions', renderActions);
+  const renderGlobalResultsLater = () => scheduleUiWork('global-results', renderGlobalResults);
+  const renderClassChecklistLater = () => scheduleUiWork('class-checklist', renderClassStudentChecklist);
+
   document.getElementById('bookingForm')?.addEventListener('submit', (event) => submitBooking(event).catch((err) => toast(err.message)));
   document.querySelectorAll('[data-public-tab]').forEach((button) => button.addEventListener('click', () => setPublicTab(button.dataset.publicTab)));
   document.getElementById('studentLookupForm')?.addEventListener('submit', (event) => {
@@ -2667,8 +2683,8 @@ function bindEvents() {
   document.getElementById('clearAttendance').addEventListener('click', () => setClassAttendance(activeAttendanceClassId, false).catch((err) => toast(err.message)));
   document.getElementById('copyAttendance').addEventListener('click', () => copyAttendanceSummary().catch((err) => toast(err.message)));
   document.getElementById('finishAttendance').addEventListener('click', () => finishAttendance().catch((err) => toast(err.message)));
-  document.getElementById('studentSearch').addEventListener('input', renderStudents);
-  document.getElementById('globalSearch').addEventListener('input', renderGlobalResults);
+  document.getElementById('studentSearch').addEventListener('input', renderStudentsLater);
+  document.getElementById('globalSearch').addEventListener('input', renderGlobalResultsLater);
   document.getElementById('globalResults').addEventListener('click', (event) => {
     const target = event.target.closest('[data-global-result]');
     if (target) openGlobalResult(target.dataset.globalResult);
@@ -2688,14 +2704,14 @@ function bindEvents() {
   document.getElementById('studentStatusFilter').addEventListener('change', renderStudents);
   document.getElementById('studentPaymentFilter').addEventListener('change', renderStudents);
   document.getElementById('paymentMonth').addEventListener('change', renderPayments);
-  document.getElementById('paymentSearch').addEventListener('input', renderPayments);
+  document.getElementById('paymentSearch').addEventListener('input', renderPaymentsLater);
   document.getElementById('paymentStatusFilter').addEventListener('change', renderPayments);
-  document.getElementById('actionSearch')?.addEventListener('input', renderActions);
+  document.getElementById('actionSearch')?.addEventListener('input', renderActionsLater);
   document.getElementById('actionActorFilter')?.addEventListener('change', renderActions);
   document.getElementById('classDateFilter').addEventListener('change', renderClasses);
   document.getElementById('classTypeFilter').addEventListener('change', renderClasses);
   document.getElementById('classStatusFilter').addEventListener('change', renderClasses);
-  document.getElementById('classStudentSearch')?.addEventListener('input', renderClassStudentChecklist);
+  document.getElementById('classStudentSearch')?.addEventListener('input', renderClassChecklistLater);
   document.getElementById('waitStatusFilter').addEventListener('change', renderWaitlist);
   document.getElementById('studentPlan').addEventListener('change', (event) => {
     const plan = planById(event.target.value);
@@ -2773,7 +2789,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260610-flow29', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260610-flow30', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
