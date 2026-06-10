@@ -35,6 +35,7 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - PWA instalavel no celular
 - Fluxo pensado para uso rapido no iPhone
 - Layout otimizado para navegador mobile
+- Visual claro mais neutro, com hierarquia inspirada no Finanza
 - Renderizacao local agrupada para reduzir travadas em celular
 - Buscas e filtros com atualizacao agendada para digitar sem engasgar
 - Navegacao mobile no rodape para ganhar espaco de tela
