@@ -340,6 +340,14 @@ function paymentUrgency(student = {}, month = currentMonth()) {
   return { label: `vence ${formatDate(due)}`, className: '', days };
 }
 
+function paymentPriority(student = {}, month = currentMonth()) {
+  if (isPaidForMonth(student, month)) return { label: 'Em dia', className: 'ok', rank: 4 };
+  const urgency = paymentUrgency(student, month);
+  if (urgency.days > 0) return { label: 'Atrasada', className: 'bad', rank: 0 };
+  if (urgency.days >= -3) return { label: 'Cobrar agora', className: 'warn', rank: 1 };
+  return { label: 'Programada', className: '', rank: 2 };
+}
+
 function classStudentIds(item = {}) {
   return item.aluno_ids || (item.alunos || []).map((entry) => entry.aluno_id || entry.id);
 }
@@ -1126,16 +1134,26 @@ function renderPayments() {
     const matchesQuery = !query || haystack.includes(query);
     const matchesFilter = !filter || (filter === 'paid' ? isPaidForMonth(student, month) : !isPaidForMonth(student, month));
     return matchesQuery && matchesFilter;
-  }).sort((a, b) => Number(isPaidForMonth(a, month)) - Number(isPaidForMonth(b, month)) || a.nome.localeCompare(b.nome));
+  }).sort((a, b) => {
+    const priorityA = paymentPriority(a, month);
+    const priorityB = paymentPriority(b, month);
+    if (priorityA.rank !== priorityB.rank) return priorityA.rank - priorityB.rank;
+    const urgencyA = paymentUrgency(a, month).days;
+    const urgencyB = paymentUrgency(b, month).days;
+    if (urgencyA !== urgencyB) return urgencyB - urgencyA;
+    return a.nome.localeCompare(b.nome);
+  });
   const rows = visibleStudents.map((student) => {
     const paid = isPaidForMonth(student, month);
     const urgency = paymentUrgency(student, month);
+    const priority = paymentPriority(student, month);
     return `
     <article class="row-card payment-row ${paid ? 'payment-paid' : 'payment-pending'}">
       <div>
         <button class="link-title compact-title" type="button" data-report-student="${student.id}">${escapeHTML(student.nome)}</button>
         <p class="meta">${escapeHTML(student.plano_nome || 'sem plano')} - ${money.format(Number(student.mensalidade || 0))} - pago até ${student.pago_ate ? formatDate(student.pago_ate) : 'sem registro'}</p>
         <div class="pill-row">
+          <span class="pill ${priority.className}">${escapeHTML(priority.label)}</span>
           <span class="pill ${paid ? 'ok' : 'bad'}">${paid ? 'em dia' : 'pendente'}</span>
           <span class="pill ${urgency.className}">${escapeHTML(urgency.label)}</span>
           <span class="pill">vence dia ${dueDay(student)}</span>
@@ -2841,7 +2859,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260610-flow34', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260610-flow35', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
