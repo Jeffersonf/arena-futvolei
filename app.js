@@ -4,6 +4,7 @@ const STORE_KEY = 'fv_school_state_v2';
 const PIN_KEY = 'tlf_admin_pin';
 const PAGE_KEY = 'tlf_last_page';
 const VISUAL_THEME_VERSION = 'ios-light-20260603';
+const ACTION_REFRESH_MS = 15000;
 const MOBILE_MORE_PAGES = ['actions', 'waitlist', 'plans', 'reports'];
 const PAGE_TITLES = {
   dashboard: ['operacao de hoje', 'Painel do dia'],
@@ -148,6 +149,7 @@ let apiMode = false;
 let state = loadLocalState();
 let activeAttendanceClassId = '';
 let publicStudentLookup = { telefone: '', student: null, items: [] };
+let actionRefreshTimer = null;
 
 function loadLocalState() {
   try {
@@ -526,6 +528,26 @@ function currentPage() {
     || document.querySelector('.page.active')?.id?.replace('page-', '')
     || localStorage.getItem(PAGE_KEY)
     || 'dashboard';
+}
+
+async function refreshActions({ force = false } = {}) {
+  if (!apiMode || !localStorage.getItem(PIN_KEY)) return;
+  if (!force && document.hidden) return;
+  const res = await api('/api/tables/logs?limit=80');
+  const nextLogs = res.rows || [];
+  const currentKey = (state.logs || []).map((item) => `${item.id}:${item.ator || ''}`).join('|');
+  const nextKey = nextLogs.map((item) => `${item.id}:${item.ator || ''}`).join('|');
+  if (currentKey === nextKey) return;
+  state.logs = nextLogs;
+  const page = currentPage();
+  if (page === 'dashboard' || page === 'actions') renderPage(page);
+}
+
+function startActionRefresh() {
+  clearInterval(actionRefreshTimer);
+  actionRefreshTimer = setInterval(() => {
+    refreshActions().catch(() => {});
+  }, ACTION_REFRESH_MS);
 }
 
 function setPage(page) {
@@ -2733,8 +2755,12 @@ updatePerformanceMode();
 updateThemeButton();
 bindEvents();
 window.addEventListener('resize', updatePerformanceMode);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) refreshActions({ force: true }).catch(() => {});
+});
+startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260609-flow26', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260609-flow27', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
