@@ -32,6 +32,7 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Mensalidade marcada no mes filtrado
 - Lista de espera com conversao para aluno
 - Lista de espera sem remocao direta no painel, usando status para historico
+- Lista de espera ordenada por prioridade: responder, marcar experimental e converter
 - Backup JSON pelo painel operacional
 - Login simples por PIN no servidor
 - Primeira tela publica para o aluno pedir vaga em uma aula

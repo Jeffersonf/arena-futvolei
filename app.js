@@ -984,6 +984,18 @@ function nextWaitLead() {
     .sort((a, b) => daysBetween(b.data_cadastro || todayISO()) - daysBetween(a.data_cadastro || todayISO()))[0];
 }
 
+function waitPriority(item = {}) {
+  const status = item.status || 'Novo';
+  const age = daysBetween(item.data_cadastro || todayISO());
+  if (status === 'Convertido') return { label: 'Convertido', className: 'ok', rank: 4, age };
+  if (status === 'Perdido') return { label: 'Perdido', className: 'bad', rank: 5, age };
+  if (status === 'Novo' && age >= 2) return { label: 'Responder hoje', className: 'bad', rank: 0, age };
+  if (status === 'Novo') return { label: 'Novo lead', className: 'warn', rank: 1, age };
+  if (status === 'Contatado') return { label: 'Marcar experimental', className: 'warn', rank: 2, age };
+  if (status === 'Experimental marcado') return { label: 'Converter aluno', className: 'warn', rank: 3, age };
+  return { label: status, className: '', rank: 3, age };
+}
+
 function renderFocusStrip() {
   const target = document.getElementById('focusStrip');
   if (!target) return;
@@ -1206,16 +1218,26 @@ function renderPlans() {
 
 function renderWaitlist() {
   const status = document.getElementById('waitStatusFilter').value;
-  const items = state.waitlist.filter((item) => !status || (item.status || 'Novo') === status);
+  const items = state.waitlist
+    .filter((item) => !status || (item.status || 'Novo') === status)
+    .sort((a, b) => {
+      const priorityA = waitPriority(a);
+      const priorityB = waitPriority(b);
+      if (priorityA.rank !== priorityB.rank) return priorityA.rank - priorityB.rank;
+      if (priorityA.age !== priorityB.age) return priorityB.age - priorityA.age;
+      return String(a.nome || '').localeCompare(String(b.nome || ''));
+    });
   document.getElementById('waitlistList').innerHTML = items.length ? items.map((item) => {
-    const age = daysBetween(item.data_cadastro || todayISO());
-    const needsReply = (item.status || 'Novo') === 'Novo' && age >= 2;
+    const priority = waitPriority(item);
+    const age = priority.age;
+    const needsReply = priority.rank === 0;
     return `
     <article class="row-card wait-row wait-${cssToken(item.status || 'Novo')} ${needsReply ? 'wait-needs-reply' : ''}">
       <div>
         <h3>${escapeHTML(item.nome)}</h3>
         <p class="meta">${escapeHTML(item.telefone || 'sem telefone')} - ${escapeHTML(item.preferencia || 'sem preferencia')}</p>
         <div class="pill-row">
+          <span class="pill ${priority.className}">${escapeHTML(priority.label)}</span>
           <span class="pill ${item.status === 'Convertido' ? 'ok' : item.status === 'Contatado' || item.status === 'Experimental marcado' ? 'warn' : item.status === 'Perdido' ? 'bad' : ''}">${escapeHTML(item.status || 'Novo')}</span>
           ${item.data_cadastro ? `<span class="pill">${formatDate(item.data_cadastro)}</span>` : ''}
           <span class="pill ${needsReply ? 'bad' : age ? 'warn' : ''}">${age || 0} dia(s)</span>
@@ -2858,7 +2880,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260610-flow37', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260610-flow38', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
