@@ -462,6 +462,23 @@ function formatActionTime(value) {
   return text.slice(0, 5);
 }
 
+function actionDateKey(value) {
+  const text = String(value || '');
+  const isoDate = text.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (isoDate) return isoDate[1];
+  const parsed = new Date(text);
+  if (!Number.isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
+  return '';
+}
+
+function formatActionDate(value) {
+  const key = actionDateKey(value);
+  if (!key) return 'Sem data';
+  if (key === todayISO()) return 'Hoje';
+  if (key === addDaysIso(todayISO(), -1)) return 'Ontem';
+  return formatDate(key);
+}
+
 function actionActor(item = {}) {
   if (item.ator) return item.ator;
   const text = `${item.acao || ''} ${item.detalhe || ''}`.toLowerCase();
@@ -474,6 +491,12 @@ function actionTone(actor = '') {
   if (actor === 'Aluno') return 'student';
   if (actor === 'Sistema') return 'system';
   return 'teacher';
+}
+
+function actionIcon(actor = '') {
+  if (actor === 'Aluno') return 'Aluno';
+  if (actor === 'Sistema') return 'Sistema';
+  return 'Prof.';
 }
 
 function sortedActions(limit = 80) {
@@ -727,7 +750,7 @@ function actionRow(item) {
   const actor = actionActor(item);
   return `
     <article class="action-item action-${actionTone(actor)}">
-      <time>${escapeHTML(formatActionTime(item.data_hora))}</time>
+      <time><span>${escapeHTML(formatActionTime(item.data_hora))}</span><small>${escapeHTML(actionIcon(actor))}</small></time>
       <div>
         <div class="action-line">
           <strong>${escapeHTML(actor)}</strong>
@@ -737,6 +760,16 @@ function actionRow(item) {
       </div>
     </article>
   `;
+}
+
+function groupedActionRows(items) {
+  let current = '';
+  return items.map((item) => {
+    const key = actionDateKey(item.data_hora) || 'sem-data';
+    const header = key !== current ? `<div class="action-day"><span>${escapeHTML(formatActionDate(item.data_hora))}</span></div>` : '';
+    current = key;
+    return `${header}${actionRow(item)}`;
+  }).join('');
 }
 
 function renderDashboardActions() {
@@ -758,16 +791,17 @@ function renderActions() {
   const professor = all.filter((item) => actionActor(item) === 'Professor').length;
   const aluno = all.filter((item) => actionActor(item) === 'Aluno').length;
   const system = all.filter((item) => actionActor(item) === 'Sistema').length;
+  const latest = items[0] || all[0];
   const summary = document.getElementById('actionSummary');
   if (summary) {
     summary.innerHTML = `
-      <article class="mini-stat"><span>Total</span><strong>${all.length}</strong></article>
+      <article class="mini-stat action-latest"><span>Ultimo movimento</span><strong>${latest ? escapeHTML(formatActionTime(latest.data_hora)) : '--:--'}</strong><small>${latest ? escapeHTML(`${actionActor(latest)} - ${latest.acao || 'Acao'}`) : 'Sem registro'}</small></article>
       <article class="mini-stat action-mini-teacher"><span>Professor</span><strong>${professor}</strong></article>
       <article class="mini-stat action-mini-student"><span>Aluno</span><strong>${aluno}</strong></article>
       <article class="mini-stat action-mini-system"><span>Sistema</span><strong>${system}</strong></article>
     `;
   }
-  document.getElementById('actionList').innerHTML = items.length ? items.map(actionRow).join('') : empty('Nenhuma acao nesse filtro.');
+  document.getElementById('actionList').innerHTML = items.length ? groupedActionRows(items) : empty('Nenhuma acao nesse filtro.');
 }
 
 function renderStudents() {
@@ -2789,7 +2823,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260610-flow32', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260610-flow33', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
