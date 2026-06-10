@@ -2032,10 +2032,18 @@ function renderStudentConfirmList() {
     list.innerHTML = empty('Nenhuma aula futura encontrada para esse WhatsApp.');
     return;
   }
+  const confirmedYes = items.filter((item) => item.confirmado === 'sim').length;
+  const confirmedNo = items.filter((item) => item.confirmado === 'nao').length;
+  const open = Math.max(0, items.length - confirmedYes - confirmedNo);
   list.innerHTML = `
     <div class="student-confirm-head">
       <span class="pill ok">${escapeHTML(student?.nome || 'Aluno')}</span>
       <small>${escapeHTML(student?.plano_nome || 'Plano nao informado')}</small>
+    </div>
+    <div class="student-confirm-summary">
+      <span class="pill ok">${confirmedYes} vou</span>
+      <span class="pill bad">${confirmedNo} nao vou</span>
+      <span class="pill ${open ? 'warn' : 'ok'}">${open} sem resposta</span>
     </div>
     ${items.map((item) => {
       const yes = item.confirmado === 'sim';
@@ -2880,7 +2888,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260610-flow38', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260610-flow39', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

@@ -36,6 +36,7 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Backup JSON pelo painel operacional
 - Login simples por PIN no servidor
 - Primeira tela publica para o aluno pedir vaga em uma aula
+- Area publica do aluno com resumo de confirmacoes futuras
 - Fila de pedidos para professor aprovar ou recusar
 - Limite de capacidade considerado antes de aceitar pedidos
 - PWA instalavel no celular
