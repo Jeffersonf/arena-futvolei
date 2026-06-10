@@ -2789,7 +2789,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260610-flow31', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260610-flow32', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

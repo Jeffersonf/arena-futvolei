@@ -36,6 +36,7 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Fluxo pensado para uso rapido no iPhone
 - Layout otimizado para navegador mobile
 - Visual claro mais neutro, com hierarquia inspirada no Finanza
+- CSS visual consolidado para reduzir overrides acumulados
 - Renderizacao local agrupada para reduzir travadas em celular
 - Buscas e filtros com atualizacao agendada para digitar sem engasgar
 - Navegacao mobile no rodape para ganhar espaco de tela
