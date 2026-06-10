@@ -436,6 +436,19 @@ function classConfirmationStats(item = {}) {
   return { yes, no, open: Math.max(0, students.length - yes - no) };
 }
 
+function classOperationStatus(item = {}) {
+  const enrolled = classStudents(item);
+  const capacity = Number(item.capacidade || 8);
+  const present = enrolled.filter((student) => item.presencas?.[student.aluno_id || student.id] || student.presente).length;
+  const confirmation = classConfirmationStats(item);
+  if ((item.status || '') === 'Finalizada') return ['ok', 'Finalizada'];
+  if (present && present < enrolled.length) return ['warn', 'Finalizar presenca'];
+  if (enrolled.length >= capacity) return ['bad', 'Lotada'];
+  if (confirmation.open) return ['warn', `${confirmation.open} sem resposta`];
+  if (confirmation.no) return ['bad', `${confirmation.no} nao vai`];
+  return ['ok', 'Pronta'];
+}
+
 function studentClassEntry(item = {}, studentId = '') {
   return classStudents(item).find((student) => String(student.aluno_id || student.id) === String(studentId)) || {};
 }
@@ -1012,11 +1025,12 @@ function renderClassesTodayPlanner() {
   const extrasTotal = classes.reduce((sum, item) => sum + classExtras(item).length, 0);
   const confirmedToday = classes.reduce((sum, item) => sum + classConfirmationStats(item).yes, 0);
   const declinedToday = classes.reduce((sum, item) => sum + classConfirmationStats(item).no, 0);
+  const attentionTotal = classes.filter((item) => classOperationStatus(item)[0] !== 'ok').length;
   const summary = `
     <article class="today-summary">
       <span>Resumo de hoje</span>
       <strong>${classes.length} aula(s)</strong>
-      <small>${expected} previstos - ${confirmedToday} confirmados - ${declinedToday} nao vao - ${present} presentes - ${extrasTotal} fora da lista</small>
+      <small>${expected} previstos - ${confirmedToday} confirmados - ${declinedToday} nao vao - ${present} presentes - ${extrasTotal} fora da lista - ${attentionTotal} atencao</small>
     </article>
   `;
   target.innerHTML = classes.length ? `${summary}${classes.map((item) => {
@@ -1025,6 +1039,7 @@ function renderClassesTodayPlanner() {
     const capacity = Number(item.capacidade || 8);
     const presentCount = enrolled.filter((student) => item.presencas?.[student.aluno_id || student.id] || student.presente).length;
     const confirmation = classConfirmationStats(item);
+    const [operationTone, operationLabel] = classOperationStatus(item);
     return `
       <article class="today-class class-${cssToken(item.status || 'Marcada')} type-${cssToken(classType(item))}">
         <div class="today-class-head">
@@ -1036,6 +1051,7 @@ function renderClassesTodayPlanner() {
             <strong>${escapeHTML(item.turma || 'Turma')}</strong>
             <span>${escapeHTML(item.professor || 'Professor nao informado')}</span>
             <div class="pill-row">
+              <span class="pill ${operationTone}">${escapeHTML(operationLabel)}</span>
               <span class="pill">${enrolled.length}/${capacity} previstos</span>
               <span class="pill ok">${confirmation.yes} vao</span>
               ${confirmation.no ? `<span class="pill bad">${confirmation.no} nao vao</span>` : ''}
@@ -1338,12 +1354,14 @@ function classRow(item) {
   const present = enrolled.filter((student) => item.presencas?.[student.aluno_id || student.id] || student.presente).length;
   const extras = classExtras(item);
   const confirmation = classConfirmationStats(item);
+  const [operationTone, operationLabel] = classOperationStatus(item);
   return `
     <article class="row-card class-row class-${cssToken(item.status || 'Marcada')} type-${cssToken(classType(item))}">
       <div>
         <h3>${formatDate(item.data)} as ${item.horario} - ${escapeHTML(item.turma || 'Turma')}</h3>
         <p class="meta">${escapeHTML(item.professor || 'Professor nao informado')} - ${enrolled.length}/${item.capacidade || 8} aluno(s) previstos</p>
         <div class="pill-row">
+          <span class="pill ${operationTone}">${escapeHTML(operationLabel)}</span>
           <span class="pill">${present}/${enrolled.length} presencas</span>
           <span class="pill ok">${confirmation.yes} vao</span>
           ${confirmation.no ? `<span class="pill bad">${confirmation.no} nao vao</span>` : ''}
@@ -2823,7 +2841,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260610-flow33', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260610-flow34', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
