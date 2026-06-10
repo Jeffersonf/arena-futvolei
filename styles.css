@@ -1412,6 +1412,14 @@ h2 {
   font-size: 22px;
 }
 
+.mini-stat small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
 .section-label {
   margin: 12px 0 6px;
   color: var(--accent);

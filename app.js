@@ -348,6 +348,16 @@ function paymentPriority(student = {}, month = currentMonth()) {
   return { label: 'Programada', className: '', rank: 2 };
 }
 
+function studentNextAction(student = {}, weekly = 0, target = 0, nextClasses = []) {
+  const payment = paymentPriority(student);
+  if (payment.rank <= 1) return { label: payment.label, detail: 'Prioridade financeira', className: payment.className };
+  const hasFixedSchedule = student.dia_fixo !== '' && student.dia_fixo !== null && student.dia_fixo !== undefined && student.horario_fixo;
+  if (!hasFixedSchedule) return { label: 'Definir agenda', detail: 'Aluno sem dia e horario fixo', className: 'warn' };
+  if (!nextClasses.length) return { label: 'Criar proximas aulas', detail: 'Agenda fixa sem aulas futuras', className: 'warn' };
+  if (target && weekly < target) return { label: 'Acompanhar frequencia', detail: `${weekly}/${target} aulas na semana`, className: 'warn' };
+  return { label: 'Tudo ok', detail: 'Aluno sem pendencia operacional', className: 'ok' };
+}
+
 function classStudentIds(item = {}) {
   return item.aluno_ids || (item.alunos || []).map((entry) => entry.aluno_id || entry.id);
 }
@@ -1506,6 +1516,7 @@ function openStudentReport(id) {
   const scheduleText = [student.dia_fixo !== '' && student.dia_fixo !== null && student.dia_fixo !== undefined ? weekdayName(student.dia_fixo) : '', student.horario_fixo || '', student.turma_fixa || ''].filter(Boolean).join(' - ') || 'sem agenda fixa';
   const nextFixedDate = student.dia_fixo !== '' && student.dia_fixo !== null && student.dia_fixo !== undefined ? nextDateForWeekday(student.dia_fixo) : '';
   const hasFixedSchedule = Boolean(nextFixedDate && student.horario_fixo);
+  const nextAction = studentNextAction(student, weekly, target, nextClasses);
   document.getElementById('studentReport').innerHTML = `
     <div class="report-hero student-profile ${paid ? 'payment-paid' : 'payment-pending'}">
       <div>
@@ -1514,6 +1525,7 @@ function openStudentReport(id) {
         <p class="meta">${escapeHTML(student.telefone || 'sem telefone')} - ${plan} - vence dia ${dueDay(student)}</p>
         <div class="pill-row">
           <span class="pill ${student.status === 'Ativo' ? 'ok' : student.status === 'Experimental' ? 'warn' : ''}">${escapeHTML(student.status || 'Ativo')}</span>
+          <span class="pill ${nextAction.className}">${escapeHTML(nextAction.label)}</span>
           <span class="pill">${escapeHTML(student.nivel || 'sem nivel')}</span>
           <span class="pill ${paid ? 'ok' : 'bad'}">${paid ? 'pagamento em dia' : 'pagamento pendente'}</span>
           <span class="pill">${weekly}/${target || '-'} na semana</span>
@@ -1528,6 +1540,7 @@ function openStudentReport(id) {
     </div>
     <div class="report-grid student-report-grid">
       <article class="mini-stat"><span>Semana atual</span><strong>${weekly}/${target || '-'}</strong></article>
+      <article class="mini-stat ${nextAction.className ? `kpi-${nextAction.className}` : ''}"><span>Acao sugerida</span><strong>${escapeHTML(nextAction.label)}</strong><small>${escapeHTML(nextAction.detail)}</small></article>
       <article class="mini-stat"><span>Presencas</span><strong>${summary.present}/${summary.enrolled}</strong></article>
       <article class="mini-stat"><span>Comparecimento</span><strong>${summary.rate}%</strong></article>
       <article class="mini-stat ${paid ? 'kpi-ok' : 'kpi-bad'}"><span>Pagamento</span><strong>${paid ? 'Em dia' : 'Pendente'}</strong></article>
@@ -2859,7 +2872,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260610-flow35', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260610-flow36', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

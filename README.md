@@ -9,6 +9,7 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Agenda de aulas
 - Presenca por aula
 - Relatorio individual ao clicar no nome do aluno
+- Ficha do aluno com acao sugerida: cobrar, definir agenda ou acompanhar frequencia
 - Aulas de hoje com previstos, avulsos e status rapido
 - Indicador operacional por aula: pronta, lotada, sem resposta ou finalizar presenca
 - Tipo de aula: regular, experimental, reposicao, avulso ou evento
