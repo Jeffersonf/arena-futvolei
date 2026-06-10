@@ -2635,19 +2635,6 @@ async function duplicateClass(id) {
   toast('Aula duplicada para a próxima semana');
 }
 
-async function deleteWait(id) {
-  if (apiMode) {
-    await api(`/api/waitlist/${id}`, { method: 'DELETE' });
-    await loadData();
-  } else {
-    const removed = state.waitlist.find((item) => String(item.id) === String(id));
-    state.waitlist = state.waitlist.filter((item) => String(item.id) !== String(id));
-    recordAction('Professor', 'Espera removida', `${removed?.nome || 'Interessado'} saiu da lista de espera.`);
-    saveAndRender();
-  }
-  toast('Removido da lista de espera');
-}
-
 async function updateWaitStatus(id, status) {
   const item = state.waitlist.find((entry) => String(entry.id) === String(id));
   if (!item) return;
@@ -2808,7 +2795,7 @@ function bindEvents() {
     toggleClassStudent(target.value, target.checked);
   });
   document.body.addEventListener('click', (event) => {
-    const target = event.target.closest('[data-action],[data-report-student],[data-edit-student],[data-sync-student],[data-edit-class],[data-duplicate-class],[data-class-status],[data-copy-class],[data-copy-report],[data-edit-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-copy-charge],[data-edit-wait],[data-delete-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day],[data-more-page],[data-more-action],[data-booking-action]');
+    const target = event.target.closest('[data-action],[data-report-student],[data-edit-student],[data-sync-student],[data-edit-class],[data-duplicate-class],[data-class-status],[data-copy-class],[data-copy-report],[data-edit-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-copy-charge],[data-edit-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day],[data-more-page],[data-more-action],[data-booking-action]');
     if (!target) return;
     if (target.dataset.action && !target.closest('#quickActions')) handleQuickAction(target.dataset.action);
     if (target.dataset.morePage) setPage(target.dataset.morePage);
@@ -2842,7 +2829,6 @@ function bindEvents() {
     if (target.dataset.pay) markPaid(target.dataset.pay).catch((err) => toast(err.message));
     if (target.dataset.copyCharge) copyStudentCharge(target.dataset.copyCharge).catch((err) => toast(err.message));
     if (target.dataset.editWait) openWaitItem(target.dataset.editWait);
-    if (target.dataset.deleteWait) deleteWait(target.dataset.deleteWait).catch((err) => toast(err.message));
     if (target.dataset.waitStatus) {
       const [id, status] = target.dataset.waitStatus.split(':');
       updateWaitStatus(id, status).catch((err) => toast(err.message));
@@ -2872,7 +2858,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260610-flow36', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260610-flow37', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
