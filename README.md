@@ -17,6 +17,7 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Central de acoes com historico de professor, aluno e sistema
 - Origem da acao persistida no servidor para separar aluno, professor e sistema
 - Atualizacao leve da central de acoes quando outra aba ou aluno registra novidade
+- Sincronizacao entre abas no modo local/demo pelo mesmo navegador
 - Filtros de alunos e aulas
 - Acoes rapidas no dashboard
 - Busca rapida por aluno/interessado

@@ -164,6 +164,17 @@ function saveLocalState() {
   localStorage.setItem(STORE_KEY, JSON.stringify(state));
 }
 
+function syncLocalStateFromStorage() {
+  if (apiMode) return;
+  state = loadLocalState();
+  renderPlanOptions();
+  renderPage();
+  renderGlobalResults();
+  if (document.getElementById('attendanceModal')?.classList.contains('open') && activeAttendanceClassId) {
+    openAttendance(activeAttendanceClassId);
+  }
+}
+
 async function api(path, options = {}) {
   const headers = { ...(options.headers || {}) };
   const pin = localStorage.getItem(PIN_KEY);
@@ -2758,9 +2769,12 @@ window.addEventListener('resize', updatePerformanceMode);
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) refreshActions({ force: true }).catch(() => {});
 });
+window.addEventListener('storage', (event) => {
+  if (event.key === STORE_KEY) syncLocalStateFromStorage();
+});
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260609-flow27', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260609-flow28', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
