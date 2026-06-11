@@ -605,6 +605,26 @@ function actionIcon(actor = '') {
   return 'Prof.';
 }
 
+function actionCategory(item = {}) {
+  const text = `${item.acao || ''} ${item.detalhe || ''}`.toLowerCase();
+  if (text.includes('pagamento') || text.includes('mensalidade') || text.includes('pago') || text.includes('cobranca')) return 'Financeiro';
+  if (text.includes('presenca') || text.includes('presente') || text.includes('faltou') || text.includes('confirmacao')) return 'Presenca';
+  if (text.includes('pedido') || text.includes('solicitou') || text.includes('aprovado') || text.includes('recusado')) return 'Pedidos';
+  if (text.includes('aula') || text.includes('agenda') || text.includes('duplicada') || text.includes('status da aula')) return 'Agenda';
+  if (text.includes('aluno') || text.includes('cadastro')) return 'Aluno';
+  if (text.includes('backup') || text.includes('sistema') || text.includes('importacao')) return 'Sistema';
+  return 'Operacao';
+}
+
+function actionCategoryTone(category = '') {
+  if (category === 'Financeiro') return 'money';
+  if (category === 'Presenca') return 'presence';
+  if (category === 'Pedidos') return 'request';
+  if (category === 'Agenda') return 'schedule';
+  if (category === 'Sistema') return 'system';
+  return 'default';
+}
+
 function sortedActions(limit = 80) {
   return [...(state.logs || [])]
     .sort((a, b) => {
@@ -856,6 +876,7 @@ function renderPending() {
 
 function actionRow(item) {
   const actor = actionActor(item);
+  const category = actionCategory(item);
   return `
     <article class="action-item action-${actionTone(actor)}">
       <time><span>${escapeHTML(formatActionTime(item.data_hora))}</span><small>${escapeHTML(actionIcon(actor))}</small></time>
@@ -863,6 +884,10 @@ function actionRow(item) {
         <div class="action-line">
           <strong>${escapeHTML(actor)}</strong>
           <span>${escapeHTML(item.acao || 'Acao')}</span>
+        </div>
+        <div class="action-meta-line">
+          <span class="pill action-pill action-pill-${actionCategoryTone(category)}">${escapeHTML(category)}</span>
+          <small>${escapeHTML(formatActionDate(item.data_hora))}</small>
         </div>
         <p>${escapeHTML(item.detalhe || 'Movimento registrado no sistema.')}</p>
       </div>
@@ -889,16 +914,19 @@ function renderDashboardActions() {
 
 function renderActions() {
   const filter = document.getElementById('actionActorFilter')?.value || '';
+  const categoryFilter = document.getElementById('actionCategoryFilter')?.value || '';
   const query = document.getElementById('actionSearch')?.value.trim().toLowerCase() || '';
   const all = sortedActions(80);
   const items = all.filter((item) => {
     const actor = actionActor(item);
-    const haystack = `${actor} ${item.acao || ''} ${item.detalhe || ''}`.toLowerCase();
-    return (!filter || actor === filter) && (!query || haystack.includes(query));
+    const category = actionCategory(item);
+    const haystack = `${actor} ${category} ${item.acao || ''} ${item.detalhe || ''}`.toLowerCase();
+    return (!filter || actor === filter) && (!categoryFilter || category === categoryFilter) && (!query || haystack.includes(query));
   });
   const professor = all.filter((item) => actionActor(item) === 'Professor').length;
   const aluno = all.filter((item) => actionActor(item) === 'Aluno').length;
   const system = all.filter((item) => actionActor(item) === 'Sistema').length;
+  const finance = all.filter((item) => actionCategory(item) === 'Financeiro').length;
   const latest = items[0] || all[0];
   const summary = document.getElementById('actionSummary');
   if (summary) {
@@ -907,6 +935,7 @@ function renderActions() {
       <article class="mini-stat action-mini-teacher"><span>Professor</span><strong>${professor}</strong></article>
       <article class="mini-stat action-mini-student"><span>Aluno</span><strong>${aluno}</strong></article>
       <article class="mini-stat action-mini-system"><span>Sistema</span><strong>${system}</strong></article>
+      <article class="mini-stat action-mini-money"><span>Financeiro</span><strong>${finance}</strong></article>
     `;
   }
   document.getElementById('actionList').innerHTML = items.length ? groupedActionRows(items) : empty('Nenhuma acao nesse filtro.');
@@ -2885,6 +2914,7 @@ function bindEvents() {
   document.getElementById('paymentStatusFilter').addEventListener('change', renderPayments);
   document.getElementById('actionSearch')?.addEventListener('input', renderActionsLater);
   document.getElementById('actionActorFilter')?.addEventListener('change', renderActions);
+  document.getElementById('actionCategoryFilter')?.addEventListener('change', renderActions);
   document.getElementById('classDateFilter').addEventListener('change', renderClasses);
   document.getElementById('classTypeFilter').addEventListener('change', renderClasses);
   document.getElementById('classStatusFilter').addEventListener('change', renderClasses);
@@ -2965,7 +2995,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260611-flow41', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260611-flow42', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

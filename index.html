@@ -9,9 +9,9 @@
     <meta name="apple-mobile-web-app-title" content="TLF Gestao" />
     <title>Team Lucão Futevôlei</title>
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260611-flow41" />
-    <link rel="stylesheet" href="styles.css?v=20260611-flow41" />
-    <link rel="stylesheet" href="visual-polish.css?v=20260611-flow41" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260611-flow42" />
+    <link rel="stylesheet" href="styles.css?v=20260611-flow42" />
+    <link rel="stylesheet" href="visual-polish.css?v=20260611-flow42" />
   </head>
   <body>
     <div class="booking-wall" id="bookingWall" aria-hidden="true">
@@ -192,6 +192,15 @@
             <select id="actionActorFilter" aria-label="Filtrar ações por origem">
               <option value="">Todos</option>
               <option value="Professor">Professor</option>
+              <option value="Aluno">Aluno</option>
+              <option value="Sistema">Sistema</option>
+            </select>
+            <select id="actionCategoryFilter" aria-label="Filtrar acoes por tipo">
+              <option value="">Todos os tipos</option>
+              <option value="Presenca">Presenca</option>
+              <option value="Financeiro">Financeiro</option>
+              <option value="Agenda">Agenda</option>
+              <option value="Pedidos">Pedidos</option>
               <option value="Aluno">Aluno</option>
               <option value="Sistema">Sistema</option>
             </select>
@@ -603,6 +612,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="app.js?v=20260611-flow41"></script>
+    <script src="app.js?v=20260611-flow42"></script>
   </body>
 </html>
