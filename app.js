@@ -151,6 +151,9 @@ let activeAttendanceClassId = '';
 let publicStudentLookup = { telefone: '', student: null, items: [] };
 let actionRefreshTimer = null;
 let renderFrame = 0;
+let stateVersion = 0;
+let indexVersion = -1;
+let stateIndex = null;
 const scheduledUiWork = new Map();
 
 function loadLocalState() {
@@ -166,6 +169,71 @@ function saveLocalState() {
   localStorage.setItem(STORE_KEY, JSON.stringify(state));
 }
 
+function touchState() {
+  stateVersion += 1;
+  stateIndex = null;
+}
+
+function buildStateIndex() {
+  const students = state.students || [];
+  const classes = state.classes || [];
+  const payments = state.payments || [];
+  const today = todayISO();
+  const studentsById = new Map(students.map((student) => [String(student.id), student]));
+  const plansById = new Map((state.plans || []).map((plan) => [String(plan.id), plan]));
+  const classesById = new Map(classes.map((item) => [String(item.id), item]));
+  const classesByDay = new Map();
+  const paymentsByMonth = new Map();
+  const attendanceByStudent = new Map();
+
+  classes.forEach((item) => {
+    if (item.status !== 'Cancelada') {
+      const list = classesByDay.get(item.data) || [];
+      list.push(item);
+      classesByDay.set(item.data, list);
+    }
+    classStudentIds(item).forEach((id) => {
+      const key = String(id);
+      const summary = attendanceByStudent.get(key) || { enrolled: 0, present: 0 };
+      summary.enrolled += 1;
+      if (item.presencas?.[id] || item.presencas?.[key]) summary.present += 1;
+      attendanceByStudent.set(key, summary);
+    });
+  });
+  classesByDay.forEach((items) => items.sort(sortClass));
+  payments.forEach((item) => {
+    const month = paymentMonth(item);
+    if (!month) return;
+    const list = paymentsByMonth.get(month) || [];
+    list.push(item);
+    paymentsByMonth.set(month, list);
+  });
+
+  const activeStudents = students.filter((student) => student.status !== 'Pausado');
+  const pendingStudents = activeStudents.filter((student) => !isPaid(student));
+  return {
+    studentsById,
+    plansById,
+    classesById,
+    activeStudents,
+    pendingStudents,
+    todayClasses: classesByDay.get(today) || [],
+    pendingBookings: (state.bookings || []).filter((item) => (item.status || 'Pendente') === 'Pendente'),
+    approvedBookings: (state.bookings || []).filter((item) => (item.status || '') === 'Aprovado'),
+    classesByDay,
+    paymentsByMonth,
+    attendanceByStudent
+  };
+}
+
+function getStateIndex() {
+  if (!stateIndex || indexVersion !== stateVersion) {
+    stateIndex = buildStateIndex();
+    indexVersion = stateVersion;
+  }
+  return stateIndex;
+}
+
 function scheduleRender() {
   if (renderFrame) return;
   renderFrame = requestAnimationFrame(() => {
@@ -175,6 +243,7 @@ function scheduleRender() {
 }
 
 function saveAndRender() {
+  touchState();
   saveLocalState();
   scheduleRender();
 }
@@ -191,6 +260,7 @@ function scheduleUiWork(key, fn) {
 function syncLocalStateFromStorage() {
   if (apiMode) return;
   state = loadLocalState();
+  touchState();
   renderPlanOptions();
   renderPage();
   renderGlobalResults();
@@ -297,15 +367,20 @@ async function loadData() {
     bookings: bookings.items || [],
     logs: logs.rows || []
   };
+  touchState();
   restorePage();
 }
 
 function studentById(id) {
-  return state.students.find((student) => String(student.id) === String(id));
+  return getStateIndex().studentsById.get(String(id));
 }
 
 function planById(id) {
-  return state.plans.find((plan) => String(plan.id) === String(id));
+  return getStateIndex().plansById.get(String(id));
+}
+
+function classById(id) {
+  return getStateIndex().classesById.get(String(id));
 }
 
 function isPaid(student) {
@@ -628,6 +703,7 @@ async function refreshActions({ force = false } = {}) {
   const nextKey = nextLogs.map((item) => `${item.id}:${item.ator || ''}`).join('|');
   if (currentKey === nextKey) return;
   state.logs = nextLogs;
+  touchState();
   const page = currentPage();
   if (page === 'dashboard' || page === 'actions') renderPage(page);
 }
@@ -718,14 +794,15 @@ function render() {
 }
 
 function renderKpis() {
+  const index = getStateIndex();
   const active = state.students.filter((s) => s.status === 'Ativo').length;
-  const todayClasses = state.classes.filter((item) => item.data === todayISO() && item.status !== 'Cancelada');
+  const todayClasses = index.todayClasses;
   const expectedToday = todayClasses.reduce((sum, item) => sum + classStudents(item).length, 0);
   const presentToday = todayClasses.reduce((sum, item) => (
     sum + classStudents(item).filter((student) => item.presencas?.[student.aluno_id || student.id] || student.presente).length
   ), 0);
-  const pendingStudents = state.students.filter((s) => s.status !== 'Pausado' && !isPaid(s));
-  const pendingBookings = (state.bookings || []).filter((item) => (item.status || 'Pendente') === 'Pendente').length;
+  const pendingStudents = index.pendingStudents;
+  const pendingBookings = index.pendingBookings.length;
   const pendingValue = pendingStudents.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0);
   const items = [
     ['Aulas hoje', todayClasses.length, `${expectedToday} previstos`, todayClasses.length ? '' : 'ok'],
@@ -755,12 +832,12 @@ function renderQuickActions() {
 }
 
 function renderTodayClasses() {
-  const classes = state.classes.filter((item) => item.data === todayISO()).sort(sortClass);
+  const classes = getStateIndex().todayClasses;
   document.getElementById('todayClasses').innerHTML = classes.length ? classes.map(classRow).join('') : empty('Nenhuma aula marcada para hoje.');
 }
 
 function renderPending() {
-  const students = state.students.filter((student) => student.status !== 'Pausado' && !isPaid(student));
+  const students = getStateIndex().pendingStudents;
   const visible = students.slice(0, 5);
   document.getElementById('pendingList').innerHTML = students.length ? `
     ${visible.map((student) => `
@@ -922,7 +999,7 @@ function renderClasses() {
 }
 
 function bookingClass(booking) {
-  return state.classes.find((item) => String(item.id) === String(booking.aula_id));
+  return getStateIndex().classesById.get(String(booking.aula_id));
 }
 
 function bookingStatusTone(status = 'Pendente') {
@@ -999,12 +1076,13 @@ function waitPriority(item = {}) {
 function renderFocusStrip() {
   const target = document.getElementById('focusStrip');
   if (!target) return;
+  const index = getStateIndex();
   const next = nextClass();
-  const todayClasses = state.classes.filter((item) => item.data === todayISO() && item.status !== 'Cancelada').sort(sortClass);
-  const pending = state.students.filter((student) => student.status !== 'Pausado' && !isPaidForMonth(student, currentMonth()));
+  const todayClasses = index.todayClasses;
+  const pending = index.activeStudents.filter((student) => !isPaidForMonth(student, currentMonth()));
   const pendingValue = pending.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0);
   const lead = nextWaitLead();
-  const pendingBookings = (state.bookings || []).filter((item) => (item.status || 'Pendente') === 'Pendente');
+  const pendingBookings = index.pendingBookings;
   const nextStudents = next ? classStudents(next) : [];
   const nextPresent = next ? nextStudents.filter((student) => next.presencas?.[student.aluno_id || student.id] || student.presente).length : 0;
   const briefTitle = next ? `${next.horario} - ${next.turma || 'Turma'}` : 'Sem aula marcada';
@@ -1049,7 +1127,7 @@ function renderClassSummary(classes) {
 function renderClassesTodayPlanner() {
   const target = document.getElementById('classesTodayPlanner');
   if (!target) return;
-  const classes = state.classes.filter((item) => item.data === todayISO()).sort(sortClass);
+  const classes = getStateIndex().todayClasses;
   const expected = classes.reduce((sum, item) => sum + classStudents(item).length, 0);
   const present = classes.reduce((sum, item) => sum + classStudents(item).filter((student) => item.presencas?.[student.aluno_id || student.id] || student.presente).length, 0);
   const extrasTotal = classes.reduce((sum, item) => sum + classExtras(item).length, 0);
@@ -1110,9 +1188,10 @@ function renderClassesTodayPlanner() {
 function renderClassCalendar() {
   const target = document.getElementById('classCalendar');
   if (!target) return;
+  const index = getStateIndex();
   const days = Array.from({ length: 7 }, (_item, index) => addDaysIso(todayISO(), index));
   target.innerHTML = days.map((day) => {
-    const classes = state.classes.filter((item) => item.data === day && item.status !== 'Cancelada').sort(sortClass);
+    const classes = index.classesByDay.get(day) || [];
     return `
       <article class="calendar-day ${day === todayISO() ? 'today' : ''}">
         <button type="button" data-class-day="${day}">
@@ -1129,9 +1208,10 @@ function renderPayments() {
   const monthInput = document.getElementById('paymentMonth');
   if (monthInput && !monthInput.value) monthInput.value = currentMonth();
   const month = monthInput?.value || currentMonth();
-  const monthPayments = (state.payments || []).filter((item) => paymentMonth(item) === month);
+  const index = getStateIndex();
+  const monthPayments = index.paymentsByMonth.get(month) || [];
   const paidThisMonth = monthPayments.reduce((sum, item) => sum + Number(item.valor || 0), 0);
-  const activeStudents = state.students.filter((student) => student.status !== 'Pausado');
+  const activeStudents = index.activeStudents;
   const pending = activeStudents.filter((student) => !isPaidForMonth(student, month));
   const overdue = pending.filter((student) => paymentUrgency(student, month).days > 0);
   const dueSoon = pending.filter((student) => {
@@ -1260,9 +1340,10 @@ function renderWaitlist() {
 
 function renderReports() {
   const month = selectedPaymentMonth();
-  const monthPayments = (state.payments || []).filter((item) => paymentMonth(item) === month);
+  const index = getStateIndex();
+  const monthPayments = index.paymentsByMonth.get(month) || [];
   const paidThisMonth = monthPayments.reduce((sum, item) => sum + Number(item.valor || 0), 0);
-  const activeStudents = state.students.filter((student) => student.status !== 'Pausado');
+  const activeStudents = index.activeStudents;
   const pending = activeStudents.filter((student) => !isPaidForMonth(student, month));
   const active = state.students.filter((student) => student.status === 'Ativo').length;
   const trial = state.students.filter((student) => student.status === 'Experimental').length;
@@ -1275,8 +1356,8 @@ function renderReports() {
   ), 0);
   const monthExtras = monthClasses.reduce((sum, item) => sum + classExtras(item).length, 0);
   const attendanceRate = monthExpectedAttendance ? Math.round((monthPresent / monthExpectedAttendance) * 100) : 0;
-  const pendingBookings = (state.bookings || []).filter((item) => (item.status || 'Pendente') === 'Pendente').length;
-  const approvedBookings = (state.bookings || []).filter((item) => (item.status || '') === 'Aprovado').length;
+  const pendingBookings = index.pendingBookings.length;
+  const approvedBookings = index.approvedBookings.length;
   const waitingOpen = state.waitlist.filter((item) => !['Convertido', 'Perdido'].includes(item.status || 'Novo')).length;
   const totalAttendances = state.classes.reduce((sum, item) => {
     const presencas = item.presencas || {};
@@ -1320,14 +1401,9 @@ function renderReports() {
   `;
 
   const attendanceRows = state.students.map((student) => {
-    let enrolled = 0;
-    let present = 0;
-    state.classes.forEach((item) => {
-      const ids = item.aluno_ids || (item.alunos || []).map((entry) => entry.aluno_id || entry.id);
-      if (!ids.map(String).includes(String(student.id))) return;
-      enrolled += 1;
-      if (item.presencas?.[student.id] || item.presencas?.[String(student.id)]) present += 1;
-    });
+    const summary = index.attendanceByStudent.get(String(student.id)) || { enrolled: 0, present: 0 };
+    const enrolled = summary.enrolled;
+    const present = summary.present;
     const rate = enrolled ? Math.round((present / enrolled) * 100) : 0;
     return { student, enrolled, present, rate };
   }).sort((a, b) => b.enrolled - a.enrolled || a.student.nome.localeCompare(b.student.nome));
@@ -1618,7 +1694,7 @@ function reportClassLine(item, showPresence = false, studentId = '') {
 }
 
 function openClass(id = '') {
-  const item = state.classes.find((entry) => String(entry.id) === String(id)) || {};
+  const item = classById(id) || {};
   document.getElementById('classId').value = item.id || '';
   document.getElementById('classDate').value = item.data || todayISO();
   document.getElementById('classTime').value = item.horario || '18:30';
@@ -1759,7 +1835,7 @@ function classRosterText(item) {
 }
 
 async function copyClassRoster(classId) {
-  const item = state.classes.find((entry) => String(entry.id) === String(classId));
+  const item = classById(classId);
   if (!item) return;
   await copyText(classRosterText(item), 'Lista da aula copiada');
 }
@@ -1792,7 +1868,7 @@ function attendanceSummaryText(item) {
 }
 
 async function copyAttendanceSummary(classId = activeAttendanceClassId) {
-  const item = state.classes.find((entry) => String(entry.id) === String(classId));
+  const item = classById(classId);
   if (!item) return;
   await copyText(attendanceSummaryText(item), 'Resumo de presenca copiado');
 }
@@ -2121,10 +2197,11 @@ async function submitStudentConfirmation(classId, confirmado) {
   }
   const local = localStudentClassesByPhone(telefone);
   if (!local.student) throw new Error('Aluno nao encontrado');
-  const classItem = state.classes.find((item) => String(item.id) === String(classId));
+  const classItem = classById(classId);
   if (!classItem) throw new Error('Aula nao encontrada');
   classItem.confirmacoes = { ...(classItem.confirmacoes || {}), [local.student.id]: confirmado };
   recordAction('Aluno', 'Confirmacao aluno', `${local.student.nome} respondeu ${confirmado === 'sim' ? 'vou' : 'nao vou'} na aula ${classItem.horario} - ${classItem.turma || 'Turma'}.`);
+  touchState();
   saveLocalState();
   publicStudentLookup = { telefone, student: local.student, items: localStudentClassesByPhone(telefone).items };
   renderStudentConfirmList();
@@ -2328,7 +2405,7 @@ async function saveClass(event) {
   event.preventDefault();
   const id = document.getElementById('classId').value;
   const alunoIds = [...document.getElementById('classStudents').selectedOptions].map((option) => option.value);
-  const previous = state.classes.find((item) => String(item.id) === String(id));
+  const previous = classById(id);
   const presencas = {};
   alunoIds.forEach((studentId) => { presencas[studentId] = previous?.presencas?.[studentId] || false; });
   const payload = {
@@ -2423,7 +2500,7 @@ async function saveWaitlist(event) {
 }
 
 function openAttendance(classId) {
-  const item = state.classes.find((entry) => String(entry.id) === String(classId));
+  const item = classById(classId);
   if (!item) return;
   activeAttendanceClassId = classId;
   const enrolled = classStudents(item);
@@ -2483,7 +2560,7 @@ async function saveClassItem(item) {
 }
 
 async function updateClassStatus(id, status) {
-  const item = state.classes.find((entry) => String(entry.id) === String(id));
+  const item = classById(id);
   if (!item) return;
   item.status = status;
   if (!apiMode) recordAction('Professor', 'Status da aula', `${item.horario} - ${item.turma || 'Turma'} mudou para ${status}.`);
@@ -2499,7 +2576,7 @@ async function finishAttendance() {
 
 async function addExtraAttendance(event) {
   event.preventDefault();
-  const item = state.classes.find((entry) => String(entry.id) === String(activeAttendanceClassId));
+  const item = classById(activeAttendanceClassId);
   if (!item) return;
   const input = document.getElementById('extraAttendanceName');
   const name = input.value.trim();
@@ -2515,7 +2592,7 @@ async function addExtraAttendance(event) {
 }
 
 async function removeExtraAttendance(classId, index) {
-  const item = state.classes.find((entry) => String(entry.id) === String(classId));
+  const item = classById(classId);
   if (!item) return;
   item.extra_presentes = [...classExtras(item)];
   const removed = item.extra_presentes[Number(index)];
@@ -2527,7 +2604,7 @@ async function removeExtraAttendance(classId, index) {
 }
 
 async function setClassAttendance(classId, present) {
-  const item = state.classes.find((entry) => String(entry.id) === String(classId));
+  const item = classById(classId);
   if (!item) return;
   item.presencas = item.presencas || {};
   classStudentIds(item).forEach((studentId) => { item.presencas[studentId] = present; });
@@ -2543,7 +2620,7 @@ async function setClassAttendance(classId, present) {
 }
 
 async function toggleAttendance(classId, studentId) {
-  const item = state.classes.find((entry) => String(entry.id) === String(classId));
+  const item = classById(classId);
   if (!item) return;
   item.presencas = item.presencas || {};
   item.presencas[studentId] = !item.presencas[studentId];
@@ -2641,7 +2718,7 @@ async function savePayment(event) {
 }
 
 async function duplicateClass(id) {
-  const item = state.classes.find((entry) => String(entry.id) === String(id));
+  const item = classById(id);
   if (!item) return;
   const next = {
     data: addDaysIso(item.data, 7),
@@ -2888,7 +2965,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260610-flow39', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260611-flow40', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
