@@ -6,8 +6,8 @@ Use este checklist quando a rodada local estiver aprovada e for hora de publicar
 
 - Live local: `http://127.0.0.1:4280/`
 - PIN da demo: `1234`
-- Versao atual dos assets: `20260611-flow40`
-- Service worker atual: `team-lucao-v90`
+- Versao atual dos assets: `20260611-flow41`
+- Service worker atual: `team-lucao-v91`
 
 ## Antes de publicar
 

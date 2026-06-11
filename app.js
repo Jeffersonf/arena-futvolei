@@ -2965,7 +2965,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260611-flow40', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260611-flow41', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
