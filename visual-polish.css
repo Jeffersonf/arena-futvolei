@@ -1321,6 +1321,59 @@ textarea,
   border-color: color-mix(in srgb, var(--accent) 20%, var(--line));
 }
 
+.schedule-preview {
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--glass-strong) 72%, transparent);
+}
+
+.schedule-preview span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.schedule-preview strong {
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.schedule-preview-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.schedule-preview-dates small {
+  padding: 5px 8px;
+  border: 1px solid color-mix(in srgb, var(--line) 90%, transparent);
+  border-radius: 999px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--panel) 74%, transparent);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.schedule-preview-ok {
+  border-color: color-mix(in srgb, var(--ok) 24%, var(--line));
+  background: color-mix(in srgb, var(--ok) 7%, var(--glass-strong));
+}
+
+.schedule-preview-warn {
+  border-color: color-mix(in srgb, var(--warn) 32%, var(--line));
+  background: color-mix(in srgb, var(--warn) 9%, var(--glass-strong));
+}
+
+.report-dates {
+  margin-top: 8px;
+}
+
 @media (max-width: 620px) {
   body {
     background:
@@ -1435,6 +1488,11 @@ textarea,
 
   .action-item {
     grid-template-columns: 54px minmax(0, 1fr);
+  }
+
+  .schedule-preview {
+    border-radius: 13px;
+    padding: 10px;
   }
 
   .mini-btn,

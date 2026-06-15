@@ -426,11 +426,30 @@ function paymentPriority(student = {}, month = currentMonth()) {
 function studentNextAction(student = {}, weekly = 0, target = 0, nextClasses = []) {
   const payment = paymentPriority(student);
   if (payment.rank <= 1) return { label: payment.label, detail: 'Prioridade financeira', className: payment.className };
-  const hasFixedSchedule = student.dia_fixo !== '' && student.dia_fixo !== null && student.dia_fixo !== undefined && student.horario_fixo;
-  if (!hasFixedSchedule) return { label: 'Definir agenda', detail: 'Aluno sem dia e horario fixo', className: 'warn' };
+  if (!hasFixedSchedule(student)) return { label: 'Definir agenda', detail: 'Aluno sem dia e horario fixo', className: 'warn' };
   if (!nextClasses.length) return { label: 'Criar proximas aulas', detail: 'Agenda fixa sem aulas futuras', className: 'warn' };
   if (target && weekly < target) return { label: 'Acompanhar frequencia', detail: `${weekly}/${target} aulas na semana`, className: 'warn' };
   return { label: 'Tudo ok', detail: 'Aluno sem pendencia operacional', className: 'ok' };
+}
+
+function hasFixedSchedule(student = {}) {
+  return student.dia_fixo !== '' && student.dia_fixo !== null && student.dia_fixo !== undefined && Boolean(student.horario_fixo);
+}
+
+function fixedScheduleGroup(student = {}) {
+  return student.turma_fixa || student.turma || student.nivel || 'Turma fixa';
+}
+
+function fixedScheduleDates(student = {}, weeks = 4) {
+  if (!hasFixedSchedule(student)) return [];
+  const start = nextDateForWeekday(student.dia_fixo);
+  if (!start) return [];
+  return Array.from({ length: weeks }, (_item, index) => addDaysIso(start, index * 7));
+}
+
+function fixedScheduleText(student = {}) {
+  if (!hasFixedSchedule(student)) return 'sem agenda fixa';
+  return [weekdayName(student.dia_fixo), student.horario_fixo, fixedScheduleGroup(student)].filter(Boolean).join(' - ');
 }
 
 function classStudentIds(item = {}) {
@@ -1475,7 +1494,7 @@ function studentCard(student) {
   const weekly = weeklyAttendanceCount(student.id);
   const target = planWeeklyTarget(student);
   const paid = isPaid(student);
-  const schedule = [student.dia_fixo ? weekdayName(student.dia_fixo) : '', student.horario_fixo || '', student.turma_fixa || ''].filter(Boolean).join(' - ') || 'sem horario fixo';
+  const schedule = fixedScheduleText(student);
   return `
     <article class="student-row status-${cssToken(student.status || 'Ativo')} payment-${paid ? 'paid' : 'pending'}">
       <div class="student-main">
@@ -1608,6 +1627,41 @@ function renderPlanOptions(selected = '') {
   if (studentPlan) studentPlan.innerHTML = `<option value="">Sem plano</option>${options}`;
 }
 
+function studentFormScheduleDraft() {
+  return {
+    dia_fixo: document.getElementById('studentFixedDay')?.value ?? '',
+    horario_fixo: document.getElementById('studentFixedTime')?.value || '',
+    turma_fixa: document.getElementById('studentFixedGroup')?.value.trim() || document.getElementById('studentLevel')?.value || 'Turma fixa'
+  };
+}
+
+function renderStudentSchedulePreview() {
+  const target = document.getElementById('studentSchedulePreview');
+  if (!target) return;
+  const draft = studentFormScheduleDraft();
+  const hasDay = draft.dia_fixo !== '' && draft.dia_fixo !== null && draft.dia_fixo !== undefined;
+  const hasTime = Boolean(draft.horario_fixo);
+  if (!hasDay && !hasTime) {
+    target.innerHTML = '<span>Agenda opcional</span><strong>Defina dia e horario para vincular automaticamente.</strong>';
+    target.className = 'schedule-preview schedule-preview-empty';
+    return;
+  }
+  if (!hasDay || !hasTime) {
+    target.innerHTML = '<span>Agenda incompleta</span><strong>Escolha dia e horario fixo para criar as proximas aulas.</strong>';
+    target.className = 'schedule-preview schedule-preview-warn';
+    return;
+  }
+  const dates = fixedScheduleDates(draft, 4);
+  target.className = 'schedule-preview schedule-preview-ok';
+  target.innerHTML = `
+    <span>Ao salvar</span>
+    <strong>${escapeHTML(fixedScheduleText(draft))}</strong>
+    <div class="schedule-preview-dates">
+      ${dates.map((dateIso) => `<small>${formatDate(dateIso)}</small>`).join('')}
+    </div>
+  `;
+}
+
 function openStudent(id = '') {
   const student = studentById(id) || {};
   document.getElementById('studentId').value = student.id || '';
@@ -1623,6 +1677,7 @@ function openStudent(id = '') {
   document.getElementById('studentFixedDay').value = student.dia_fixo ?? '';
   document.getElementById('studentFixedTime').value = student.horario_fixo || '';
   document.getElementById('studentFixedGroup').value = student.turma_fixa || student.turma || '';
+  renderStudentSchedulePreview();
   openModal('studentModal');
 }
 
@@ -1640,9 +1695,8 @@ function openStudentReport(id) {
     .slice(0, 6);
   const paid = isPaid(student);
   const plan = `${escapeHTML(student.plano_nome || 'sem plano')} - ${money.format(Number(student.mensalidade || 0))}/mes`;
-  const scheduleText = [student.dia_fixo !== '' && student.dia_fixo !== null && student.dia_fixo !== undefined ? weekdayName(student.dia_fixo) : '', student.horario_fixo || '', student.turma_fixa || ''].filter(Boolean).join(' - ') || 'sem agenda fixa';
-  const nextFixedDate = student.dia_fixo !== '' && student.dia_fixo !== null && student.dia_fixo !== undefined ? nextDateForWeekday(student.dia_fixo) : '';
-  const hasFixedSchedule = Boolean(nextFixedDate && student.horario_fixo);
+  const scheduleText = fixedScheduleText(student);
+  const fixedDates = fixedScheduleDates(student, 4);
   const nextAction = studentNextAction(student, weekly, target, nextClasses);
   document.getElementById('studentReport').innerHTML = `
     <div class="report-hero student-profile ${paid ? 'payment-paid' : 'payment-pending'}">
@@ -1675,10 +1729,11 @@ function openStudentReport(id) {
     <article class="row-card compact-row schedule-report-card">
       <div>
         <h3>Agenda fixa</h3>
-        <p class="meta">${escapeHTML(scheduleText)}${nextFixedDate ? ` - proxima em ${formatDate(nextFixedDate)}` : ''}</p>
+        <p class="meta">${escapeHTML(scheduleText)}${fixedDates[0] ? ` - proxima em ${formatDate(fixedDates[0])}` : ''}</p>
+        ${fixedDates.length ? `<div class="schedule-preview-dates report-dates">${fixedDates.map((dateIso) => `<small>${formatDate(dateIso)}</small>`).join('')}</div>` : ''}
       </div>
       <div class="actions">
-        <button class="mini-btn" data-sync-student="${student.id}">${hasFixedSchedule ? 'Criar proximas aulas' : 'Definir agenda'}</button>
+        <button class="mini-btn" data-sync-student="${student.id}">${hasFixedSchedule(student) ? 'Criar proximas aulas' : 'Definir agenda'}</button>
       </div>
     </article>
     ${student.observacao ? `<p class="report-note">${escapeHTML(student.observacao)}</p>` : ''}
@@ -2283,12 +2338,11 @@ async function respondBooking(id, action, force = false) {
 
 function syncStudentFixedSchedule(student) {
   if (!student?.id || student.status === 'Pausado') return 0;
-  if (student.dia_fixo === '' || student.dia_fixo === null || student.dia_fixo === undefined || !student.horario_fixo) return 0;
-  const start = nextDateForWeekday(student.dia_fixo);
-  if (!start) return 0;
-  const group = student.turma_fixa || student.turma || student.nivel || 'Turma fixa';
+  const dates = fixedScheduleDates(student, 4);
+  if (!dates.length) return 0;
+  const group = fixedScheduleGroup(student);
   let touched = 0;
-  Array.from({ length: 4 }, (_item, index) => addDaysIso(start, index * 7)).forEach((dateIso) => {
+  dates.forEach((dateIso) => {
     let item = state.classes.find((entry) => (
       entry.data === dateIso &&
       entry.horario === student.horario_fixo &&
@@ -2324,12 +2378,11 @@ function syncStudentFixedSchedule(student) {
 
 async function syncStudentFixedScheduleApi(student) {
   if (!student?.id || student.status === 'Pausado') return 0;
-  if (student.dia_fixo === '' || student.dia_fixo === null || student.dia_fixo === undefined || !student.horario_fixo) return 0;
-  const start = nextDateForWeekday(student.dia_fixo);
-  if (!start) return 0;
-  const group = student.turma_fixa || student.turma || student.nivel || 'Turma fixa';
+  const dates = fixedScheduleDates(student, 4);
+  if (!dates.length) return 0;
+  const group = fixedScheduleGroup(student);
   let touched = 0;
-  for (const dateIso of Array.from({ length: 4 }, (_item, index) => addDaysIso(start, index * 7))) {
+  for (const dateIso of dates) {
     const existing = state.classes.find((entry) => (
       entry.data === dateIso &&
       entry.horario === student.horario_fixo &&
@@ -2373,7 +2426,7 @@ async function syncStudentFixedScheduleApi(student) {
 async function syncStudentScheduleAction(studentId) {
   const student = studentById(studentId);
   if (!student) return;
-  if (student.dia_fixo === '' || student.dia_fixo === null || student.dia_fixo === undefined || !student.horario_fixo) {
+  if (!hasFixedSchedule(student)) {
     toast('Defina dia e horario fixo antes de sincronizar');
     openStudent(studentId);
     return;
@@ -2411,6 +2464,10 @@ async function saveStudent(event) {
     observacao: document.getElementById('studentNote').value.trim(),
     pago_ate: studentById(id)?.pago_ate || ''
   };
+  const hasFixedDay = payload.dia_fixo !== '' && payload.dia_fixo !== null && payload.dia_fixo !== undefined;
+  if (hasFixedDay !== Boolean(payload.horario_fixo)) {
+    throw new Error('Para agenda fixa, informe dia e horario.');
+  }
   if (apiMode) {
     const saved = await api(id ? `/api/students/${id}` : '/api/students', { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) });
     await loadData();
@@ -2924,6 +2981,10 @@ function bindEvents() {
     const plan = planById(event.target.value);
     if (plan) document.getElementById('studentFee').value = plan.preco || '';
   });
+  ['studentFixedDay', 'studentFixedTime', 'studentFixedGroup', 'studentLevel'].forEach((id) => {
+    document.getElementById(id)?.addEventListener('input', renderStudentSchedulePreview);
+    document.getElementById(id)?.addEventListener('change', renderStudentSchedulePreview);
+  });
   document.getElementById('themeBtn').addEventListener('click', toggleTheme);
   document.getElementById('logoutBtn').addEventListener('click', logout);
   document.getElementById('classStudentChecklist')?.addEventListener('change', (event) => {
@@ -2995,7 +3056,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260611-flow43', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow44', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
