@@ -9,9 +9,9 @@
     <meta name="apple-mobile-web-app-title" content="TLF Gestao" />
     <title>Team Lucão Futevôlei</title>
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260615-flow49" />
-    <link rel="stylesheet" href="styles.css?v=20260615-flow49" />
-    <link rel="stylesheet" href="visual-polish.css?v=20260615-flow49" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260615-flow50" />
+    <link rel="stylesheet" href="styles.css?v=20260615-flow50" />
+    <link rel="stylesheet" href="visual-polish.css?v=20260615-flow50" />
   </head>
   <body>
     <div class="booking-wall" id="bookingWall" aria-hidden="true">
@@ -564,10 +564,10 @@
         <h2>Presenças</h2>
         <p class="muted" id="attendanceTitle"></p>
         <div class="attendance-actions">
-          <button class="soft-btn" type="button" id="markAllPresent">Todos presentes</button>
-          <button class="soft-btn" type="button" id="clearAttendance">Limpar presença</button>
+          <button class="soft-btn attendance-primary" type="button" id="markAllPresent">Todos presentes</button>
+          <button class="soft-btn attendance-primary" type="button" id="finishAttendance">Finalizar aula</button>
           <button class="soft-btn" type="button" id="copyAttendance">Copiar resumo</button>
-          <button class="soft-btn" type="button" id="finishAttendance">Finalizar aula</button>
+          <button class="soft-btn attendance-muted" type="button" id="clearAttendance">Limpar</button>
         </div>
         <form class="extra-attendance" id="extraAttendanceForm">
           <input id="extraAttendanceName" placeholder="Nome de quem veio sem estar na aula" />
@@ -623,6 +623,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="app.js?v=20260615-flow49"></script>
+    <script src="app.js?v=20260615-flow50"></script>
   </body>
 </html>

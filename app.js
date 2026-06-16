@@ -2703,7 +2703,13 @@ function openAttendance(classId) {
   document.getElementById('attendanceTitle').innerHTML = `
     <span>${formatDate(item.data)} as ${escapeHTML(item.horario)} - ${escapeHTML(item.turma || 'Turma')}</span>
     <strong>${presentCount}/${ids.length} presentes</strong>
-    <small>${escapeHTML(classType(item))} - ${escapeHTML(item.status || 'Marcada')} - ${confirmation.yes} vao - ${absentLikely} nao vao - ${confirmation.open} sem resposta - ${extras.length} fora da lista</small>
+    <small>${escapeHTML(classType(item))} - ${escapeHTML(item.status || 'Marcada')}</small>
+    <div class="attendance-title-pills">
+      <span class="pill ok">${confirmation.yes} vao</span>
+      ${absentLikely ? `<span class="pill bad">${absentLikely} nao vao</span>` : ''}
+      <span class="pill warn">${confirmation.open} sem resposta</span>
+      ${extras.length ? `<span class="pill warn">${extras.length} fora da lista</span>` : ''}
+    </div>
   `;
   document.getElementById('attendanceList').innerHTML = enrolled.map((student) => {
     const id = student.aluno_id || student.id;
@@ -3161,7 +3167,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow49', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow50', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

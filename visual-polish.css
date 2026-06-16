@@ -715,8 +715,27 @@ select:focus,
     color-mix(in srgb, var(--panel) 91%, var(--accent) 4%);
 }
 
+.attendance-title-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
 .attendance-actions {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.attendance-actions .attendance-primary {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--ok) 34%, var(--line));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .025)),
+    color-mix(in srgb, var(--ok) 12%, var(--panel));
+}
+
+.attendance-actions .attendance-muted {
+  color: var(--muted);
 }
 
 .extra-attendance {
@@ -1076,6 +1095,24 @@ select:focus,
   .attendance-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 7px;
+  }
+
+  #attendanceTitle {
+    padding: 11px;
+  }
+
+  #attendanceTitle strong {
+    font-size: 22px;
+  }
+
+  .attendance-title-pills {
+    gap: 5px;
+  }
+
+  .attendance-title-pills .pill {
+    min-height: 23px;
+    padding-inline: 8px;
+    font-size: 10px;
   }
 
   .attendance-actions .soft-btn,
