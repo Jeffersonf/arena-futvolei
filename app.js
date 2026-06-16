@@ -3,7 +3,7 @@
 const STORE_KEY = 'fv_school_state_v2';
 const PIN_KEY = 'tlf_admin_pin';
 const PAGE_KEY = 'tlf_last_page';
-const VISUAL_THEME_VERSION = 'ios-light-20260603';
+const VISUAL_THEME_VERSION = 'finanza-dark-20260616';
 const ACTION_REFRESH_MS = 15000;
 const MOBILE_MORE_PAGES = ['actions', 'waitlist', 'plans', 'reports'];
 const PAGE_TITLES = {
@@ -3207,7 +3207,7 @@ function bindEvents() {
 }
 
 if (localStorage.getItem('fv_visual_theme_version') !== VISUAL_THEME_VERSION) {
-  localStorage.setItem('fv_theme', 'light');
+  localStorage.setItem('fv_theme', 'dark');
   localStorage.setItem('fv_visual_theme_version', VISUAL_THEME_VERSION);
 }
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'light';
@@ -3223,7 +3223,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow56', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260616-flow57', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
