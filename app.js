@@ -676,6 +676,16 @@ function actionFocusCard(actor, title, subtitle, items) {
   `;
 }
 
+function studentRecentActions(student = {}, limit = 5) {
+  const name = String(student.nome || '').toLowerCase();
+  const phone = phoneDigits(student.telefone || '');
+  if (!name && !phone) return [];
+  return sortedActions(120).filter((item) => {
+    const text = `${item.acao || ''} ${item.detalhe || ''}`.toLowerCase();
+    return (name && text.includes(name)) || (phone && phoneDigits(text).includes(phone));
+  }).slice(0, limit);
+}
+
 function sortedActions(limit = 80) {
   return [...(state.logs || [])]
     .sort((a, b) => {
@@ -1771,6 +1781,7 @@ function openStudentReport(id) {
   const scheduleText = fixedScheduleText(student);
   const fixedDates = fixedScheduleDates(student, 4);
   const nextAction = studentNextAction(student, weekly, target, nextClasses);
+  const recentActions = studentRecentActions(student, 5);
   document.getElementById('studentReport').innerHTML = `
     <div class="report-hero student-profile ${paid ? 'payment-paid' : 'payment-pending'}">
       <div>
@@ -1810,6 +1821,12 @@ function openStudentReport(id) {
       </div>
     </article>
     ${student.observacao ? `<p class="report-note">${escapeHTML(student.observacao)}</p>` : ''}
+    <section class="student-report-section">
+      <div class="section-label">Ações recentes</div>
+      <div class="student-action-list">
+        ${recentActions.length ? recentActions.map(actionFocusRow).join('') : empty('Nenhuma ação recente ligada a este aluno.')}
+      </div>
+    </section>
     <div class="two-col report-columns">
       <section>
         <div class="section-label">Proximas aulas previstas</div>
@@ -3144,7 +3161,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow47', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow48', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

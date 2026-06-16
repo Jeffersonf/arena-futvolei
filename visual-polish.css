@@ -687,6 +687,23 @@ select:focus,
     color-mix(in srgb, var(--panel) 92%, transparent);
 }
 
+.student-report-section {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.student-action-list {
+  display: grid;
+  gap: 7px;
+}
+
+#studentReport .action-focus-row {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, .012)),
+    color-mix(in srgb, var(--panel) 92%, transparent);
+}
+
 #attendanceModal .modal {
   width: min(600px, 100%);
 }
@@ -1038,6 +1055,18 @@ select:focus,
   #studentReport .compact-row,
   #studentReport .report-note {
     border-radius: 10px;
+  }
+
+  .student-report-section {
+    margin: 10px 0;
+  }
+
+  #studentReport .action-focus-row {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+
+  #studentReport .action-focus-row p {
+    font-size: 11px;
   }
 
   #attendanceModal .modal {
