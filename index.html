@@ -9,9 +9,9 @@
     <meta name="apple-mobile-web-app-title" content="TLF Gestao" />
     <title>Team Lucão Futevôlei</title>
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260615-flow48" />
-    <link rel="stylesheet" href="styles.css?v=20260615-flow48" />
-    <link rel="stylesheet" href="visual-polish.css?v=20260615-flow48" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260615-flow49" />
+    <link rel="stylesheet" href="styles.css?v=20260615-flow49" />
+    <link rel="stylesheet" href="visual-polish.css?v=20260615-flow49" />
   </head>
   <body>
     <div class="booking-wall" id="bookingWall" aria-hidden="true">
@@ -419,7 +419,14 @@
         <button class="close" type="button" data-close="studentModal">x</button>
         <h2>Aluno</h2>
         <input type="hidden" id="studentId" />
-        <label>Nome<input id="studentName" required placeholder="Ex: Ana Souza" /></label>
+        <fieldset class="form-group student-form-section student-identity-group">
+          <legend>Identificacao</legend>
+          <label>Nome<input id="studentName" required placeholder="Ex: Ana Souza" /></label>
+          <div class="form-row">
+            <label>Telefone<input id="studentPhone" placeholder="(15) 99999-9999" /></label>
+            <label>Email<input id="studentEmail" type="email" placeholder="aluno@email.com" /></label>
+          </div>
+        </fieldset>
         <fieldset class="form-group schedule-group">
           <legend>Agenda fixa</legend>
           <div class="form-row">
@@ -440,8 +447,8 @@
           <label>Turma fixa<input id="studentFixedGroup" placeholder="Ex: Iniciantes 18h" /></label>
           <div class="schedule-preview" id="studentSchedulePreview"></div>
         </fieldset>
-        <label>Telefone<input id="studentPhone" placeholder="(15) 99999-9999" /></label>
-        <label>Email<input id="studentEmail" type="email" placeholder="aluno@email.com" /></label>
+        <fieldset class="form-group student-form-section">
+          <legend>Plano e operacao</legend>
         <div class="form-row">
           <label>Plano
             <select id="studentPlan"></select>
@@ -465,7 +472,8 @@
           </select>
         </label>
         <label>Observação<input id="studentNote" placeholder="Restrições, objetivo, responsável..." /></label>
-        <button class="primary-btn" type="submit">Salvar aluno</button>
+        </fieldset>
+        <button class="primary-btn modal-save-btn" type="submit">Salvar aluno</button>
       </form>
     </div>
 
@@ -615,6 +623,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="app.js?v=20260615-flow48"></script>
+    <script src="app.js?v=20260615-flow49"></script>
   </body>
 </html>

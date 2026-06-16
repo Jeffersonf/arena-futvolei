@@ -1495,6 +1495,23 @@ textarea,
   background: color-mix(in srgb, var(--warn) 9%, var(--glass-strong));
 }
 
+#studentForm {
+  gap: 10px;
+}
+
+#studentForm .student-form-section,
+#studentForm .schedule-group {
+  margin-bottom: 0;
+}
+
+#studentForm .student-identity-group {
+  border-color: color-mix(in srgb, var(--ok) 20%, var(--line));
+}
+
+#studentForm .modal-save-btn {
+  min-height: 46px;
+}
+
 .report-dates {
   margin-top: 8px;
 }
@@ -1729,6 +1746,29 @@ textarea,
   .schedule-preview {
     border-radius: 13px;
     padding: 10px;
+  }
+
+  #studentForm {
+    max-height: min(92svh, calc(100svh - env(safe-area-inset-top)));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+
+  #studentForm .student-form-section,
+  #studentForm .schedule-group {
+    gap: 8px;
+    padding: 11px;
+    border-radius: 13px;
+  }
+
+  #studentForm .schedule-preview {
+    padding: 10px;
+  }
+
+  #studentForm .modal-save-btn {
+    min-height: 50px;
+    margin: 4px 0 0;
+    border-radius: 15px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .28), var(--inner-highlight);
   }
 
   .payment-priority-head {
