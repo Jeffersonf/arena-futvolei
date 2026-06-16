@@ -408,7 +408,7 @@ function dueDateForMonth(student = {}, month = todayISO().slice(0, 7)) {
 function paymentUrgency(student = {}, month = currentMonth()) {
   if (isPaidForMonth(student, month)) return { label: 'em dia', className: 'ok', days: 0 };
   const due = dueDateForMonth(student, month);
-  const days = daysBetween(due, todayISO());
+  const days = signedDaysBetween(due, todayISO());
   if (days > 0) return { label: `${days} dia(s) atrasado`, className: 'bad', days };
   if (days === 0) return { label: 'vence hoje', className: 'warn', days };
   if (days >= -3) return { label: `vence em ${Math.abs(days)} dia(s)`, className: 'warn', days };
@@ -701,6 +701,13 @@ function daysBetween(dateIso, endIso = todayISO()) {
   const start = new Date(`${dateIso}T12:00:00`);
   const end = new Date(`${endIso}T12:00:00`);
   return Math.max(0, Math.floor((end - start) / 86400000));
+}
+
+function signedDaysBetween(dateIso, endIso = todayISO()) {
+  if (!dateIso) return 0;
+  const start = new Date(`${dateIso}T12:00:00`);
+  const end = new Date(`${endIso}T12:00:00`);
+  return Math.floor((end - start) / 86400000);
 }
 
 function whatsappUrl(phone, text = '') {
@@ -1270,6 +1277,39 @@ function renderPayments() {
   const receiveRate = expected ? Math.round((paidThisMonth / expected) * 100) : 0;
   const query = document.getElementById('paymentSearch')?.value.trim().toLowerCase() || '';
   const filter = document.getElementById('paymentStatusFilter')?.value || '';
+  const priorityStudents = sortedPaymentStudents(month).filter((student) => !isPaidForMonth(student, month));
+  const priorityTarget = document.getElementById('paymentPriority');
+  if (priorityTarget) {
+    priorityTarget.innerHTML = priorityStudents.length ? `
+      <div class="payment-priority-head">
+        <div>
+          <span class="section-label">cobrar primeiro</span>
+          <strong>${priorityStudents.length} pendente(s)</strong>
+        </div>
+        <button class="mini-btn" type="button" data-action="quick-pending">Copiar lista</button>
+      </div>
+      <div class="payment-priority-grid">
+        ${priorityStudents.slice(0, 3).map((student) => {
+          const urgency = paymentUrgency(student, month);
+          const priority = paymentPriority(student, month);
+          return `
+            <article class="payment-priority-card">
+              <div>
+                <button class="link-title compact-title" type="button" data-report-student="${student.id}">${escapeHTML(student.nome)}</button>
+                <p class="meta">${money.format(Number(student.mensalidade || 0))} - ${escapeHTML(urgency.label)}</p>
+                <span class="pill ${priority.className}">${escapeHTML(priority.label)}</span>
+              </div>
+              <div class="actions">
+                ${student.telefone ? `<a class="mini-btn" href="${whatsappUrl(student.telefone, studentChargeText(student, month))}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+                <button class="mini-btn" data-copy-charge="${student.id}">Copiar</button>
+                <button class="mini-btn" data-pay="${student.id}">Pago</button>
+              </div>
+            </article>
+          `;
+        }).join('')}
+      </div>
+    ` : '';
+  }
   document.getElementById('financeSummary').innerHTML = `
     <article class="mini-stat kpi-ok payment-secondary"><span>Recebido no mês</span><strong>${money.format(paidThisMonth)}</strong></article>
     <article class="mini-stat payment-secondary"><span>Previsao do mes</span><strong>${money.format(expected)}</strong></article>
@@ -1279,19 +1319,11 @@ function renderPayments() {
     <article class="mini-stat ${dueSoon.length ? 'kpi-warn' : ''}"><span>Cobrar agora</span><strong>${dueSoon.length}</strong></article>
     <article class="mini-stat ${pending.length ? 'kpi-bad' : 'kpi-ok'}"><span>A receber</span><strong>${money.format(pending.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0))}</strong></article>
   `;
-  const visibleStudents = state.students.filter((student) => {
+  const visibleStudents = sortedPaymentStudents(month).filter((student) => {
     const haystack = `${student.nome} ${student.telefone} ${student.plano_nome}`.toLowerCase();
     const matchesQuery = !query || haystack.includes(query);
     const matchesFilter = !filter || (filter === 'paid' ? isPaidForMonth(student, month) : !isPaidForMonth(student, month));
     return matchesQuery && matchesFilter;
-  }).sort((a, b) => {
-    const priorityA = paymentPriority(a, month);
-    const priorityB = paymentPriority(b, month);
-    if (priorityA.rank !== priorityB.rank) return priorityA.rank - priorityB.rank;
-    const urgencyA = paymentUrgency(a, month).days;
-    const urgencyB = paymentUrgency(b, month).days;
-    if (urgencyA !== urgencyB) return urgencyB - urgencyA;
-    return a.nome.localeCompare(b.nome);
   });
   const rows = visibleStudents.map((student) => {
     const paid = isPaidForMonth(student, month);
@@ -1310,7 +1342,7 @@ function renderPayments() {
         </div>
       </div>
       <div class="actions">
-        ${student.telefone ? `<a class="mini-btn" href="${whatsappUrl(student.telefone, `Oi ${student.nome}, tudo bem? Passando para lembrar da mensalidade do Team Lucão Futevôlei.`)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+        ${student.telefone ? `<a class="mini-btn" href="${whatsappUrl(student.telefone, studentChargeText(student, month))}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
         <button class="mini-btn" data-copy-charge="${student.id}">Copiar cobranca</button>
         <button class="mini-btn" data-pay="${student.id}">${paid ? 'Marcar nao pago' : 'Marcar pago'}</button>
       </div>
@@ -1841,7 +1873,22 @@ function pendingChargeText(month = selectedPaymentMonth()) {
 }
 
 function studentChargeText(student, month = selectedPaymentMonth()) {
-  return `Oi ${student.nome}, tudo bem? Passando para lembrar da mensalidade do Team Lucao Futevolei referente a ${month}, no valor de ${money.format(Number(student.mensalidade || 0))}. Vencimento todo dia ${dueDay(student)}.`;
+  const urgency = paymentUrgency(student, month);
+  const due = dueDateForMonth(student, month);
+  const status = urgency.days > 0 ? `esta em aberto desde ${formatDate(due)}` : urgency.days === 0 ? 'vence hoje' : `vence em ${formatDate(due)}`;
+  return `Oi ${student.nome}, tudo bem? Passando para lembrar da mensalidade do Team Lucao Futevolei referente a ${month}, no valor de ${money.format(Number(student.mensalidade || 0))}. Ela ${status}.`;
+}
+
+function sortedPaymentStudents(month = selectedPaymentMonth()) {
+  return getStateIndex().activeStudents.slice().sort((a, b) => {
+    const priorityA = paymentPriority(a, month);
+    const priorityB = paymentPriority(b, month);
+    if (priorityA.rank !== priorityB.rank) return priorityA.rank - priorityB.rank;
+    const urgencyA = paymentUrgency(a, month).days;
+    const urgencyB = paymentUrgency(b, month).days;
+    if (urgencyA !== urgencyB) return urgencyB - urgencyA;
+    return String(a.nome || '').localeCompare(String(b.nome || ''));
+  });
 }
 
 async function copyPendingCharges() {
@@ -3056,7 +3103,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow44', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow45', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

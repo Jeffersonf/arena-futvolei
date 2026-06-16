@@ -1374,6 +1374,52 @@ textarea,
   margin-top: 8px;
 }
 
+.payment-priority {
+  display: grid;
+  gap: 10px;
+  margin: 10px 0 12px;
+}
+
+.payment-priority:empty {
+  display: none;
+}
+
+.payment-priority-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.payment-priority-head strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 18px;
+}
+
+.payment-priority-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.payment-priority-card {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line));
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 5%, transparent), transparent),
+    color-mix(in srgb, var(--panel) 92%, transparent);
+  box-shadow: var(--inner-highlight);
+}
+
+.payment-priority-card .actions {
+  gap: 6px;
+}
+
 @media (max-width: 620px) {
   body {
     background:
@@ -1493,6 +1539,14 @@ textarea,
   .schedule-preview {
     border-radius: 13px;
     padding: 10px;
+  }
+
+  .payment-priority-head {
+    align-items: stretch;
+  }
+
+  .payment-priority-grid {
+    grid-template-columns: 1fr;
   }
 
   .mini-btn,
