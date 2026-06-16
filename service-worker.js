@@ -1,11 +1,11 @@
-const CACHE_NAME = 'team-lucao-v104';
+const CACHE_NAME = 'team-lucao-v105';
 const ASSETS = [
   './',
   './index.html',
-  './styles.css?v=20260615-flow54',
-  './visual-polish.css?v=20260615-flow54',
-  './app.js?v=20260615-flow54',
-  './manifest.webmanifest?v=20260615-flow54',
+  './styles.css?v=20260615-flow55',
+  './visual-polish.css?v=20260615-flow55',
+  './app.js?v=20260615-flow55',
+  './manifest.webmanifest?v=20260615-flow55',
   './assets/team-lucao-logo.png'
 ];
 

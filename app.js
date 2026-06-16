@@ -1960,7 +1960,13 @@ async function copyText(text, message = 'Texto copiado') {
 
 async function recordOperationalAction(action, detail, actor = 'Professor') {
   recordAction(actor, action, detail);
-  if (!apiMode) saveLocalState();
+  if (apiMode) {
+    api('/api/logs', { method: 'POST', body: JSON.stringify({ acao: action, detalhe: detail, ator: actor }) })
+      .then(() => refreshActions({ force: true }))
+      .catch(() => {});
+  } else {
+    saveLocalState();
+  }
   const page = document.documentElement.dataset.page;
   if (page === 'actions' || page === 'dashboard') renderPage(page);
 }
@@ -3217,7 +3223,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow54', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow55', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

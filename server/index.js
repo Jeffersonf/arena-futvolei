@@ -650,6 +650,19 @@ app.put('/api/availability', (req, res) => {
   }
 });
 
+app.post('/api/logs', (req, res) => {
+  try {
+    const action = String(req.body.acao || req.body.action || '').trim();
+    const detail = String(req.body.detalhe || req.body.detail || '').trim();
+    const actor = String(req.body.ator || req.body.actor || 'Professor').trim();
+    if (!action) throw new Error('Acao obrigatoria');
+    logAction(action, detail, actor);
+    res.json({ ok: true });
+  } catch (err) {
+    jsonError(res, err);
+  }
+});
+
 app.get('/api/tables', (_req, res) => {
   res.json({ ok: true, tables: DATA_TABLES.map((table) => ({ table, columns: tableColumns(table) })) });
 });
