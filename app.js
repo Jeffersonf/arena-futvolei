@@ -279,13 +279,25 @@ function saveAndRender() {
   scheduleRender();
 }
 
-function scheduleUiWork(key, fn) {
-  if (scheduledUiWork.has(key)) return;
-  const frame = requestAnimationFrame(() => {
-    scheduledUiWork.delete(key);
-    fn();
-  });
-  scheduledUiWork.set(key, frame);
+function scheduleUiWork(key, fn, delay = 80) {
+  const current = scheduledUiWork.get(key);
+  if (current) {
+    if (current.type === 'timeout') clearTimeout(current.id);
+    if (current.type === 'frame') cancelAnimationFrame(current.id);
+  }
+  const run = () => {
+    const frame = requestAnimationFrame(() => {
+      scheduledUiWork.delete(key);
+      fn();
+    });
+    scheduledUiWork.set(key, { type: 'frame', id: frame });
+  };
+  if (delay > 0) {
+    const timeout = setTimeout(run, delay);
+    scheduledUiWork.set(key, { type: 'timeout', id: timeout });
+    return;
+  }
+  run();
 }
 
 function syncLocalStateFromStorage() {
@@ -843,6 +855,7 @@ function setPage(page) {
   const isMobile = window.matchMedia('(max-width: 620px)').matches;
   if (page === 'more' && !isMobile) page = 'dashboard';
   if (!document.getElementById(`page-${page}`)) page = 'dashboard';
+  if (document.documentElement.dataset.page && page === currentPage() && document.getElementById(`page-${page}`)?.classList.contains('active')) return;
   const moreActive = isMobile && MOBILE_MORE_PAGES.includes(page);
   document.querySelectorAll('.page').forEach((el) => el.classList.toggle('active', el.id === `page-${page}`));
   document.querySelectorAll('.nav-item').forEach((el) => {
@@ -3043,11 +3056,11 @@ async function createServerBackup() {
 }
 
 function bindEvents() {
-  const renderStudentsLater = () => scheduleUiWork('students', renderStudents);
-  const renderPaymentsLater = () => scheduleUiWork('payments', renderPayments);
-  const renderActionsLater = () => scheduleUiWork('actions', renderActions);
-  const renderGlobalResultsLater = () => scheduleUiWork('global-results', renderGlobalResults);
-  const renderClassChecklistLater = () => scheduleUiWork('class-checklist', renderClassStudentChecklist);
+  const renderStudentsLater = () => scheduleUiWork('students', renderStudents, 120);
+  const renderPaymentsLater = () => scheduleUiWork('payments', renderPayments, 120);
+  const renderActionsLater = () => scheduleUiWork('actions', renderActions, 120);
+  const renderGlobalResultsLater = () => scheduleUiWork('global-results', renderGlobalResults, 40);
+  const renderClassChecklistLater = () => scheduleUiWork('class-checklist', renderClassStudentChecklist, 80);
 
   document.getElementById('bookingForm')?.addEventListener('submit', (event) => submitBooking(event).catch((err) => toast(err.message)));
   document.querySelectorAll('[data-public-tab]').forEach((button) => button.addEventListener('click', () => setPublicTab(button.dataset.publicTab)));
@@ -3223,7 +3236,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260616-flow59', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260616-flow60', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
