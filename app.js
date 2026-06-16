@@ -188,6 +188,7 @@ function buildStateIndex() {
   const classStudentsById = new Map();
   const weeklyAttendanceByStudent = new Map();
   const weeklyTargetByStudent = new Map();
+  const attendanceHistoryByStudent = new Map();
 
   students.forEach((student) => {
     const plan = plansById.get(String(student.plano_id));
@@ -213,15 +214,20 @@ function buildStateIndex() {
       const key = String(id);
       const summary = attendanceByStudent.get(key) || { enrolled: 0, present: 0 };
       summary.enrolled += 1;
-      if (item.presencas?.[id] || item.presencas?.[key]) {
+      const wasPresent = Boolean(item.presencas?.[id] || item.presencas?.[key]);
+      if (wasPresent) {
         summary.present += 1;
         const attendanceKey = `${key}|${weekKey}`;
         weeklyAttendanceByStudent.set(attendanceKey, (weeklyAttendanceByStudent.get(attendanceKey) || 0) + 1);
       }
       attendanceByStudent.set(key, summary);
+      const history = attendanceHistoryByStudent.get(key) || [];
+      history.push({ ...item, wasPresent });
+      attendanceHistoryByStudent.set(key, history);
     });
   });
   classesByDay.forEach((items) => items.sort(sortClass));
+  attendanceHistoryByStudent.forEach((history) => history.sort(sortClass));
   payments.forEach((item) => {
     const month = paymentMonth(item);
     if (!month) return;
@@ -245,6 +251,7 @@ function buildStateIndex() {
     classStudentsById,
     paymentsByMonth,
     attendanceByStudent,
+    attendanceHistoryByStudent,
     weeklyAttendanceByStudent,
     weeklyTargetByStudent
   };
@@ -552,19 +559,13 @@ function planWeeklyTarget(student = {}) {
 }
 
 function attendanceSummary(studentId) {
-  let enrolled = 0;
-  let present = 0;
-  const history = [];
-  state.classes.forEach((item) => {
-    const ids = classStudentIds(item).map(String);
-    if (!ids.includes(String(studentId))) return;
-    enrolled += 1;
-    const wasPresent = Boolean(item.presencas?.[studentId] || item.presencas?.[String(studentId)]);
-    if (wasPresent) present += 1;
-    history.push({ ...item, wasPresent });
-  });
+  const index = getStateIndex();
+  const summary = index.attendanceByStudent.get(String(studentId)) || { enrolled: 0, present: 0 };
+  const history = index.attendanceHistoryByStudent.get(String(studentId)) || [];
+  const enrolled = summary.enrolled;
+  const present = summary.present;
   const rate = enrolled ? Math.round((present / enrolled) * 100) : 0;
-  return { enrolled, present, rate, history: history.sort(sortClass) };
+  return { enrolled, present, rate, history };
 }
 
 function classConfirmationStats(item = {}) {
@@ -3193,7 +3194,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow51', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow52', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
