@@ -1958,6 +1958,13 @@ async function copyText(text, message = 'Texto copiado') {
   toast(message);
 }
 
+async function recordOperationalAction(action, detail, actor = 'Professor') {
+  recordAction(actor, action, detail);
+  if (!apiMode) saveLocalState();
+  const page = document.documentElement.dataset.page;
+  if (page === 'actions' || page === 'dashboard') renderPage(page);
+}
+
 function pendingChargeText(month = selectedPaymentMonth()) {
   const pending = state.students.filter((student) => student.status !== 'Pausado' && !isPaidForMonth(student, month));
   if (!pending.length) return `Sem mensalidades pendentes em ${month}.`;
@@ -1986,8 +1993,10 @@ function sortedPaymentStudents(month = selectedPaymentMonth()) {
 }
 
 async function copyPendingCharges() {
+  const month = selectedPaymentMonth();
   const text = pendingChargeText();
   await copyText(text, 'Lista de cobranca copiada');
+  await recordOperationalAction('Cobranca copiada', `Lista de mensalidades pendentes copiada para ${month}.`);
   setPage('payments');
 }
 
@@ -2023,7 +2032,9 @@ function monthlyOperationText(month = selectedPaymentMonth()) {
 }
 
 async function copyMonthlyReport() {
-  await copyText(monthlyOperationText(), 'Fechamento copiado');
+  const month = selectedPaymentMonth();
+  await copyText(monthlyOperationText(month), 'Fechamento copiado');
+  await recordOperationalAction('Fechamento copiado', `Fechamento operacional de ${month} foi copiado.`);
 }
 
 async function copyStudentCharge(studentId) {
@@ -2031,6 +2042,7 @@ async function copyStudentCharge(studentId) {
   if (!student) return;
   const text = studentChargeText(student);
   await copyText(text, 'Cobranca copiada');
+  await recordOperationalAction('Cobranca individual', `Cobranca de ${student.nome} foi copiada.`);
 }
 
 function classShareText(item) {
@@ -2063,6 +2075,7 @@ async function copyClassRoster(classId) {
   const item = classById(classId);
   if (!item) return;
   await copyText(classRosterText(item), 'Lista da aula copiada');
+  await recordOperationalAction('Lista da aula copiada', `${item.horario} - ${item.turma || 'Turma'} em ${formatDate(item.data)} teve lista copiada.`);
 }
 
 function attendanceSummaryText(item) {
@@ -2096,6 +2109,7 @@ async function copyAttendanceSummary(classId = activeAttendanceClassId) {
   const item = classById(classId);
   if (!item) return;
   await copyText(attendanceSummaryText(item), 'Resumo de presenca copiado');
+  await recordOperationalAction('Resumo de presenca copiado', `${item.horario} - ${item.turma || 'Turma'} em ${formatDate(item.data)} teve resumo copiado.`);
 }
 
 function whatsappShareUrl(text) {
@@ -3203,7 +3217,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow53', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow54', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
