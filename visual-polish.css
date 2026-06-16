@@ -1618,10 +1618,55 @@ textarea,
     border-radius: 15px;
   }
 
+  .student-row {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .student-row .student-main {
+    padding-bottom: 4px;
+  }
+
+  .student-row .student-plan,
+  .student-row .student-frequency,
+  .student-row .student-payment {
+    padding: 0;
+  }
+
+  .student-row .compact-title {
+    font-size: 16px;
+    line-height: 1.15;
+  }
+
+  .student-row .meta {
+    font-size: 11px;
+    line-height: 1.25;
+  }
+
+  .student-frequency {
+    text-align: right;
+  }
+
+  .student-payment p {
+    display: none;
+  }
+
   .row-card .actions,
   .class-row .actions,
   .student-actions {
     gap: 6px;
+  }
+
+  .student-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .student-actions .mini-btn {
+    width: 100%;
+    min-width: 0;
+    padding-inline: 8px;
   }
 
   .action-filters {
@@ -1663,6 +1708,59 @@ textarea,
 
   .payment-priority-grid {
     grid-template-columns: 1fr;
+  }
+
+  .today-summary {
+    padding: 14px 12px;
+  }
+
+  .today-summary small {
+    display: block;
+    max-width: 34ch;
+    line-height: 1.35;
+  }
+
+  .today-class {
+    padding: 12px;
+  }
+
+  .today-class-head {
+    grid-template-columns: 58px minmax(0, 1fr);
+    align-items: start;
+    gap: 10px;
+  }
+
+  .today-class-head .actions {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 7px;
+    margin-top: 2px;
+  }
+
+  .today-class-head .actions .mini-btn {
+    width: 100%;
+    min-width: 0;
+    padding-inline: 8px;
+  }
+
+  .today-class .pill-row {
+    gap: 5px;
+  }
+
+  .today-class .pill {
+    min-height: 24px;
+    padding-inline: 8px;
+    font-size: 10px;
+  }
+
+  .today-class .roster-list {
+    gap: 6px;
+  }
+
+  .roster-person {
+    padding: 9px 10px;
   }
 
   .mini-btn,

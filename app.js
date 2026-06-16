@@ -1266,10 +1266,10 @@ function renderClassesTodayPlanner() {
             </div>
           </div>
           <div class="actions">
-            <a class="mini-btn" href="${whatsappShareUrl(classShareText(item))}" target="_blank" rel="noopener">WhatsApp</a>
-            <button class="mini-btn" data-copy-class="${item.id}">Copiar lista</button>
             <button class="mini-btn" data-attendance="${item.id}">Presencas</button>
             ${classStatusActions(item)}
+            <a class="mini-btn" href="${whatsappShareUrl(classShareText(item))}" target="_blank" rel="noopener">WhatsApp</a>
+            <button class="mini-btn" data-copy-class="${item.id}">Copiar</button>
           </div>
         </div>
         <div class="roster-list">
@@ -3144,7 +3144,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow46', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow47', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
