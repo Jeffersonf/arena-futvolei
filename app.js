@@ -3223,7 +3223,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260616-flow57', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260616-flow58', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

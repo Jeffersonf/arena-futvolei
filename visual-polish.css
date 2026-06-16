@@ -2010,13 +2010,8 @@ body::before {
 }
 
 .nav-item[data-page="dashboard"]::before {
-  content: "⌂";
-  display: inline-grid;
-  width: 20px;
-  place-items: center;
-  margin-right: 7px;
-  color: var(--accent);
-  font-weight: 900;
+  content: "";
+  display: none;
 }
 
 .nav-item:hover {
@@ -2577,5 +2572,358 @@ textarea {
 
   .modal h2 {
     font-size: 22px;
+  }
+}
+
+/* Interaction polish 2026-06-16: clearer actions, better widget rhythm. */
+.app {
+  padding-top: 26px;
+}
+
+.topbar {
+  align-items: center;
+}
+
+.top-actions {
+  align-items: center;
+}
+
+.primary-btn,
+.soft-btn,
+.file-btn,
+.mini-btn,
+.ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.primary-btn,
+.soft-btn,
+.file-btn,
+.ghost-btn {
+  min-height: 42px;
+  padding-inline: 15px;
+}
+
+.mini-btn {
+  min-height: 34px;
+  padding: 0 11px;
+  font-size: 12px;
+  font-weight: 820;
+}
+
+.soft-btn,
+.mini-btn,
+.file-btn {
+  border-color: color-mix(in srgb, var(--line) 92%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .015)),
+    color-mix(in srgb, var(--panel2) 72%, transparent);
+  color: color-mix(in srgb, var(--text) 84%, var(--muted));
+}
+
+.soft-btn:hover,
+.mini-btn:hover,
+.file-btn:hover {
+  color: var(--text);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .075), rgba(255, 255, 255, .02)),
+    color-mix(in srgb, var(--panel2) 82%, var(--accent) 4%);
+}
+
+.primary-btn {
+  min-width: 132px;
+  font-weight: 900;
+}
+
+.top-actions [data-open-student] {
+  min-width: 132px;
+}
+
+.top-actions [data-refresh] {
+  min-width: 104px;
+}
+
+.panel-head .soft-btn,
+.panel-head .primary-btn {
+  min-height: 38px;
+  padding-inline: 13px;
+}
+
+.day-command {
+  grid-template-columns: minmax(0, 1fr) minmax(214px, 236px);
+  align-items: stretch;
+  gap: 16px;
+}
+
+.day-command-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.day-command-actions {
+  align-self: stretch;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.day-command-actions .primary-btn {
+  grid-column: 1 / -1;
+  min-height: 48px;
+}
+
+.day-command-actions .soft-btn {
+  min-width: 0;
+  padding-inline: 10px;
+}
+
+.kpi-grid,
+.quick-actions,
+.two-col,
+.booking-layout,
+.student-confirm-list,
+.list {
+  gap: 12px;
+}
+
+.panel {
+  padding: 16px;
+}
+
+.panel + .panel,
+.action-panel {
+  margin-top: 14px;
+}
+
+.kpi,
+.quick-action,
+.mini-stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.kpi {
+  min-height: 100px;
+}
+
+.quick-action {
+  min-height: 80px;
+  padding: 13px;
+}
+
+.student-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(76px, 1fr));
+  gap: 7px;
+  max-width: 342px;
+  width: 100%;
+}
+
+.student-actions [data-edit-student] {
+  order: 1;
+  border-color: color-mix(in srgb, var(--aqua) 26%, var(--line));
+}
+
+.student-actions a {
+  order: 2;
+}
+
+.student-actions [data-pay] {
+  order: 3;
+  border-color: color-mix(in srgb, var(--ok) 30%, var(--line));
+}
+
+.payment-pending .student-actions [data-pay] {
+  color: var(--ok);
+}
+
+.payment-paid .student-actions [data-pay] {
+  color: var(--warn);
+}
+
+.today-class-head,
+.class-row {
+  gap: 14px;
+}
+
+.today-class-head .actions,
+.class-row .actions {
+  gap: 7px;
+}
+
+.today-class-head .actions [data-attendance],
+.class-row .actions [data-attendance] {
+  border-color: color-mix(in srgb, var(--aqua) 30%, var(--line));
+  color: color-mix(in srgb, var(--text) 88%, var(--aqua));
+}
+
+.today-class-head .actions [data-class-status],
+.class-row .actions [data-class-status] {
+  border-color: color-mix(in srgb, var(--ok) 26%, var(--line));
+}
+
+.modal .primary-btn[type="submit"],
+.modal-save-btn {
+  min-height: 48px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.modal .soft-btn,
+.modal .mini-btn {
+  min-height: 38px;
+}
+
+.form-grid,
+.frow,
+.filters,
+.payment-filters {
+  gap: 10px;
+}
+
+@media (min-width: 621px) {
+  .top-actions {
+    display: grid;
+    grid-template-columns: minmax(220px, 300px) auto auto auto;
+  }
+
+  .top-actions .global-search {
+    width: 100%;
+  }
+
+  .panel-head {
+    align-items: center;
+  }
+}
+
+@media (max-width: 620px) {
+  .app {
+    padding: 8px 10px calc(92px + env(safe-area-inset-bottom));
+  }
+
+  .topbar {
+    margin-bottom: 8px;
+    padding: 8px 0;
+  }
+
+  .top-actions {
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+  }
+
+  .global-search {
+    order: 1;
+  }
+
+  .top-actions [data-open-student] {
+    order: 2;
+    min-width: 0;
+  }
+
+  .top-actions [data-refresh] {
+    order: 3;
+    min-width: 0;
+  }
+
+  .top-actions .primary-btn,
+  .top-actions .soft-btn {
+    width: 100%;
+  }
+
+  .day-command {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .day-command-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .day-command-actions .primary-btn {
+    min-height: 46px;
+  }
+
+  .panel {
+    padding: 13px;
+  }
+
+  .panel-head {
+    align-items: center;
+  }
+
+  .panel-head .soft-btn {
+    min-height: 36px;
+    padding-inline: 11px;
+  }
+
+  .kpi-grid,
+  .quick-actions {
+    gap: 9px;
+  }
+
+  .kpi {
+    min-height: 84px;
+  }
+
+  .quick-action {
+    min-height: 70px;
+  }
+
+  .student-actions,
+  .student-row .actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: none;
+  }
+
+  .student-row .actions .mini-btn,
+  .student-row .actions a.mini-btn {
+    min-width: 0;
+    padding-inline: 6px;
+    font-size: 11px;
+  }
+
+  .today-class-head .actions [data-attendance] {
+    grid-column: 1 / -1;
+    min-height: 42px;
+  }
+
+  .today-class-head .actions [data-class-status] {
+    order: 2;
+  }
+
+  .today-class-head .actions a {
+    order: 3;
+  }
+
+  .today-class-head .actions [data-copy-class] {
+    order: 4;
+  }
+
+  .sidebar {
+    padding: 5px;
+  }
+
+  .nav-item {
+    min-height: 48px;
+  }
+
+  .sidebar .brand,
+  .sidebar .nav-label,
+  .sidebar .ghost-btn,
+  .sidebar .secondary-nav {
+    display: none;
+  }
+
+  .nav-item[data-page="dashboard"]::before {
+    content: "";
+    display: none;
   }
 }
