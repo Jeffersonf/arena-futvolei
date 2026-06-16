@@ -644,6 +644,38 @@ function actionCategoryTone(category = '') {
   return 'default';
 }
 
+function actionFocusRow(item) {
+  const category = actionCategory(item);
+  return `
+    <article class="action-focus-row">
+      <time>${escapeHTML(formatActionTime(item.data_hora))}</time>
+      <div>
+        <strong>${escapeHTML(item.acao || 'Movimento')}</strong>
+        <p>${escapeHTML(item.detalhe || 'Movimento registrado no sistema.')}</p>
+        <span class="pill action-pill action-pill-${actionCategoryTone(category)}">${escapeHTML(category)}</span>
+      </div>
+    </article>
+  `;
+}
+
+function actionFocusCard(actor, title, subtitle, items) {
+  return `
+    <section class="action-focus-card action-${actionTone(actor)}">
+      <div class="action-focus-head">
+        <div>
+          <span>${escapeHTML(actor)}</span>
+          <strong>${escapeHTML(title)}</strong>
+        </div>
+        <small>${items.length} registro(s)</small>
+      </div>
+      <p>${escapeHTML(subtitle)}</p>
+      <div class="action-focus-list">
+        ${items.length ? items.slice(0, 4).map(actionFocusRow).join('') : empty('Nada importante aqui agora.')}
+      </div>
+    </section>
+  `;
+}
+
 function sortedActions(limit = 80) {
   return [...(state.logs || [])]
     .sort((a, b) => {
@@ -962,6 +994,15 @@ function renderActions() {
       <article class="mini-stat action-mini-student"><span>Aluno</span><strong>${aluno}</strong></article>
       <article class="mini-stat action-mini-system"><span>Sistema</span><strong>${system}</strong></article>
       <article class="mini-stat action-mini-money"><span>Financeiro</span><strong>${finance}</strong></article>
+    `;
+  }
+  const focus = document.getElementById('actionFocus');
+  if (focus) {
+    const teacherItems = all.filter((item) => actionActor(item) === 'Professor');
+    const studentItems = all.filter((item) => actionActor(item) === 'Aluno');
+    focus.innerHTML = `
+      ${actionFocusCard('Professor', 'Operação do professor', 'Pagamentos, presenças, aulas e decisões feitas pelo painel.', teacherItems)}
+      ${actionFocusCard('Aluno', 'Movimento dos alunos', 'Confirmações, pedidos de aula e respostas enviadas pelo acesso rápido.', studentItems)}
     `;
   }
   document.getElementById('actionList').innerHTML = items.length ? groupedActionRows(items) : empty('Nenhuma acao nesse filtro.');
@@ -3103,7 +3144,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow45', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow46', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

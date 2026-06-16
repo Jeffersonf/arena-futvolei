@@ -1268,6 +1268,102 @@ textarea,
   grid-template-columns: minmax(220px, 1.45fr) minmax(140px, .75fr) minmax(150px, .85fr);
 }
 
+#actionSummary {
+  grid-template-columns: minmax(220px, 1.45fr) repeat(4, minmax(120px, .72fr));
+}
+
+#actionSummary .action-latest {
+  grid-column: auto;
+}
+
+.action-focus {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.action-focus-card {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--panel) 92%, transparent), color-mix(in srgb, var(--panel2) 80%, transparent)),
+    var(--panel);
+  box-shadow: var(--inner-highlight);
+}
+
+.action-focus-card > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.action-focus-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.action-focus-head span,
+.action-focus-head small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.action-focus-head strong {
+  display: block;
+  margin-top: 2px;
+  color: var(--text);
+  font-size: 18px;
+  letter-spacing: 0;
+}
+
+.action-focus-list {
+  display: grid;
+  gap: 7px;
+}
+
+.action-focus-row {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+  padding: 9px;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--panel) 86%, transparent);
+}
+
+.action-focus-row time {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.action-focus-row strong {
+  display: block;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.action-focus-row p {
+  margin: 3px 0 6px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.32;
+}
+
 .action-item {
   align-items: stretch;
 }
@@ -1530,6 +1626,26 @@ textarea,
 
   .action-filters {
     grid-template-columns: 1fr;
+  }
+
+  #actionSummary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #actionSummary .action-latest {
+    grid-column: 1 / -1;
+  }
+
+  .action-focus {
+    grid-template-columns: 1fr;
+  }
+
+  .action-focus-card {
+    padding: 12px;
+  }
+
+  .action-focus-row {
+    grid-template-columns: 46px minmax(0, 1fr);
   }
 
   .action-item {
