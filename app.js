@@ -402,6 +402,15 @@ async function loadData() {
   restorePage();
 }
 
+async function refreshApp() {
+  await loadData();
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    const registration = await navigator.serviceWorker.getRegistration('./');
+    await registration?.update();
+  }
+  toast('Dados e app atualizados');
+}
+
 function studentById(id) {
   return getStateIndex().studentsById.get(String(id));
 }
@@ -3056,7 +3065,7 @@ function bindEvents() {
   document.querySelectorAll('[data-open-plan]').forEach((button) => button.addEventListener('click', () => openPlan()));
   document.querySelectorAll('[data-open-waitlist]').forEach((button) => button.addEventListener('click', () => openWaitlist()));
   document.querySelectorAll('[data-close]').forEach((button) => button.addEventListener('click', () => closeModal(button.dataset.close)));
-  document.querySelectorAll('[data-refresh]').forEach((button) => button.addEventListener('click', () => loadData().then(() => toast('Dados atualizados')).catch((err) => toast(err.message))));
+  document.querySelectorAll('[data-refresh]').forEach((button) => button.addEventListener('click', () => refreshApp().catch((err) => toast(err.message))));
   document.querySelectorAll('[data-backup]').forEach((button) => button.addEventListener('click', () => downloadBackup().catch((err) => toast(err.message))));
   document.querySelectorAll('[data-copy-pending]').forEach((button) => button.addEventListener('click', () => copyPendingCharges().catch((err) => toast(err.message))));
   document.querySelectorAll('[data-server-backup]').forEach((button) => button.addEventListener('click', () => createServerBackup().catch((err) => toast(err.message))));
@@ -3194,7 +3203,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow52', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow53', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
