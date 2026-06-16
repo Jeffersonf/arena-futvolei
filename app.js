@@ -185,18 +185,39 @@ function buildStateIndex() {
   const classesByDay = new Map();
   const paymentsByMonth = new Map();
   const attendanceByStudent = new Map();
+  const classStudentsById = new Map();
+  const weeklyAttendanceByStudent = new Map();
+  const weeklyTargetByStudent = new Map();
+
+  students.forEach((student) => {
+    const plan = plansById.get(String(student.plano_id));
+    const match = String(student.plano_nome || '').match(/(\d+)\s*x/i);
+    weeklyTargetByStudent.set(String(student.id), plan ? Number(plan.aulas_semana || 0) : match ? Number(match[1]) : 0);
+  });
 
   classes.forEach((item) => {
+    const ids = classStudentIds(item);
+    const enrolled = item.alunos || ids.map((id) => {
+      const student = studentsById.get(String(id));
+      if (!student) return null;
+      return { ...student, confirmado: item.confirmacoes?.[id] || item.confirmacoes?.[String(id)] || '' };
+    }).filter(Boolean);
+    classStudentsById.set(String(item.id), enrolled);
     if (item.status !== 'Cancelada') {
       const list = classesByDay.get(item.data) || [];
       list.push(item);
       classesByDay.set(item.data, list);
     }
-    classStudentIds(item).forEach((id) => {
+    const weekKey = weekBounds(item.data).start;
+    ids.forEach((id) => {
       const key = String(id);
       const summary = attendanceByStudent.get(key) || { enrolled: 0, present: 0 };
       summary.enrolled += 1;
-      if (item.presencas?.[id] || item.presencas?.[key]) summary.present += 1;
+      if (item.presencas?.[id] || item.presencas?.[key]) {
+        summary.present += 1;
+        const attendanceKey = `${key}|${weekKey}`;
+        weeklyAttendanceByStudent.set(attendanceKey, (weeklyAttendanceByStudent.get(attendanceKey) || 0) + 1);
+      }
       attendanceByStudent.set(key, summary);
     });
   });
@@ -221,8 +242,11 @@ function buildStateIndex() {
     pendingBookings: (state.bookings || []).filter((item) => (item.status || 'Pendente') === 'Pendente'),
     approvedBookings: (state.bookings || []).filter((item) => (item.status || '') === 'Aprovado'),
     classesByDay,
+    classStudentsById,
     paymentsByMonth,
-    attendanceByStudent
+    attendanceByStudent,
+    weeklyAttendanceByStudent,
+    weeklyTargetByStudent
   };
 }
 
@@ -457,6 +481,8 @@ function classStudentIds(item = {}) {
 }
 
 function classStudents(item = {}) {
+  const cached = item.id ? getStateIndex().classStudentsById.get(String(item.id)) : null;
+  if (cached) return cached;
   if (item.alunos) return item.alunos;
   return classStudentIds(item).map((id) => {
     const student = studentById(id);
@@ -510,15 +536,15 @@ function weekBounds(dateIso = todayISO()) {
 }
 
 function weeklyAttendanceCount(studentId, dateIso = todayISO()) {
-  const { start, end } = weekBounds(dateIso);
-  return state.classes.filter((item) => (
-    item.data >= start
-    && item.data <= end
-    && Boolean(item.presencas?.[studentId] || item.presencas?.[String(studentId)])
-  )).length;
+  const { start } = weekBounds(dateIso);
+  return getStateIndex().weeklyAttendanceByStudent.get(`${String(studentId)}|${start}`) || 0;
 }
 
 function planWeeklyTarget(student = {}) {
+  if (student.id) {
+    const cached = getStateIndex().weeklyTargetByStudent.get(String(student.id));
+    if (cached !== undefined) return cached;
+  }
   const plan = planById(student.plano_id);
   if (plan) return Number(plan.aulas_semana || 0);
   const match = String(student.plano_nome || '').match(/(\d+)\s*x/i);
@@ -3167,7 +3193,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow50', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow51', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
