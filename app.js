@@ -662,7 +662,7 @@ function actionIcon(actor = '') {
 
 function actionCategory(item = {}) {
   const text = `${item.acao || ''} ${item.detalhe || ''}`.toLowerCase();
-  if (text.includes('pagamento') || text.includes('mensalidade') || text.includes('pago') || text.includes('cobranca')) return 'Financeiro';
+  if (text.includes('pagamento') || text.includes('mensalidade') || text.includes('pago') || text.includes('cobranca') || text.includes('fechamento') || text.includes('receita')) return 'Financeiro';
   if (text.includes('presenca') || text.includes('presente') || text.includes('faltou') || text.includes('confirmacao')) return 'Presenca';
   if (text.includes('pedido') || text.includes('solicitou') || text.includes('aprovado') || text.includes('recusado')) return 'Pedidos';
   if (text.includes('aula') || text.includes('agenda') || text.includes('duplicada') || text.includes('status da aula')) return 'Agenda';
@@ -3223,7 +3223,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow55', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260615-flow56', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
