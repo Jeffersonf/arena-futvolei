@@ -1193,6 +1193,433 @@ select:focus,
   gap: 6px;
 }
 
+/* Layout pass 2026-06-17: clearer button hierarchy, calmer widgets and iPhone spacing. */
+.primary-btn,
+.soft-btn,
+.mini-btn,
+.file-btn,
+.ghost-btn,
+.nav-item,
+.more-card,
+.quick-action {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.primary-btn {
+  position: relative;
+  isolation: isolate;
+  min-height: 46px;
+  border: 0;
+  background: linear-gradient(180deg, #f04452 0%, #cb1728 100%);
+  color: #fff;
+  box-shadow:
+    0 12px 24px color-mix(in srgb, var(--accent) 22%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, .26),
+    inset 0 -1px 0 rgba(0, 0, 0, .14);
+}
+
+.primary-btn::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .18), transparent 48%);
+}
+
+.soft-btn,
+.mini-btn,
+.file-btn,
+.ghost-btn {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .64), rgba(255, 255, 255, .32)),
+    color-mix(in srgb, var(--panel) 86%, transparent);
+  border-color: color-mix(in srgb, var(--line) 86%, transparent);
+  color: color-mix(in srgb, var(--text) 84%, #000 16%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, .56) inset,
+    0 8px 18px rgba(15, 23, 42, .055);
+}
+
+[data-theme="dark"] .soft-btn,
+[data-theme="dark"] .mini-btn,
+[data-theme="dark"] .file-btn,
+[data-theme="dark"] .ghost-btn {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .075), rgba(255, 255, 255, .025)),
+    color-mix(in srgb, var(--panel2) 84%, transparent);
+  color: color-mix(in srgb, var(--text) 88%, var(--muted));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .12),
+    0 8px 18px rgba(0, 0, 0, .18);
+}
+
+.soft-btn:hover,
+.mini-btn:hover,
+.file-btn:hover,
+.ghost-btn:hover {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .74), rgba(255, 255, 255, .42)),
+    color-mix(in srgb, var(--panel) 82%, var(--accent) 5%);
+}
+
+.mini-btn {
+  min-height: 36px;
+  border-radius: 10px;
+}
+
+.top-actions {
+  padding: 4px;
+  border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--glass) 64%, transparent);
+  box-shadow: var(--inner-highlight);
+}
+
+.top-actions .global-search input {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.top-actions .soft-btn,
+.top-actions .primary-btn {
+  min-height: 40px;
+  border-radius: 10px;
+}
+
+.panel,
+.day-command,
+.kpi,
+.mini-stat,
+.quick-action,
+.row-card,
+.student-row,
+.today-class,
+.today-summary,
+.calendar-day {
+  border-radius: 10px;
+}
+
+.panel {
+  padding: 18px;
+}
+
+.panel-head {
+  min-height: 42px;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+}
+
+.panel-head h2 {
+  font-size: clamp(20px, 1.7vw, 24px);
+}
+
+.kpi-grid,
+.quick-actions {
+  gap: 12px;
+}
+
+.kpi,
+.mini-stat,
+.quick-action {
+  padding: 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .7), rgba(255, 255, 255, .4)),
+    color-mix(in srgb, var(--panel) 88%, transparent);
+}
+
+[data-theme="dark"] .kpi,
+[data-theme="dark"] .mini-stat,
+[data-theme="dark"] .quick-action {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .018)),
+    color-mix(in srgb, var(--panel) 92%, transparent);
+}
+
+.quick-action {
+  min-height: 82px;
+}
+
+.quick-action span,
+.kpi span,
+.mini-stat span {
+  color: color-mix(in srgb, var(--muted) 72%, var(--aqua) 28%);
+  letter-spacing: .075em;
+}
+
+.row-card,
+.student-row,
+.today-class {
+  align-items: start;
+  gap: 14px;
+  padding: 14px;
+}
+
+.student-row {
+  grid-template-columns: minmax(220px, 1.25fr) minmax(150px, .78fr) minmax(130px, .55fr) minmax(132px, .55fr) minmax(250px, auto);
+}
+
+.student-actions {
+  grid-template-columns: 1fr 1fr 1fr;
+  align-self: center;
+}
+
+.student-actions .mini-btn {
+  min-height: 38px;
+}
+
+.student-actions [data-edit-student],
+.class-row .actions [data-edit-class],
+.today-class-head .actions [data-attendance],
+.class-row .actions [data-attendance] {
+  color: color-mix(in srgb, var(--aqua) 72%, var(--text));
+  border-color: color-mix(in srgb, var(--aqua) 34%, var(--line));
+}
+
+.student-actions [data-pay],
+.payment-row .actions [data-pay] {
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 34%, var(--line));
+}
+
+.payment-paid .student-actions [data-pay],
+.payment-paid .actions [data-pay] {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 36%, var(--line));
+}
+
+.today-class-head .actions,
+.class-row .actions,
+.payment-row .actions,
+.booking-request .actions,
+.row-card .actions {
+  align-self: center;
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(2, minmax(104px, 1fr));
+  width: min(100%, 340px);
+}
+
+.today-class-head .actions [data-attendance],
+.class-row .actions [data-attendance] {
+  grid-column: 1 / -1;
+  min-height: 40px;
+}
+
+.payment-row .actions {
+  grid-template-columns: repeat(3, minmax(96px, 1fr));
+  width: min(100%, 430px);
+}
+
+.payment-priority {
+  margin: 10px 0 12px;
+}
+
+.payment-priority-card {
+  border-radius: 10px;
+}
+
+.pill-row {
+  gap: 5px;
+}
+
+.pill {
+  min-height: 26px;
+  padding-inline: 8px;
+}
+
+.modal {
+  border-radius: 14px;
+  padding: 22px;
+}
+
+.modal .close {
+  top: 12px;
+  right: 12px;
+  border-radius: 999px;
+}
+
+.modal .form-group {
+  border-radius: 12px;
+}
+
+.list-more-btn {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 6px;
+  justify-content: center;
+}
+
+@media (min-width: 621px) {
+  .topbar {
+    grid-template-columns: minmax(240px, 1fr) minmax(520px, auto);
+  }
+
+  .class-row {
+    grid-template-columns: minmax(0, 1fr) minmax(270px, auto);
+  }
+}
+
+@media (max-width: 620px) {
+  .app {
+    padding: 8px 12px calc(96px + env(safe-area-inset-bottom));
+  }
+
+  .topbar {
+    gap: 8px;
+  }
+
+  .top-actions {
+    grid-template-columns: 1fr 1fr;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .top-actions .global-search {
+    grid-column: 1 / -1;
+  }
+
+  .top-actions .global-search input {
+    border-color: var(--line);
+    box-shadow: var(--inner-highlight);
+  }
+
+  .top-actions .soft-btn,
+  .top-actions .primary-btn {
+    min-height: 44px;
+  }
+
+  .panel {
+    padding: 0;
+  }
+
+  .panel-head {
+    min-height: 0;
+    padding: 0 2px 9px;
+    border-bottom: 0;
+  }
+
+  .panel-head .soft-btn {
+    min-height: 38px;
+  }
+
+  .kpi-grid,
+  .quick-actions,
+  .finance-summary,
+  .report-grid {
+    gap: 8px;
+  }
+
+  .kpi,
+  .mini-stat,
+  .quick-action {
+    min-height: 76px;
+    padding: 11px;
+    border-radius: 12px;
+  }
+
+  .quick-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .quick-action strong {
+    font-size: 13px;
+    line-height: 1.12;
+  }
+
+  .row-card,
+  .student-row,
+  .today-class {
+    border-radius: 12px;
+    padding: 12px;
+  }
+
+  .student-row {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .student-row .student-main,
+  .student-row .student-plan,
+  .student-row .student-frequency,
+  .student-row .student-payment,
+  .student-row .student-actions {
+    grid-column: auto;
+  }
+
+  .student-frequency {
+    justify-self: start;
+    text-align: left;
+  }
+
+  .student-actions,
+  .student-row .actions,
+  .today-class-head .actions,
+  .class-row .actions,
+  .payment-row .actions,
+  .booking-request .actions,
+  .row-card .actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    max-width: none;
+    overflow: visible;
+    padding: 0;
+    gap: 6px;
+  }
+
+  .class-row .actions,
+  .today-class-head .actions,
+  .payment-row .actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .today-class-head .actions [data-attendance],
+  .class-row .actions [data-attendance],
+  .payment-row .actions [data-pay] {
+    grid-column: 1 / -1;
+  }
+
+  .student-actions .mini-btn,
+  .student-actions a.mini-btn,
+  .row-card .actions .mini-btn,
+  .row-card .actions a.mini-btn,
+  .today-class-head .actions .mini-btn,
+  .class-row .actions .mini-btn,
+  .payment-row .actions .mini-btn {
+    min-width: 0;
+    width: 100%;
+    min-height: 40px;
+    padding-inline: 6px;
+    white-space: normal;
+    line-height: 1.08;
+  }
+
+  .modal {
+    border-radius: 18px 18px 0 0;
+    padding: 18px 14px calc(16px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 390px) {
+  .quick-actions,
+  .kpi-grid,
+  .finance-summary,
+  .report-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .student-actions,
+  .student-row .actions {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 620px) {
   body {
     background:

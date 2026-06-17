@@ -18,6 +18,7 @@ const PAGE_TITLES = {
   reports: ['gestao', 'Relatorios'],
   more: ['atalhos', 'Mais']
 };
+const LIST_PAGE_SIZE = 24;
 const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const currentMonth = () => todayISO().slice(0, 7);
@@ -154,6 +155,8 @@ let renderFrame = 0;
 let stateVersion = 0;
 let indexVersion = -1;
 let stateIndex = null;
+let studentVisibleLimit = LIST_PAGE_SIZE;
+let paymentVisibleLimit = LIST_PAGE_SIZE;
 const scheduledUiWork = new Map();
 const renderSignatures = new Map();
 
@@ -306,6 +309,16 @@ function shouldRender(key, signature) {
   if (renderSignatures.get(key) === signature) return false;
   renderSignatures.set(key, signature);
   return true;
+}
+
+function resetStudentListLimit() {
+  studentVisibleLimit = LIST_PAGE_SIZE;
+  renderSignatures.delete('students');
+}
+
+function resetPaymentListLimit() {
+  paymentVisibleLimit = LIST_PAGE_SIZE;
+  renderSignatures.delete('payments');
 }
 
 function syncLocalStateFromStorage() {
@@ -893,7 +906,7 @@ function toggleTheme() {
 
 function updateThemeButton() {
   const button = document.getElementById('themeBtn');
-  if (button) button.textContent = document.documentElement.dataset.theme === 'dark' ? '🌙' : '☀️';
+  if (button) button.textContent = document.documentElement.dataset.theme === 'dark' ? '\u{1F319}' : '\u2600\uFE0F';
 }
 
 function logout() {
@@ -1081,7 +1094,7 @@ function renderStudents() {
   const query = document.getElementById('studentSearch').value.trim().toLowerCase();
   const status = document.getElementById('studentStatusFilter').value;
   const payment = document.getElementById('studentPaymentFilter').value;
-  const signature = `${stateVersion}|${query}|${status}|${payment}`;
+  const signature = `${stateVersion}|${query}|${status}|${payment}|${studentVisibleLimit}`;
   if (!shouldRender('students', signature)) return;
   const students = state.students.filter((student) => {
     const haystack = `${student.nome} ${student.telefone} ${student.plano_nome} ${student.nivel} ${student.status}`.toLowerCase();
@@ -1090,6 +1103,7 @@ function renderStudents() {
     const matchesPayment = !payment || (payment === 'paid' ? isPaid(student) : !isPaid(student));
     return matchesQuery && matchesStatus && matchesPayment;
   });
+  const visible = students.slice(0, studentVisibleLimit);
   document.getElementById('studentGrid').innerHTML = students.length ? `
     <div class="student-list-head" aria-hidden="true">
       <span>Aluno</span>
@@ -1098,7 +1112,12 @@ function renderStudents() {
       <span>Pagamento</span>
       <span>Acoes</span>
     </div>
-    ${students.map(studentCard).join('')}
+    ${visible.map(studentCard).join('')}
+    ${students.length > visible.length ? `
+      <button class="soft-btn list-more-btn" type="button" data-action="students-more">
+        Mostrar mais ${Math.min(LIST_PAGE_SIZE, students.length - visible.length)} de ${students.length - visible.length}
+      </button>
+    ` : ''}
   ` : empty('Nenhum aluno encontrado.');
 }
 
@@ -1379,7 +1398,7 @@ function renderPayments() {
   const month = monthInput?.value || currentMonth();
   const query = document.getElementById('paymentSearch')?.value.trim().toLowerCase() || '';
   const filter = document.getElementById('paymentStatusFilter')?.value || '';
-  const signature = `${stateVersion}|${month}|${query}|${filter}`;
+  const signature = `${stateVersion}|${month}|${query}|${filter}|${paymentVisibleLimit}`;
   if (!shouldRender('payments', signature)) return;
   const index = getStateIndex();
   const monthPayments = index.paymentsByMonth.get(month) || [];
@@ -1441,7 +1460,8 @@ function renderPayments() {
     const matchesFilter = !filter || (filter === 'paid' ? isPaidForMonth(student, month) : !isPaidForMonth(student, month));
     return matchesQuery && matchesFilter;
   });
-  const rows = visibleStudents.map((student) => {
+  const visiblePaymentStudents = visibleStudents.slice(0, paymentVisibleLimit);
+  const rows = visiblePaymentStudents.map((student) => {
     const paid = isPaidForMonth(student, month);
     const urgency = paymentUrgency(student, month);
     const priority = paymentPriority(student, month);
@@ -1473,8 +1493,13 @@ function renderPayments() {
       </div>
     </article>
   `);
+  const morePaymentsButton = visibleStudents.length > visiblePaymentStudents.length ? `
+    <button class="soft-btn list-more-btn" type="button" data-action="payments-more">
+      Mostrar mais ${Math.min(LIST_PAGE_SIZE, visibleStudents.length - visiblePaymentStudents.length)} de ${visibleStudents.length - visiblePaymentStudents.length}
+    </button>
+  ` : '';
   document.getElementById('paymentList').innerHTML = rows.length
-    ? `${rows.join('')}${history.length ? `<div class="section-label">Histórico recente</div>${history.join('')}` : ''}`
+    ? `${rows.join('')}${morePaymentsButton}${history.length ? `<div class="section-label">Histórico recente</div>${history.join('')}` : ''}`
     : empty('Cadastre alunos para acompanhar mensalidades.');
 }
 
@@ -2165,6 +2190,19 @@ function handleQuickAction(action) {
   if (action === 'payments') {
     setPage('payments');
     document.getElementById('paymentStatusFilter').value = 'pending';
+    resetPaymentListLimit();
+    renderPayments();
+    return;
+  }
+  if (action === 'students-more') {
+    studentVisibleLimit += LIST_PAGE_SIZE;
+    renderSignatures.delete('students');
+    renderStudents();
+    return;
+  }
+  if (action === 'payments-more') {
+    paymentVisibleLimit += LIST_PAGE_SIZE;
+    renderSignatures.delete('payments');
     renderPayments();
     return;
   }
@@ -3142,7 +3180,10 @@ function bindEvents() {
   document.getElementById('clearAttendance').addEventListener('click', () => setClassAttendance(activeAttendanceClassId, false).catch((err) => toast(err.message)));
   document.getElementById('copyAttendance').addEventListener('click', () => copyAttendanceSummary().catch((err) => toast(err.message)));
   document.getElementById('finishAttendance').addEventListener('click', () => finishAttendance().catch((err) => toast(err.message)));
-  document.getElementById('studentSearch').addEventListener('input', renderStudentsLater);
+  document.getElementById('studentSearch').addEventListener('input', () => {
+    resetStudentListLimit();
+    renderStudentsLater();
+  });
   document.getElementById('globalSearch').addEventListener('input', renderGlobalResultsLater);
   document.getElementById('globalResults').addEventListener('click', (event) => {
     const target = event.target.closest('[data-global-result]');
@@ -3160,11 +3201,26 @@ function bindEvents() {
     }
     document.getElementById('globalResults').classList.remove('open');
   });
-  document.getElementById('studentStatusFilter').addEventListener('change', renderStudents);
-  document.getElementById('studentPaymentFilter').addEventListener('change', renderStudents);
-  document.getElementById('paymentMonth').addEventListener('change', renderPayments);
-  document.getElementById('paymentSearch').addEventListener('input', renderPaymentsLater);
-  document.getElementById('paymentStatusFilter').addEventListener('change', renderPayments);
+  document.getElementById('studentStatusFilter').addEventListener('change', () => {
+    resetStudentListLimit();
+    renderStudents();
+  });
+  document.getElementById('studentPaymentFilter').addEventListener('change', () => {
+    resetStudentListLimit();
+    renderStudents();
+  });
+  document.getElementById('paymentMonth').addEventListener('change', () => {
+    resetPaymentListLimit();
+    renderPayments();
+  });
+  document.getElementById('paymentSearch').addEventListener('input', () => {
+    resetPaymentListLimit();
+    renderPaymentsLater();
+  });
+  document.getElementById('paymentStatusFilter').addEventListener('change', () => {
+    resetPaymentListLimit();
+    renderPayments();
+  });
   document.getElementById('actionSearch')?.addEventListener('input', renderActionsLater);
   document.getElementById('actionActorFilter')?.addEventListener('change', renderActions);
   document.getElementById('actionCategoryFilter')?.addEventListener('change', renderActions);
@@ -3252,7 +3308,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260617-flow61', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260617-flow63', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
