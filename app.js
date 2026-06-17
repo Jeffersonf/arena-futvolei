@@ -155,6 +155,7 @@ let stateVersion = 0;
 let indexVersion = -1;
 let stateIndex = null;
 const scheduledUiWork = new Map();
+const renderSignatures = new Map();
 
 function loadLocalState() {
   try {
@@ -172,6 +173,7 @@ function saveLocalState() {
 function touchState() {
   stateVersion += 1;
   stateIndex = null;
+  renderSignatures.clear();
 }
 
 function buildStateIndex() {
@@ -298,6 +300,12 @@ function scheduleUiWork(key, fn, delay = 80) {
     return;
   }
   run();
+}
+
+function shouldRender(key, signature) {
+  if (renderSignatures.get(key) === signature) return false;
+  renderSignatures.set(key, signature);
+  return true;
 }
 
 function syncLocalStateFromStorage() {
@@ -1033,6 +1041,8 @@ function renderActions() {
   const filter = document.getElementById('actionActorFilter')?.value || '';
   const categoryFilter = document.getElementById('actionCategoryFilter')?.value || '';
   const query = document.getElementById('actionSearch')?.value.trim().toLowerCase() || '';
+  const signature = `${stateVersion}|${filter}|${categoryFilter}|${query}`;
+  if (!shouldRender('actions', signature)) return;
   const all = sortedActions(80);
   const items = all.filter((item) => {
     const actor = actionActor(item);
@@ -1071,6 +1081,8 @@ function renderStudents() {
   const query = document.getElementById('studentSearch').value.trim().toLowerCase();
   const status = document.getElementById('studentStatusFilter').value;
   const payment = document.getElementById('studentPaymentFilter').value;
+  const signature = `${stateVersion}|${query}|${status}|${payment}`;
+  if (!shouldRender('students', signature)) return;
   const students = state.students.filter((student) => {
     const haystack = `${student.nome} ${student.telefone} ${student.plano_nome} ${student.nivel} ${student.status}`.toLowerCase();
     const matchesQuery = haystack.includes(query);
@@ -1142,6 +1154,8 @@ function renderClasses() {
   const date = document.getElementById('classDateFilter').value;
   const type = document.getElementById('classTypeFilter')?.value || '';
   const status = document.getElementById('classStatusFilter')?.value || '';
+  const signature = `${stateVersion}|${date}|${type}|${status}`;
+  if (!shouldRender('classes', signature)) return;
   const classes = [...state.classes].filter((item) => (
     (!date || item.data === date)
     && (!type || classType(item) === type)
@@ -1363,6 +1377,10 @@ function renderPayments() {
   const monthInput = document.getElementById('paymentMonth');
   if (monthInput && !monthInput.value) monthInput.value = currentMonth();
   const month = monthInput?.value || currentMonth();
+  const query = document.getElementById('paymentSearch')?.value.trim().toLowerCase() || '';
+  const filter = document.getElementById('paymentStatusFilter')?.value || '';
+  const signature = `${stateVersion}|${month}|${query}|${filter}`;
+  if (!shouldRender('payments', signature)) return;
   const index = getStateIndex();
   const monthPayments = index.paymentsByMonth.get(month) || [];
   const paidThisMonth = monthPayments.reduce((sum, item) => sum + Number(item.valor || 0), 0);
@@ -1375,8 +1393,6 @@ function renderPayments() {
   });
   const expected = activeStudents.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0);
   const receiveRate = expected ? Math.round((paidThisMonth / expected) * 100) : 0;
-  const query = document.getElementById('paymentSearch')?.value.trim().toLowerCase() || '';
-  const filter = document.getElementById('paymentStatusFilter')?.value || '';
   const priorityStudents = sortedPaymentStudents(month).filter((student) => !isPaidForMonth(student, month));
   const priorityTarget = document.getElementById('paymentPriority');
   if (priorityTarget) {
@@ -3236,7 +3252,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260616-flow60', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260617-flow61', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
