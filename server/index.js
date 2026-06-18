@@ -268,7 +268,7 @@ app.post('/api/public/bookings', (req, res) => {
     };
     if (!payload.nome) throw new Error('Informe seu nome');
     const result = insertRow('agendamentos', payload);
-    logAction('Pedido de aula', `${payload.nome} solicitou aula ${classItem.id}.`, 'Aluno');
+    logAction('Pedido de aula', `${payload.nome} solicitou vaga na aula ${classItem.horario} - ${classItem.turma || 'Turma'} em ${classItem.data}.`, 'Aluno');
     res.json({ ok: true, item: row('SELECT * FROM agendamentos WHERE id=?', [result.id]) });
   } catch (err) {
     jsonError(res, err);
@@ -313,7 +313,8 @@ app.post('/api/public/student-confirm', (req, res) => {
       classId,
       student.id
     ]);
-    logAction('Confirmacao aluno', `${student.nome} respondeu ${confirmValue} na aula ${classId}.`, 'Aluno');
+    const classItem = row('SELECT * FROM aulas WHERE id=?', [classId]);
+    logAction('Confirmacao aluno', `${student.nome} respondeu ${confirmValue} na aula ${classItem?.horario || classId} - ${classItem?.turma || 'Turma'} em ${classItem?.data || ''}.`, 'Aluno');
     res.json({ ok: true, item: row('SELECT * FROM aula_alunos WHERE aula_id=? AND aluno_id=?', [classId, student.id]) });
   } catch (err) {
     jsonError(res, err);
@@ -421,7 +422,9 @@ app.post('/api/students', (req, res) => {
     const payload = normalizeStudentPayload(req.body);
     if (!payload.nome) throw new Error('Informe o nome do aluno');
     const result = insertRow('alunos', payload);
-    res.json({ ...result, item: row('SELECT * FROM alunos WHERE id=?', [result.id]) });
+    const item = row('SELECT * FROM alunos WHERE id=?', [result.id]);
+    logAction('Aluno cadastrado', `${item.nome} foi cadastrado no painel.`, 'Professor');
+    res.json({ ...result, item });
   } catch (err) {
     jsonError(res, err);
   }
@@ -429,10 +432,17 @@ app.post('/api/students', (req, res) => {
 
 app.put('/api/students/:id', (req, res) => {
   try {
+    const previous = row('SELECT * FROM alunos WHERE id=?', [req.params.id]);
     const payload = normalizeStudentPayload(req.body);
     if (!payload.nome) throw new Error('Informe o nome do aluno');
     updateRow('alunos', req.params.id, payload);
-    res.json({ ok: true, item: row('SELECT * FROM alunos WHERE id=?', [req.params.id]) });
+    const item = row('SELECT * FROM alunos WHERE id=?', [req.params.id]);
+    if (previous?.pago_ate && !item.pago_ate) {
+      logAction('Pagamento reaberto', `${item.nome} foi marcado como nao pago.`, 'Professor');
+    } else {
+      logAction('Aluno atualizado', `${item.nome} teve cadastro atualizado.`, 'Professor');
+    }
+    res.json({ ok: true, item });
   } catch (err) {
     jsonError(res, err);
   }
@@ -492,7 +502,9 @@ app.post('/api/classes', (req, res) => {
     const studentIds = req.body.aluno_ids || req.body.studentIds || [];
     const result = insertRow('aulas', payload);
     upsertClassStudents(result.id, studentIds, req.body.presencas || req.body.attendance || {});
-    res.json({ ok: true, item: classWithStudents(row('SELECT * FROM aulas WHERE id=?', [result.id])) });
+    const item = classWithStudents(row('SELECT * FROM aulas WHERE id=?', [result.id]));
+    logAction('Aula criada', `${item.horario} - ${item.turma || 'Turma'} em ${item.data}.`, 'Professor');
+    res.json({ ok: true, item });
   } catch (err) {
     jsonError(res, err);
   }
@@ -503,7 +515,9 @@ app.put('/api/classes/:id', (req, res) => {
     const payload = normalizeClassPayload(req.body);
     updateRow('aulas', req.params.id, payload);
     upsertClassStudents(req.params.id, req.body.aluno_ids || req.body.studentIds || [], req.body.presencas || req.body.attendance || {});
-    res.json({ ok: true, item: classWithStudents(row('SELECT * FROM aulas WHERE id=?', [req.params.id])) });
+    const item = classWithStudents(row('SELECT * FROM aulas WHERE id=?', [req.params.id]));
+    logAction('Aula atualizada', `${item.horario} - ${item.turma || 'Turma'} em ${item.data}.`, 'Professor');
+    res.json({ ok: true, item });
   } catch (err) {
     jsonError(res, err);
   }
@@ -525,7 +539,7 @@ app.put('/api/classes/:id/attendance', (req, res) => {
     Object.entries(attendance).forEach(([studentId, present]) => {
       run('UPDATE aula_alunos SET presente=? WHERE aula_id=? AND aluno_id=?', [present ? 1 : 0, req.params.id, studentId]);
     });
-    logAction('Presença', `Presenças atualizadas na aula ${req.params.id}.`, 'Professor');
+    logAction('Presenca', `${classItem.horario} - ${classItem.turma || 'Turma'} em ${classItem.data} teve presencas atualizadas.`, 'Professor');
     res.json({ ok: true, item: classWithStudents(classItem) });
   } catch (err) {
     jsonError(res, err);
@@ -563,7 +577,7 @@ app.post('/api/bookings/:id/respond', (req, res) => {
     if (!['approve', 'reject'].includes(action)) throw new Error('Acao invalida');
     if (action === 'reject') {
       run("UPDATE agendamentos SET status='Recusado', respondido_em=? WHERE id=?", [today(), booking.id]);
-      logAction('Pedido recusado', `${booking.nome} recusado na aula ${booking.aula_id}.`, 'Professor');
+      logAction('Pedido recusado', `${booking.nome} foi recusado na aula ${classItem.horario} - ${classItem.turma || 'Turma'} em ${classItem.data}.`, 'Professor');
       return res.json({ ok: true, item: row('SELECT * FROM agendamentos WHERE id=?', [booking.id]) });
     }
     const currentIds = classItem.aluno_ids || [];
@@ -580,7 +594,7 @@ app.post('/api/bookings/:id/respond', (req, res) => {
       run('UPDATE aulas SET extras=? WHERE id=?', [JSON.stringify(extras), classItem.id]);
     }
     run("UPDATE agendamentos SET status='Aprovado', respondido_em=? WHERE id=?", [today(), booking.id]);
-    logAction('Pedido aprovado', `${booking.nome} aprovado na aula ${booking.aula_id}.`, 'Professor');
+    logAction('Pedido aprovado', `${booking.nome} foi aprovado na aula ${classItem.horario} - ${classItem.turma || 'Turma'} em ${classItem.data}.`, 'Professor');
     return res.json({ ok: true, item: row('SELECT * FROM agendamentos WHERE id=?', [booking.id]) });
   } catch (err) {
     return jsonError(res, err);
@@ -603,7 +617,9 @@ app.post('/api/waitlist', (req, res) => {
     };
     if (!payload.nome) throw new Error('Informe o nome');
     const result = insertRow('lista_espera', payload);
-    res.json({ ...result, item: row('SELECT * FROM lista_espera WHERE id=?', [result.id]) });
+    const item = row('SELECT * FROM lista_espera WHERE id=?', [result.id]);
+    logAction('Interessado cadastrado', `${item.nome} entrou na lista de espera.`, 'Professor');
+    res.json({ ...result, item });
   } catch (err) {
     jsonError(res, err);
   }
@@ -620,7 +636,9 @@ app.put('/api/waitlist/:id', (req, res) => {
     };
     if (!payload.nome) throw new Error('Informe o nome');
     updateRow('lista_espera', req.params.id, payload);
-    res.json({ ok: true, item: row('SELECT * FROM lista_espera WHERE id=?', [req.params.id]) });
+    const item = row('SELECT * FROM lista_espera WHERE id=?', [req.params.id]);
+    logAction('Espera atualizada', `${item.nome} mudou para ${item.status || 'Novo'}.`, 'Professor');
+    res.json({ ok: true, item });
   } catch (err) {
     jsonError(res, err);
   }

@@ -374,7 +374,6 @@ function insertRow(tableName, payload = {}) {
     throw err;
   }
   const result = run(`INSERT INTO ${table} (${columns.join(',')}) VALUES (${columns.map(() => '?').join(',')})`, columns.map((col) => payload[col]));
-  logAction('API', `Registro criado em ${table}.`, 'Professor');
   return { ok: true, table, id: Number(result.lastInsertRowid) };
 }
 
@@ -388,14 +387,12 @@ function updateRow(tableName, id, payload = {}) {
     throw err;
   }
   run(`UPDATE ${table} SET ${editable.map((col) => `${col}=?`).join(',')} WHERE id=?`, [...editable.map((col) => payload[col]), id]);
-  logAction('API', `Registro ${id} atualizado em ${table}.`, 'Professor');
   return { ok: true, table, id: Number(id) };
 }
 
 function deleteRow(tableName, id) {
   const table = normalizeTable(tableName);
   run(`DELETE FROM ${table} WHERE id=?`, [id]);
-  logAction('API', `Registro ${id} removido de ${table}.`, 'Professor');
   return { ok: true, table, id: Number(id) };
 }
 
