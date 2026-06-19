@@ -3,7 +3,7 @@
 const STORE_KEY = 'fv_school_state_v2';
 const PIN_KEY = 'tlf_admin_pin';
 const PAGE_KEY = 'tlf_last_page';
-const VISUAL_THEME_VERSION = 'finanza-polish-20260619';
+const VISUAL_THEME_VERSION = 'finanza-clone-20260619';
 const ACTION_REFRESH_MS = 15000;
 const MOBILE_MORE_PAGES = ['actions', 'waitlist', 'plans', 'reports'];
 const PAGE_TITLES = {
@@ -3308,7 +3308,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260619-finanza2', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260619-finanza3', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
