@@ -17,13 +17,19 @@ Use este checklist quando a rodada local estiver aprovada e for hora de publicar
 npm run check
 ```
 
-2. Com o live server aberto, rodar:
+2. Auditar os fluxos principais com servidor e banco temporario:
+
+```bash
+npm run flow:audit
+```
+
+3. Com o live server aberto, rodar:
 
 ```bash
 npm run visual:check
 ```
 
-3. Conferir no navegador:
+4. Conferir no navegador:
 
 - Tela publica de agendamento mobile.
 - Aba publica `Sou aluno` para confirmar presenca futura.
@@ -36,7 +42,7 @@ npm run visual:check
 - Alunos desktop.
 - Pedidos desktop.
 
-4. Conferir manualmente no live server:
+5. Conferir manualmente no live server:
 
 - Entrar com PIN `1234`.
 - Enviar um pedido de aula pela primeira tela.

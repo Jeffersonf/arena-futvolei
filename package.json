@@ -9,7 +9,8 @@
     "live": "serve . -l 4280",
     "static": "npx serve .",
     "check": "node --check app.js && node --check server/db.js && node --check server/index.js",
-    "visual:check": "node scripts/visual-check.js"
+    "visual:check": "node scripts/visual-check.js",
+    "flow:audit": "node scripts/flow-audit.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

@@ -108,6 +108,12 @@ QA visual local:
 npm run visual:check
 ```
 
+Auditoria automatica dos fluxos principais com servidor e banco temporario:
+
+```bash
+npm run flow:audit
+```
+
 ## Uso real online
 
 Para rodar como sistema de uso diario, use o servidor Node com SQLite persistente. Configure pelo menos:
