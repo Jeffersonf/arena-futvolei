@@ -134,8 +134,8 @@
         </div>
         <div class="top-actions">
           <div class="global-search">
-            <input id="globalSearch" aria-label="Busca rápida" placeholder="Busca rápida..." autocomplete="off" />
-            <div class="global-results" id="globalResults"></div>
+            <input id="globalSearch" aria-label="Busca rápida" aria-controls="globalResults" aria-expanded="false" aria-haspopup="listbox" placeholder="Busca rápida..." autocomplete="off" />
+            <div class="global-results" id="globalResults" role="listbox" aria-label="Resultados da busca"></div>
           </div>
           <span class="mode-chip" id="modeStatus">Carregando...</span>
           <button class="soft-btn" type="button" data-refresh>Atualizar</button>

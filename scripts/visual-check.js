@@ -12,6 +12,7 @@ const cases = [
   { name: 'mobile-student-confirm-public', viewport: { width: 390, height: 844 }, page: null, action: 'public-student-tab' },
   { name: 'desktop-booking', viewport: { width: 1440, height: 950 }, page: null },
   { name: 'mobile-dashboard', viewport: { width: 390, height: 844 }, page: 'dashboard' },
+  { name: 'mobile-global-search', viewport: { width: 390, height: 844 }, page: 'dashboard', action: 'global-search' },
   { name: 'mobile-dashboard-dark', viewport: { width: 390, height: 844 }, page: 'dashboard', theme: 'dark' },
   { name: 'mobile-actions', viewport: { width: 390, height: 844 }, page: 'actions' },
   { name: 'mobile-students', viewport: { width: 390, height: 844 }, page: 'students' },
@@ -68,6 +69,16 @@ async function assertModalFocus(page, modalSelector, triggerSelector) {
 }
 
 async function runCaseAction(page, action) {
+  if (action === 'global-search') {
+    const input = page.locator('#globalSearch');
+    await input.fill('Ana');
+    await page.waitForSelector('#globalResults.open [role="option"]');
+    const expanded = await input.getAttribute('aria-expanded');
+    if (expanded !== 'true') throw new Error('Busca global nao marcou aria-expanded ao abrir');
+    await page.keyboard.press('Escape');
+    if (await page.locator('#globalResults.open').count()) throw new Error('Busca global nao fechou com Escape');
+    if (await input.getAttribute('aria-expanded') !== 'false') throw new Error('Busca global nao sincronizou aria-expanded ao fechar');
+  }
   if (action === 'public-student-tab') {
     await page.locator('[data-public-tab="student"]').click();
     const tabState = await page.evaluate(() => ({

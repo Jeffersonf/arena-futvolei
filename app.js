@@ -907,7 +907,7 @@ function setPage(page) {
   document.documentElement.dataset.page = page;
   updateTopbar(page);
   localStorage.setItem(PAGE_KEY, page);
-  document.getElementById('globalResults').classList.remove('open');
+  closeGlobalResults();
   window.scrollTo({ top: 0, behavior: 'smooth' });
   renderPage(page);
 }
@@ -1152,7 +1152,7 @@ function renderGlobalResults() {
   if (!input || !results) return;
   const query = input.value.trim().toLowerCase();
   if (query.length < 2) {
-    results.classList.remove('open');
+    closeGlobalResults();
     results.innerHTML = '';
     return;
   }
@@ -1172,12 +1172,18 @@ function renderGlobalResults() {
   }));
   const items = [...studentItems, ...waitItems];
   results.innerHTML = items.length ? items.map((item) => `
-    <button type="button" data-global-result="${item.action}">
+    <button type="button" role="option" data-global-result="${item.action}">
       <strong>${escapeHTML(item.title)}</strong>
       <span>${escapeHTML(item.meta)}</span>
     </button>
   `).join('') : '<div class="global-empty">Nada encontrado</div>';
   results.classList.add('open');
+  input.setAttribute('aria-expanded', 'true');
+}
+
+function closeGlobalResults() {
+  document.getElementById('globalResults')?.classList.remove('open');
+  document.getElementById('globalSearch')?.setAttribute('aria-expanded', 'false');
 }
 
 function openGlobalResult(action) {
@@ -3261,7 +3267,7 @@ function bindEvents() {
     if (target) openGlobalResult(target.dataset.globalResult);
   });
   document.addEventListener('click', (event) => {
-    if (!event.target.closest('.global-search')) document.getElementById('globalResults').classList.remove('open');
+    if (!event.target.closest('.global-search')) closeGlobalResults();
   });
   document.addEventListener('keydown', (event) => {
     const activeLayer = document.querySelector('.modal-wrap.open, .login-wall.open');
@@ -3271,7 +3277,7 @@ function bindEvents() {
         closeModal(openModalEl.id);
         return;
       }
-      if (!activeLayer) document.getElementById('globalResults').classList.remove('open');
+      if (!activeLayer) closeGlobalResults();
       return;
     }
     if (event.key !== 'Tab' || !activeLayer) return;
