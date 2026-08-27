@@ -114,6 +114,12 @@ Auditoria local de acessibilidade:
 npm run accessibility:audit
 ```
 
+Auditoria local de carregamento, assets e overflow:
+
+```bash
+npm run performance:audit
+```
+
 Auditoria automatica dos fluxos principais com servidor e banco temporario:
 
 ```bash
