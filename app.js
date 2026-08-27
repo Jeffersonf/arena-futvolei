@@ -674,7 +674,8 @@ function formatActionDate(value) {
 }
 
 function actionActor(item = {}) {
-  if (item.ator) return item.ator;
+  if (['Professor', 'Aluno', 'Sistema'].includes(item.ator)) return item.ator;
+  if (item.ator === 'API') return 'Sistema';
   const text = `${item.acao || ''} ${item.detalhe || ''}`.toLowerCase();
   if (text.includes('confirmacao aluno') || text.includes('solicitou aula')) return 'Aluno';
   if (text.includes('backup') || text.includes('importacao') || text.includes('sistema')) return 'Sistema';

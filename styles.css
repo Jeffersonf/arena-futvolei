@@ -91,6 +91,14 @@ a {
 }
 
 button,
+a,
+input,
+select,
+textarea {
+  transition: border-color .16s ease, background-color .16s ease, color .16s ease, box-shadow .16s ease;
+}
+
+button,
 a {
   -webkit-tap-highlight-color: transparent;
 }
@@ -252,6 +260,18 @@ input:disabled {
   background: var(--accent-soft);
   color: var(--accent);
   font-weight: 600;
+}
+
+@media (hover: hover) {
+  .row-card:hover,
+  .student-card:hover,
+  .student-row:hover,
+  .kpi:hover,
+  .mini-stat:hover,
+  .more-card:hover,
+  .booking-class-card:hover {
+    border-color: var(--line-strong);
+  }
 }
 
 .ghost-btn,
@@ -1446,7 +1466,7 @@ label {
     width: 100%;
     padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
     border-width: 1px 0 0;
-    border-radius: 18px 18px 0 0;
+    border-radius: 16px 16px 0 0;
     box-shadow: 0 -10px 30px rgba(0, 0, 0, .12);
   }
 
@@ -1595,7 +1615,7 @@ label {
   .modal {
     width: 100%;
     max-height: calc(100vh - 22px);
-    border-radius: 18px 18px 0 0;
+    border-radius: 16px 16px 0 0;
     padding: 14px 14px calc(20px + env(safe-area-inset-bottom));
   }
 }
@@ -1636,7 +1656,7 @@ label {
 
   .login-box {
     align-self: end;
-    border-radius: 18px 18px 0 0;
+    border-radius: 16px 16px 0 0;
   }
 
   .booking-wall {
