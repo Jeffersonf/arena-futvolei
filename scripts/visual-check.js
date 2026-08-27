@@ -4,7 +4,7 @@ const fs = require('fs');
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
 const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260827-release1';
-const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260827-editorial2';
+const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260827-editorial3';
 const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined;
 
 const cases = [
@@ -12,6 +12,7 @@ const cases = [
   { name: 'mobile-student-confirm-public', viewport: { width: 390, height: 844 }, page: null, action: 'public-student-tab' },
   { name: 'desktop-booking', viewport: { width: 1440, height: 950 }, page: null },
   { name: 'mobile-dashboard', viewport: { width: 390, height: 844 }, page: 'dashboard' },
+  { name: 'mobile-narrow-dashboard', viewport: { width: 320, height: 700 }, page: 'dashboard' },
   { name: 'mobile-global-search', viewport: { width: 390, height: 844 }, page: 'dashboard', action: 'global-search' },
   { name: 'mobile-dashboard-dark', viewport: { width: 390, height: 844 }, page: 'dashboard', theme: 'dark' },
   { name: 'mobile-actions', viewport: { width: 390, height: 844 }, page: 'actions' },
@@ -153,6 +154,21 @@ async function runCaseAction(page, action) {
       await page.waitForTimeout(100);
     }
     if (item.action) await runCaseAction(page, item.action);
+    if (item.page && item.viewport.width <= 520) {
+      const mobileNav = await page.evaluate(() => {
+        const sidebar = document.querySelector('.sidebar');
+        const visibleItems = Array.from(document.querySelectorAll('.sidebar .nav-item'))
+          .filter((item) => getComputedStyle(item).display !== 'none');
+        return {
+          visibleItems: visibleItems.length,
+          sidebarHeight: sidebar?.getBoundingClientRect().height || 0,
+          hasSecondary: visibleItems.some((item) => item.classList.contains('secondary-nav'))
+        };
+      });
+      if (mobileNav.visibleItems !== 6 || mobileNav.hasSecondary || mobileNav.sidebarHeight > 100) {
+        throw new Error(`${item.name}: navegacao mobile fora do padrao (${JSON.stringify(mobileNav)})`);
+      }
+    }
     console.log(`  action ${item.name}`);
     if (runtimeErrors.length) throw new Error(`${item.name}: ${runtimeErrors.join(' | ')}`);
     await page.screenshot({ path: `${outDir}/${item.name}.png`, fullPage: false });
