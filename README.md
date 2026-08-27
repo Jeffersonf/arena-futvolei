@@ -108,6 +108,12 @@ QA visual local:
 npm run visual:check
 ```
 
+Auditoria local de acessibilidade:
+
+```bash
+npm run accessibility:audit
+```
+
 Auditoria automatica dos fluxos principais com servidor e banco temporario:
 
 ```bash
