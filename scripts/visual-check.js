@@ -3,7 +3,7 @@ const fs = require('fs');
 
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
-const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260624-clean1';
+const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260827-a11y1';
 const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260827-editorial1';
 const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined;
 

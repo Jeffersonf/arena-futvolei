@@ -33,7 +33,7 @@
           <button id="studentTab" type="button" role="tab" aria-selected="false" aria-controls="studentPane" data-public-tab="student">Sou aluno</button>
         </div>
         <div class="booking-layout">
-          <div id="guestPane" class="booking-pane active" role="tabpanel" aria-labelledby="guestTab" data-public-pane="guest">
+          <div id="guestPane" class="booking-pane active" role="tabpanel" aria-labelledby="guestTab" aria-hidden="false" data-public-pane="guest">
             <form class="booking-form" id="bookingForm">
               <label>Nome<input id="bookingName" autocomplete="name" placeholder="Seu nome" required /></label>
               <label>WhatsApp<input id="bookingPhone" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" /></label>
@@ -52,7 +52,7 @@
               <div class="booking-class-list" id="bookingClassList"></div>
             </div>
           </div>
-          <div id="studentPane" class="booking-pane" role="tabpanel" aria-labelledby="studentTab" data-public-pane="student">
+          <div id="studentPane" class="booking-pane" role="tabpanel" aria-labelledby="studentTab" aria-hidden="true" data-public-pane="student">
             <form class="booking-form student-confirm-form" id="studentLookupForm">
               <label>Seu WhatsApp<input id="studentLookupPhone" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" required /></label>
               <button class="primary-btn" type="submit">Ver minhas aulas</button>
@@ -191,7 +191,7 @@
           <div class="finance-summary" id="actionSummary"></div>
           <div class="action-focus" id="actionFocus"></div>
           <div class="filters action-filters">
-            <input id="actionSearch" placeholder="Buscar ação, aluno ou detalhe..." />
+            <input id="actionSearch" aria-label="Buscar ações, alunos ou detalhes" placeholder="Buscar ação, aluno ou detalhe..." />
             <select id="actionActorFilter" aria-label="Filtrar ações por origem">
               <option value="">Todos</option>
               <option value="Professor">Professor</option>
@@ -552,7 +552,7 @@
         <div class="class-students-picker">
           <div class="section-label">Alunos da aula</div>
           <div class="class-picker-head">
-            <input id="classStudentSearch" placeholder="Buscar aluno para adicionar..." autocomplete="off" />
+            <input id="classStudentSearch" aria-label="Buscar aluno para adicionar à aula" placeholder="Buscar aluno para adicionar..." autocomplete="off" />
             <span id="classStudentCount">0 selecionados</span>
           </div>
           <div class="class-student-list" id="classStudentChecklist"></div>
@@ -627,6 +627,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-    <script src="app.js?v=20260624-clean1"></script>
+    <script src="app.js?v=20260827-a11y1"></script>
   </body>
 </html>

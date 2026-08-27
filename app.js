@@ -19,6 +19,7 @@ const PAGE_TITLES = {
   more: ['atalhos', 'Mais']
 };
 const LIST_PAGE_SIZE = 24;
+let lastModalTrigger = null;
 const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const currentMonth = () => todayISO().slice(0, 7);
@@ -682,6 +683,10 @@ function actionActor(item = {}) {
   return 'Professor';
 }
 
+function actionLabel(item = {}) {
+  return item.acao === 'API' ? 'Registro do sistema' : (item.acao || 'Acao');
+}
+
 function actionTone(actor = '') {
   if (actor === 'Aluno') return 'student';
   if (actor === 'Sistema') return 'system';
@@ -720,7 +725,7 @@ function actionFocusRow(item) {
     <article class="action-focus-row">
       <time>${escapeHTML(formatActionTime(item.data_hora))}</time>
       <div>
-        <strong>${escapeHTML(item.acao || 'Movimento')}</strong>
+        <strong>${escapeHTML(actionLabel(item))}</strong>
         <p>${escapeHTML(item.detalhe || 'Movimento registrado no sistema.')}</p>
         <span class="pill action-pill action-pill-${actionCategoryTone(category)}">${escapeHTML(category)}</span>
       </div>
@@ -1024,7 +1029,7 @@ function actionRow(item) {
       <div>
         <div class="action-line">
           <strong>${escapeHTML(actor)}</strong>
-          <span>${escapeHTML(item.acao || 'Acao')}</span>
+          <span>${escapeHTML(actionLabel(item))}</span>
         </div>
         <div class="action-meta-line">
           <span class="pill action-pill action-pill-${actionCategoryTone(category)}">${escapeHTML(category)}</span>
@@ -1063,7 +1068,7 @@ function renderActions() {
   const items = all.filter((item) => {
     const actor = actionActor(item);
     const category = actionCategory(item);
-    const haystack = `${actor} ${category} ${item.acao || ''} ${item.detalhe || ''}`.toLowerCase();
+    const haystack = `${actor} ${category} ${actionLabel(item)} ${item.acao || ''} ${item.detalhe || ''}`.toLowerCase();
     return (!filter || actor === filter) && (!categoryFilter || category === categoryFilter) && (!query || haystack.includes(query));
   });
   const professor = all.filter((item) => actionActor(item) === 'Professor').length;
@@ -1074,7 +1079,7 @@ function renderActions() {
   const summary = document.getElementById('actionSummary');
   if (summary) {
     summary.innerHTML = `
-      <article class="mini-stat action-latest"><span>Ultimo movimento</span><strong>${latest ? escapeHTML(formatActionTime(latest.data_hora)) : '--:--'}</strong><small>${latest ? escapeHTML(`${actionActor(latest)} - ${latest.acao || 'Acao'}`) : 'Sem registro'}</small></article>
+      <article class="mini-stat action-latest"><span>Ultimo movimento</span><strong>${latest ? escapeHTML(formatActionTime(latest.data_hora)) : '--:--'}</strong><small>${latest ? escapeHTML(`${actionActor(latest)} - ${actionLabel(latest)}`) : 'Sem registro'}</small></article>
       <article class="mini-stat action-mini-teacher"><span>Professor</span><strong>${professor}</strong></article>
       <article class="mini-stat action-mini-student"><span>Aluno</span><strong>${aluno}</strong></article>
       <article class="mini-stat action-mini-system"><span>Sistema</span><strong>${system}</strong></article>
@@ -1780,14 +1785,17 @@ function escapeHTML(value) {
 }
 
 function openModal(id) {
+  const modalWrap = document.getElementById(id);
+  if (!modalWrap) return;
+  if (!document.querySelector('.modal-wrap.open') && document.activeElement instanceof HTMLElement) {
+    lastModalTrigger = document.activeElement;
+  }
   document.querySelectorAll('.modal-wrap.open').forEach((modal) => {
     if (modal.id !== id) {
       modal.classList.remove('open');
       modal.setAttribute('aria-hidden', 'true');
     }
   });
-  const modalWrap = document.getElementById(id);
-  if (!modalWrap) return;
   modalWrap.classList.add('open');
   modalWrap.setAttribute('aria-hidden', 'false');
   document.body.classList.add('modal-open');
@@ -1801,7 +1809,11 @@ function closeModal(id) {
   if (!modalWrap) return;
   modalWrap.classList.remove('open');
   modalWrap.setAttribute('aria-hidden', 'true');
-  if (!document.querySelector('.modal-wrap.open')) document.body.classList.remove('modal-open');
+  if (!document.querySelector('.modal-wrap.open')) {
+    document.body.classList.remove('modal-open');
+    if (lastModalTrigger?.isConnected && !lastModalTrigger.disabled) lastModalTrigger.focus();
+    lastModalTrigger = null;
+  }
 }
 
 function renderPlanOptions(selected = '') {
@@ -3229,13 +3241,29 @@ function bindEvents() {
     if (!event.target.closest('.global-search')) document.getElementById('globalResults').classList.remove('open');
   });
   document.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape') return;
-    const openModalEl = document.querySelector('.modal-wrap.open');
-    if (openModalEl) {
-      closeModal(openModalEl.id);
+    const activeLayer = document.querySelector('.modal-wrap.open, .login-wall.open');
+    if (event.key === 'Escape') {
+      const openModalEl = document.querySelector('.modal-wrap.open');
+      if (openModalEl) {
+        closeModal(openModalEl.id);
+        return;
+      }
+      if (!activeLayer) document.getElementById('globalResults').classList.remove('open');
       return;
     }
-    document.getElementById('globalResults').classList.remove('open');
+    if (event.key !== 'Tab' || !activeLayer) return;
+    const focusables = [...activeLayer.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+      .filter((element) => element.offsetParent !== null);
+    if (!focusables.length) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   });
   document.getElementById('studentStatusFilter').addEventListener('change', () => {
     resetStudentListLimit();
