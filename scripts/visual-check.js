@@ -46,9 +46,37 @@ async function login(page) {
   await page.waitForFunction(() => !document.getElementById('loginWall').classList.contains('open'), null, { timeout: 5000 });
 }
 
+async function assertModalFocus(page, modalSelector, triggerSelector) {
+  const focusables = page.locator(`${modalSelector}.open button:not([disabled]), ${modalSelector}.open input:not([disabled]), ${modalSelector}.open select:not([disabled]), ${modalSelector}.open textarea:not([disabled])`);
+  const count = await focusables.count();
+  if (count < 2) throw new Error(`${modalSelector}: foco nao possui elementos suficientes para teste`);
+  const firstId = await focusables.first().evaluate((element) => element.id || element.textContent.trim());
+  const lastId = await focusables.last().evaluate((element) => element.id || element.textContent.trim());
+  await focusables.last().focus();
+  await page.keyboard.press('Tab');
+  const forwardId = await page.evaluate(() => document.activeElement?.id || document.activeElement?.textContent.trim());
+  if (forwardId !== firstId) throw new Error(`${modalSelector}: Tab nao voltou ao primeiro controle`);
+  await focusables.first().focus();
+  await page.keyboard.press('Shift+Tab');
+  const backwardId = await page.evaluate(() => document.activeElement?.id || document.activeElement?.textContent.trim());
+  if (backwardId !== lastId) throw new Error(`${modalSelector}: Shift+Tab nao voltou ao ultimo controle`);
+  await page.locator(`${modalSelector} button.close`).click();
+  const restored = await page.evaluate(() => document.activeElement?.dataset.editStudent || document.activeElement?.id || '');
+  if (!restored) throw new Error(`${modalSelector}: foco nao foi restaurado ao fechar`);
+  await page.locator(triggerSelector).first().click();
+  await page.waitForSelector(`${modalSelector}.open`);
+}
+
 async function runCaseAction(page, action) {
   if (action === 'public-student-tab') {
     await page.locator('[data-public-tab="student"]').click();
+    const tabState = await page.evaluate(() => ({
+      guest: { selected: document.querySelector('[data-public-tab="guest"]')?.getAttribute('aria-selected'), hidden: document.getElementById('guestPane')?.getAttribute('aria-hidden') },
+      student: { selected: document.querySelector('[data-public-tab="student"]')?.getAttribute('aria-selected'), hidden: document.getElementById('studentPane')?.getAttribute('aria-hidden') }
+    }));
+    if (tabState.guest.selected !== 'false' || tabState.guest.hidden !== 'true' || tabState.student.selected !== 'true' || tabState.student.hidden !== 'false') {
+      throw new Error('Abas publicas com estados ARIA inconsistentes');
+    }
   }
   if (action === 'student-report') {
     await page.locator('#page-students.active .student-row [data-report-student]').first().click();
@@ -57,6 +85,7 @@ async function runCaseAction(page, action) {
   if (action === 'student-modal') {
     await page.locator('#page-students.active .student-row [data-edit-student]').first().click();
     await page.waitForSelector('#studentModal.open', { timeout: 5000 });
+    await assertModalFocus(page, '#studentModal', '#page-students.active .student-row [data-edit-student]');
   }
   if (action === 'payment-modal') {
     await page.locator('#page-payments.active [data-pay]').first().click();

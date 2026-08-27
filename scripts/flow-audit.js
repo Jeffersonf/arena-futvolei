@@ -7,6 +7,14 @@ const PORT = Number(process.env.FLOW_AUDIT_PORT || 4322);
 const DB_PATH = path.join(ROOT, 'tmp-flow-audit.db');
 const PIN = process.env.ADMIN_PIN || '1234';
 const BASE = `http://127.0.0.1:${PORT}`;
+const todayIso = () => new Date().toISOString().slice(0, 10);
+const addDaysIso = (dateIso, days) => {
+  const date = new Date(`${dateIso}T12:00:00`);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+};
+const auditDate = addDaysIso(todayIso(), 1);
+const auditMonth = auditDate.slice(0, 7);
 
 function cleanupDb() {
   [DB_PATH, `${DB_PATH}-shm`, `${DB_PATH}-wal`].forEach((file) => {
@@ -61,6 +69,17 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+async function expectFailure(pathname, options, expected) {
+  let failed = false;
+  try {
+    await request(pathname, options);
+  } catch (err) {
+    failed = true;
+    assert(err.message.includes(expected), `Erro inesperado para ${pathname}: ${err.message}`);
+  }
+  assert(failed, `Esperava falha para ${pathname}`);
+}
+
 async function main() {
   cleanupDb();
   const server = spawn(process.execPath, ['server/index.js'], {
@@ -79,6 +98,8 @@ async function main() {
 
   try {
     await waitForServer(server);
+
+    await expectFailure('/api/students', { headers: { 'X-Admin-Pin': '' } }, 'PIN');
 
     const student = await request('/api/students', {
       method: 'POST',
@@ -99,7 +120,7 @@ async function main() {
     const classItem = await request('/api/classes', {
       method: 'POST',
       body: JSON.stringify({
-        data: '2026-06-20',
+        data: auditDate,
         horario: '08:00',
         turma: 'Audit Sabado',
         professor: 'Lucao',
@@ -109,6 +130,31 @@ async function main() {
         aluno_ids: [student.item.id]
       })
     });
+
+    const expiredClass = await request('/api/classes', {
+      method: 'POST',
+      body: JSON.stringify({
+        data: addDaysIso(todayIso(), -1),
+        horario: '07:00',
+        turma: 'Audit Encerrada',
+        professor: 'Lucao',
+        tipo: 'Regular',
+        capacidade: 8,
+        status: 'Marcada'
+      })
+    });
+    const publicClasses = await request('/api/public/classes', { public: true });
+    assert(!publicClasses.items.some((item) => Number(item.id) === Number(expiredClass.item.id)), 'Aula vencida apareceu no acesso publico');
+    await expectFailure('/api/public/bookings', {
+      public: true,
+      method: 'POST',
+      body: JSON.stringify({ nome: 'Sem WhatsApp', aula_id: classItem.item.id })
+    }, 'WhatsApp');
+    await expectFailure('/api/public/bookings', {
+      public: true,
+      method: 'POST',
+      body: JSON.stringify({ nome: 'Pedido vencido', telefone: '(15) 99999-4444', aula_id: expiredClass.item.id })
+    }, 'ja passou');
 
     await request(`/api/classes/${classItem.item.id}/attendance`, {
       method: 'PUT',
@@ -128,10 +174,10 @@ async function main() {
     await request(`/api/students/${student.item.id}/pay`, {
       method: 'POST',
       body: JSON.stringify({
-        referencia: '2026-06',
+        referencia: auditMonth,
         valor: 260,
         forma_pagamento: 'Pix',
-        pago_em: '2026-06-18'
+        pago_em: auditDate
       })
     });
 
@@ -145,6 +191,15 @@ async function main() {
         observacao: 'Aula experimental'
       })
     });
+    await expectFailure('/api/public/bookings', {
+      public: true,
+      method: 'POST',
+      body: JSON.stringify({
+        nome: 'Pedido duplicado',
+        telefone: '(15) 99999-2222',
+        aula_id: classItem.item.id
+      })
+    }, 'Ja existe');
     await request(`/api/bookings/${booking.item.id}/respond`, {
       method: 'POST',
       body: JSON.stringify({ action: 'approve', force: true })
@@ -190,7 +245,7 @@ async function main() {
     const auditedClass = classes.items.find((item) => Number(item.id) === Number(classItem.item.id));
     assert(auditedClass.alunos.some((item) => Number(item.id) === Number(student.item.id) && Number(item.presente) === 1), 'Presenca nao persistiu na aula');
 
-    const payments = await request('/api/payments?month=2026-06');
+    const payments = await request(`/api/payments?month=${auditMonth}`);
     assert(payments.items.some((item) => Number(item.aluno_id) === Number(student.item.id)), 'Pagamento nao foi registrado');
 
     console.log(JSON.stringify({

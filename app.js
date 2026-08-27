@@ -2410,6 +2410,7 @@ async function submitBooking(event) {
     observacao: document.getElementById('bookingNote').value.trim()
   };
   if (!payload.nome || !payload.aula_id) throw new Error('Informe nome e aula');
+  if (phoneDigits(payload.telefone).length < 8) throw new Error('Informe pelo menos 8 numeros do WhatsApp');
   if (document.getElementById('bookingClass')?.selectedOptions[0]?.disabled) {
     throw new Error('Escolha uma aula com vaga');
   }

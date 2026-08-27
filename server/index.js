@@ -257,6 +257,15 @@ app.post('/api/public/bookings', (req, res) => {
     const classItem = row('SELECT * FROM aulas WHERE id=?', [req.body.aula_id]);
     if (!classItem) throw new Error('Aula nao encontrada');
     if (classItem.status === 'Cancelada') throw new Error('Aula cancelada');
+    if (String(classItem.data || '') < today()) throw new Error('Essa aula ja passou');
+    const phone = phoneDigits(req.body.telefone || '');
+    if (phone.length < 8) throw new Error('Informe pelo menos 8 numeros do WhatsApp');
+    const duplicate = row(`
+      SELECT id FROM agendamentos
+      WHERE aula_id=? AND status IN ('Pendente', 'Aprovado') AND ${phoneSql()} LIKE ?
+      LIMIT 1
+    `, [classItem.id, `%${phone.slice(-8)}`]);
+    if (duplicate) throw new Error('Ja existe um pedido para esse WhatsApp nessa aula');
     const currentCount = scalar('SELECT COUNT(*) AS total FROM aula_alunos WHERE aula_id=?', [classItem.id]);
     if (currentCount >= Number(classItem.capacidade || 8)) throw new Error('Aula lotada');
     const payload = {
@@ -306,6 +315,8 @@ app.post('/api/public/student-confirm', (req, res) => {
     if (!['sim', 'nao'].includes(confirmValue)) throw new Error('Resposta invalida');
     const link = row('SELECT * FROM aula_alunos WHERE aula_id=? AND aluno_id=?', [classId, student.id]);
     if (!link) throw new Error('Essa aula nao esta vinculada a este aluno');
+    const classItem = row('SELECT * FROM aulas WHERE id=?', [classId]);
+    if (!classItem || classItem.status === 'Cancelada' || String(classItem.data || '') < today()) throw new Error('Essa aula nao esta mais disponivel para confirmacao');
     const now = new Date().toISOString();
     run('UPDATE aula_alunos SET confirmado=?, confirmado_em=? WHERE aula_id=? AND aluno_id=?', [
       confirmValue,
@@ -313,7 +324,6 @@ app.post('/api/public/student-confirm', (req, res) => {
       classId,
       student.id
     ]);
-    const classItem = row('SELECT * FROM aulas WHERE id=?', [classId]);
     logAction('Confirmacao aluno', `${student.nome} respondeu ${confirmValue} na aula ${classItem?.horario || classId} - ${classItem?.turma || 'Turma'} em ${classItem?.data || ''}.`, 'Aluno');
     res.json({ ok: true, item: row('SELECT * FROM aula_alunos WHERE aula_id=? AND aluno_id=?', [classId, student.id]) });
   } catch (err) {
