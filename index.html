@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0a0a0a" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="TLF Gestao" />
+    <meta name="apple-mobile-web-app-title" content="TLF Gestão" />
     <title>Team Lucão Futevôlei</title>
     <link rel="icon" type="image/png" href="assets/team-lucao-logo.png" />
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
@@ -26,7 +26,7 @@
           <div>
             <p class="eyebrow">agenda da escola</p>
             <h1>Team Lucao Futevolei</h1>
-            <p>Peça uma vaga ou confirme as aulas em que voce ja esta marcado.</p>
+            <p>Peça uma vaga ou confirme as aulas em que você já está marcado.</p>
           </div>
         </div>
         <div class="booking-tabs" role="tablist" aria-label="Agenda publica">
@@ -39,15 +39,15 @@
               <label>Nome<input id="bookingName" autocomplete="name" placeholder="Seu nome" required /></label>
               <label>WhatsApp<input id="bookingPhone" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" required /></label>
               <label>Aula<select id="bookingClass" required></select></label>
-              <label>Observacao<input id="bookingNote" placeholder="Nivel, reposicao, experimental..." /></label>
+              <label>Observação<input id="bookingNote" placeholder="Nível, reposição, experimental..." /></label>
               <button class="primary-btn" type="submit">Pedir vaga</button>
               <p class="booking-status" id="bookingStatus" role="status" aria-live="polite"></p>
             </form>
             <div class="booking-board">
               <div class="panel-head compact-head">
                 <div>
-                  <span>proximos horarios</span>
-                  <h2>Aulas disponiveis</h2>
+                  <span>próximos horários</span>
+                  <h2>Aulas disponíveis</h2>
                 </div>
               </div>
               <div class="booking-class-list" id="bookingClassList"></div>
@@ -62,8 +62,8 @@
             <div class="booking-board">
               <div class="panel-head compact-head">
                 <div>
-                  <span>confirmacao rapida</span>
-                  <h2>Minhas proximas aulas</h2>
+                  <span>confirmação rápida</span>
+                  <h2>Minhas próximas aulas</h2>
                 </div>
               </div>
               <div class="student-confirm-list" id="studentClassList"></div>
@@ -81,7 +81,7 @@
         <div class="login-copy">
           <p class="eyebrow">acesso restrito</p>
           <h2 id="loginTitle">Team Lucao Futevolei</h2>
-          <p>Painel rapido para organizar alunos, aulas e cobrancas.</p>
+          <p>Painel rápido para organizar alunos, aulas e cobranças.</p>
         </div>
         <label>PIN de acesso<input id="loginPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="1234" /></label>
         <button class="primary-btn" type="submit">Entrar</button>
@@ -100,7 +100,7 @@
         </div>
       </div>
       <nav class="nav" aria-label="Menu principal">
-        <span class="nav-label">Operacao</span>
+        <span class="nav-label">Operação</span>
         <button class="nav-item active" type="button" aria-current="page" data-page="dashboard">Início</button>
         <button class="nav-item secondary-nav" type="button" data-page="actions"><span aria-hidden="true">⚡</span> Ações</button>
         <button class="nav-item" type="button" data-page="bookings"><span aria-hidden="true">✓</span> Pedidos</button>
@@ -108,7 +108,7 @@
         <button class="nav-item" type="button" data-page="classes"><span aria-hidden="true">📅</span> Aulas</button>
         <button class="nav-item" type="button" data-page="payments"><span aria-hidden="true">💳</span> Cobrar</button>
         <button class="nav-item" type="button" data-page="waitlist"><span aria-hidden="true">⏳</span> Espera</button>
-        <span class="nav-label secondary-nav">Gestao</span>
+        <span class="nav-label secondary-nav">Gestão</span>
         <button class="nav-item secondary-nav" type="button" data-page="plans"><span aria-hidden="true">🏷️</span> Planos</button>
         <button class="nav-item secondary-nav" type="button" data-page="reports">Relatórios</button>
         <button class="nav-item mobile-only" type="button" data-page="more"><span aria-hidden="true">⋯</span> Mais</button>
@@ -120,7 +120,7 @@
     <main class="app">
       <header class="topbar">
         <div>
-          <p class="eyebrow" id="topbarEyebrow">operacao de hoje</p>
+          <p class="eyebrow" id="topbarEyebrow">operação de hoje</p>
           <h1 id="topbarTitle">Painel do dia</h1>
         </div>
         <div class="mobile-top-brand">
@@ -134,7 +134,7 @@
         </div>
         <div class="top-actions">
           <div class="global-search">
-            <input id="globalSearch" aria-label="Busca rápida" placeholder="Busca rapida..." autocomplete="off" />
+            <input id="globalSearch" aria-label="Busca rápida" placeholder="Busca rápida..." autocomplete="off" />
             <div class="global-results" id="globalResults"></div>
           </div>
           <span class="mode-chip" id="modeStatus">Carregando...</span>
@@ -172,7 +172,7 @@
         <section class="panel action-panel">
           <div class="panel-head">
             <div>
-              <span>historico</span>
+              <span>histórico</span>
               <h2>Últimas ações</h2>
             </div>
             <button class="soft-btn" type="button" data-action="actions">Ver central</button>
@@ -185,7 +185,7 @@
         <div class="panel">
           <div class="panel-head">
             <div>
-              <span>historico</span>
+              <span>histórico</span>
               <h2>Central de ações</h2>
             </div>
           </div>
@@ -201,13 +201,13 @@
             </select>
             <select id="actionCategoryFilter" aria-label="Filtrar acoes por tipo">
               <option value="">Todos os tipos</option>
-              <option value="Presenca">Presenca</option>
+              <option value="Presenca">Presença</option>
               <option value="Financeiro">Financeiro</option>
               <option value="Agenda">Agenda</option>
               <option value="Pedidos">Pedidos</option>
               <option value="Aluno">Aluno</option>
               <option value="Sistema">Sistema</option>
-              <option value="Operacao">Operacao</option>
+              <option value="Operacao">Operação</option>
             </select>
           </div>
           <div class="action-feed" id="actionList"></div>
@@ -252,7 +252,7 @@
           </div>
           <div class="section-label">Hoje</div>
           <div class="today-planner" id="classesTodayPlanner"></div>
-          <div class="section-label">Calendario previsto</div>
+          <div class="section-label">Calendário previsto</div>
           <div class="class-calendar" id="classCalendar"></div>
           <div class="section-label">Aulas previstas</div>
           <div class="filters">
@@ -261,7 +261,7 @@
               <option value="">Todos os tipos</option>
               <option value="Regular">Regular</option>
               <option value="Experimental">Experimental</option>
-              <option value="Reposicao">Reposicao</option>
+              <option value="Reposicao">Reposição</option>
               <option value="Avulso">Avulso</option>
               <option value="Evento">Evento</option>
             </select>
@@ -302,14 +302,14 @@
           </div>
           <div class="finance-summary payment-summary" id="financeSummary"></div>
           <div class="filters payment-filters">
-            <input id="paymentMonth" type="month" aria-label="Mes de referencia" />
+            <input id="paymentMonth" type="month" aria-label="Mês de referência" />
             <input id="paymentSearch" aria-label="Buscar aluno ou telefone" placeholder="Buscar aluno ou telefone..." />
             <select id="paymentStatusFilter" aria-label="Filtrar mensalidades">
               <option value="">Todos</option>
               <option value="pending">Pendentes</option>
               <option value="paid">Em dia</option>
             </select>
-            <button class="soft-btn" type="button" data-copy-pending>Copiar cobrancas</button>
+            <button class="soft-btn" type="button" data-copy-pending>Copiar cobranças</button>
           </div>
           <div class="payment-priority" id="paymentPriority"></div>
           <div class="list" id="paymentList"></div>
@@ -400,8 +400,8 @@
             </button>
             <button class="more-card" type="button" data-more-page="reports">
               <span>gestao</span>
-              <strong>Relatorios</strong>
-              <small>Frequencia, pendencias e pontos de atencao.</small>
+              <strong>Relatórios</strong>
+              <small>Frequência, pendências e pontos de atenção.</small>
             </button>
             <button class="more-card" type="button" data-more-action="theme">
               <span>tema</span>
@@ -452,7 +452,7 @@
           <div class="schedule-preview" id="studentSchedulePreview"></div>
         </fieldset>
         <fieldset class="form-group student-form-section">
-          <legend>Plano e operacao</legend>
+          <legend>Plano e operação</legend>
         <div class="form-row">
           <label>Plano
             <select id="studentPlan"></select>
@@ -511,7 +511,7 @@
             </select>
           </label>
         </div>
-        <label>Observacao<input id="paymentNote" placeholder="Ex: pago antecipado, desconto, reposicao..." /></label>
+        <label>Observação<input id="paymentNote" placeholder="Ex: pago antecipado, desconto, reposição..." /></label>
         <button class="primary-btn" type="submit">Confirmar pagamento</button>
       </form>
     </div>
@@ -532,7 +532,7 @@
             <select id="classType">
               <option value="Regular">Regular</option>
               <option value="Experimental">Experimental</option>
-              <option value="Reposicao">Reposicao</option>
+              <option value="Reposicao">Reposição</option>
               <option value="Avulso">Avulso</option>
               <option value="Evento">Evento</option>
             </select>
@@ -578,7 +578,7 @@
           <input id="extraAttendanceName" placeholder="Nome de quem veio sem estar na aula" />
           <select id="extraAttendanceType" aria-label="Tipo de avulso">
             <option value="Avulso">Avulso</option>
-            <option value="Reposicao">Reposicao</option>
+            <option value="Reposicao">Reposição</option>
             <option value="Experimental">Experimental</option>
             <option value="Visitante">Visitante</option>
           </select>

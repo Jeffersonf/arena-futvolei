@@ -7,15 +7,15 @@ const VISUAL_THEME_VERSION = 'web-redo-20260703';
 const ACTION_REFRESH_MS = 15000;
 const MOBILE_MORE_PAGES = ['actions', 'waitlist', 'plans', 'reports'];
 const PAGE_TITLES = {
-  dashboard: ['operacao de hoje', 'Painel do dia'],
-  actions: ['historico', 'Central de acoes'],
+  dashboard: ['operação de hoje', 'Painel do dia'],
+  actions: ['histórico', 'Central de ações'],
   bookings: ['alunos', 'Pedidos de aula'],
   students: ['cadastro', 'Alunos'],
   classes: ['agenda', 'Aulas'],
   payments: ['financeiro', 'Mensalidades'],
   waitlist: ['demanda', 'Lista de espera'],
   plans: ['oferta', 'Planos'],
-  reports: ['gestao', 'Relatorios'],
+  reports: ['gestão', 'Relatórios'],
   more: ['atalhos', 'Mais']
 };
 const LIST_PAGE_SIZE = 24;
@@ -395,11 +395,11 @@ function updateSystemNotice() {
   if (!notice) return;
   if (apiMode) {
     notice.className = 'system-notice online';
-    notice.innerHTML = '<strong>Operacao real</strong><span>Servidor ativo, dados compartilhados e backups disponiveis.</span>';
+    notice.innerHTML = '<strong>Operação real</strong><span>Servidor ativo, dados compartilhados e backups disponíveis.</span>';
     return;
   }
   notice.className = 'system-notice demo';
-  notice.innerHTML = '<strong>Demo local</strong><span>Dados neste navegador. Para uso diario no iPhone, publique o servidor.</span>';
+  notice.innerHTML = '<strong>Demo local</strong><span>Dados neste navegador. Para uso diário no iPhone, publique o servidor.</span>';
 }
 
 async function loadData() {
@@ -500,8 +500,8 @@ function paymentPriority(student = {}, month = currentMonth()) {
 function studentNextAction(student = {}, weekly = 0, target = 0, nextClasses = []) {
   const payment = paymentPriority(student);
   if (payment.rank <= 1) return { label: payment.label, detail: 'Prioridade financeira', className: payment.className };
-  if (!hasFixedSchedule(student)) return { label: 'Definir agenda', detail: 'Aluno sem dia e horario fixo', className: 'warn' };
-  if (!nextClasses.length) return { label: 'Criar proximas aulas', detail: 'Agenda fixa sem aulas futuras', className: 'warn' };
+  if (!hasFixedSchedule(student)) return { label: 'Definir agenda', detail: 'Aluno sem dia e horário fixo', className: 'warn' };
+  if (!nextClasses.length) return { label: 'Criar próximas aulas', detail: 'Agenda fixa sem aulas futuras', className: 'warn' };
   if (target && weekly < target) return { label: 'Acompanhar frequencia', detail: `${weekly}/${target} aulas na semana`, className: 'warn' };
   return { label: 'Tudo ok', detail: 'Aluno sem pendencia operacional', className: 'ok' };
 }
@@ -684,7 +684,19 @@ function actionActor(item = {}) {
 }
 
 function actionLabel(item = {}) {
-  return item.acao === 'API' ? 'Registro do sistema' : (item.acao || 'Acao');
+  const labels = {
+    API: 'Registro do sistema',
+    Presenca: 'Presença',
+    'Presenca em massa': 'Presença em massa',
+    'Confirmacao aluno': 'Confirmação do aluno',
+    'Pedido recusado': 'Pedido recusado',
+    'Pedido aprovado': 'Pedido aprovado'
+  };
+  return labels[item.acao] || item.acao || 'Ação';
+}
+
+function actionCategoryLabel(category = '') {
+  return ({ Presenca: 'Presença', Operacao: 'Operação' }[category] || category);
 }
 
 function actionTone(actor = '') {
@@ -727,7 +739,7 @@ function actionFocusRow(item) {
       <div>
         <strong>${escapeHTML(actionLabel(item))}</strong>
         <p>${escapeHTML(item.detalhe || 'Movimento registrado no sistema.')}</p>
-        <span class="pill action-pill action-pill-${actionCategoryTone(category)}">${escapeHTML(category)}</span>
+        <span class="pill action-pill action-pill-${actionCategoryTone(category)}">${escapeHTML(actionCategoryLabel(category))}</span>
       </div>
     </article>
   `;
@@ -977,7 +989,7 @@ function renderKpis() {
   const pendingValue = pendingStudents.reduce((sum, student) => sum + Number(student.mensalidade || 0), 0);
   const items = [
     ['Aulas hoje', todayClasses.length, `${expectedToday} previstos`, todayClasses.length ? '' : 'ok'],
-    ['Presencas', `${presentToday}/${expectedToday || 0}`, expectedToday ? 'marcadas hoje' : 'sem lista hoje', expectedToday && presentToday < expectedToday ? 'warn' : 'ok'],
+    ['Presenças', `${presentToday}/${expectedToday || 0}`, expectedToday ? 'marcadas hoje' : 'sem lista hoje', expectedToday && presentToday < expectedToday ? 'warn' : 'ok'],
     ['Pedidos', pendingBookings, pendingBookings ? 'aprovar agora' : 'sem pedido aberto', pendingBookings ? 'warn' : 'ok'],
     ['A receber', pendingStudents.length, pendingStudents.length ? money.format(pendingValue) : `${active} alunos ativos`, pendingStudents.length ? 'bad' : 'ok']
   ];
@@ -1022,7 +1034,7 @@ function renderPending() {
       </article>
     `).join('')}
     ${students.length > visible.length ? `<button class="soft-btn dashboard-more-btn" type="button" data-action="quick-pending">Ver ${students.length - visible.length} restante(s)</button>` : ''}
-  ` : empty('Sem pendencias por enquanto.');
+  ` : empty('Sem pendências por enquanto.');
 }
 
 function actionRow(item) {
@@ -1037,7 +1049,7 @@ function actionRow(item) {
           <span>${escapeHTML(actionLabel(item))}</span>
         </div>
         <div class="action-meta-line">
-          <span class="pill action-pill action-pill-${actionCategoryTone(category)}">${escapeHTML(category)}</span>
+          <span class="pill action-pill action-pill-${actionCategoryTone(category)}">${escapeHTML(actionCategoryLabel(category))}</span>
           <small>${escapeHTML(formatActionDate(item.data_hora))}</small>
         </div>
         <p>${escapeHTML(item.detalhe || 'Movimento registrado no sistema.')}</p>
@@ -1123,7 +1135,7 @@ function renderStudents() {
       <span>Plano</span>
       <span>Agenda</span>
       <span>Pagamento</span>
-      <span>Acoes</span>
+      <span>Ações</span>
     </div>
     ${visible.map(studentCard).join('')}
     ${students.length > visible.length ? `
@@ -1287,7 +1299,7 @@ function renderFocusStrip() {
   const nextStudents = next ? classStudents(next) : [];
   const nextPresent = next ? nextStudents.filter((student) => next.presencas?.[student.aluno_id || student.id] || student.presente).length : 0;
   const briefTitle = next ? `${next.horario} - ${next.turma || 'Turma'}` : 'Sem aula marcada';
-  const briefText = next ? `${formatDate(next.data)} - ${nextStudents.length}/${next.capacidade || 8} previstos - ${nextPresent}/${nextStudents.length || 0} presentes` : 'Crie a primeira aula do dia para iniciar a operacao.';
+  const briefText = next ? `${formatDate(next.data)} - ${nextStudents.length}/${next.capacidade || 8} previstos - ${nextPresent}/${nextStudents.length || 0} presentes` : 'Crie a primeira aula do dia para iniciar a operação.';
   target.innerHTML = `
     <section class="day-command focus-${next ? 'live' : 'ok'}">
       <div class="day-command-main">
@@ -1339,7 +1351,7 @@ function renderClassesTodayPlanner() {
     <article class="today-summary">
       <span>Resumo de hoje</span>
       <strong>${classes.length} aula(s)</strong>
-      <small>${expected} previstos - ${confirmedToday} confirmados - ${declinedToday} nao vao - ${present} presentes - ${extrasTotal} fora da lista - ${attentionTotal} atencao</small>
+      <small>${expected} previstos - ${confirmedToday} confirmados - ${declinedToday} não vão - ${present} presentes - ${extrasTotal} fora da lista - ${attentionTotal} atenção</small>
     </article>
   `;
   target.innerHTML = classes.length ? `${summary}${classes.map((item) => {
@@ -1362,8 +1374,8 @@ function renderClassesTodayPlanner() {
             <div class="pill-row">
               <span class="pill ${operationTone}">${escapeHTML(operationLabel)}</span>
               <span class="pill">${enrolled.length}/${capacity} previstos</span>
-              <span class="pill ok">${confirmation.yes} vao</span>
-              ${confirmation.no ? `<span class="pill bad">${confirmation.no} nao vao</span>` : ''}
+              <span class="pill ok">${confirmation.yes} vão</span>
+              ${confirmation.no ? `<span class="pill bad">${confirmation.no} não vão</span>` : ''}
               ${confirmation.open ? `<span class="pill warn">${confirmation.open} sem resposta</span>` : ''}
               <span class="pill ${presentCount >= enrolled.length && enrolled.length ? 'ok' : 'warn'}">${presentCount}/${enrolled.length} presentes</span>
               ${extras.length ? `<span class="pill warn">${extras.length} fora da lista</span>` : ''}
@@ -1371,7 +1383,7 @@ function renderClassesTodayPlanner() {
             </div>
           </div>
           <div class="actions">
-            <button class="mini-btn" data-attendance="${item.id}">Presencas</button>
+            <button class="mini-btn" data-attendance="${item.id}">Presenças</button>
             ${classStatusActions(item)}
             <a class="mini-btn" href="${whatsappShareUrl(classShareText(item))}" target="_blank" rel="noopener">WhatsApp</a>
             <button class="mini-btn" data-copy-class="${item.id}">Copiar</button>
@@ -1492,7 +1504,7 @@ function renderPayments() {
       </div>
       <div class="actions">
         ${student.telefone ? `<a class="mini-btn" href="${whatsappUrl(student.telefone, studentChargeText(student, month))}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
-        <button class="mini-btn" data-copy-charge="${student.id}">Copiar cobranca</button>
+        <button class="mini-btn" data-copy-charge="${student.id}">Copiar cobrança</button>
         <button class="mini-btn" data-pay="${student.id}">${paid ? 'Marcar nao pago' : 'Marcar pago'}</button>
       </div>
     </article>
@@ -1613,7 +1625,7 @@ function renderReports() {
       <div>
         <span class="section-label">Fechamento do mes</span>
         <h3>${escapeHTML(month)}</h3>
-        <p class="meta">Resumo pronto para revisar a operacao e copiar para o professor.</p>
+        <p class="meta">Resumo pronto para revisar a operação e copiar para o professor.</p>
       </div>
       <div class="operation-grid">
         <span><strong>${money.format(expectedRevenue)}</strong><small>previsao</small></span>
@@ -1627,7 +1639,7 @@ function renderReports() {
       </div>
       <div class="actions">
         <button class="mini-btn" data-copy-report="month">Copiar fechamento</button>
-        <button class="mini-btn" data-action="payments">Ver cobrancas</button>
+        <button class="mini-btn" data-action="payments">Ver cobranças</button>
         <button class="mini-btn" data-backup>Backup JSON</button>
         <button class="mini-btn" data-server-backup>Backup servidor</button>
       </div>
@@ -1722,9 +1734,9 @@ function classRow(item) {
         <p class="meta">${escapeHTML(item.professor || 'Professor nao informado')} - ${enrolled.length}/${item.capacidade || 8} aluno(s) previstos</p>
         <div class="pill-row">
           <span class="pill ${operationTone}">${escapeHTML(operationLabel)}</span>
-          <span class="pill">${present}/${enrolled.length} presencas</span>
-          <span class="pill ok">${confirmation.yes} vao</span>
-          ${confirmation.no ? `<span class="pill bad">${confirmation.no} nao vao</span>` : ''}
+          <span class="pill">${present}/${enrolled.length} presenças</span>
+          <span class="pill ok">${confirmation.yes} vão</span>
+          ${confirmation.no ? `<span class="pill bad">${confirmation.no} não vão</span>` : ''}
           ${confirmation.open ? `<span class="pill warn">${confirmation.open} sem resposta</span>` : ''}
           ${extras.length ? `<span class="pill warn">${extras.length} fora da lista</span>` : ''}
           <span class="pill warn">${escapeHTML(classType(item))}</span>
@@ -1740,7 +1752,7 @@ function classRow(item) {
       </div>
       <div class="actions">
         <a class="mini-btn" href="${whatsappShareUrl(classShareText(item))}" target="_blank" rel="noopener">WhatsApp</a>
-        <button class="mini-btn" data-attendance="${item.id}">Presencas</button>
+        <button class="mini-btn" data-attendance="${item.id}">Presenças</button>
         ${classStatusActions(item)}
         <button class="mini-btn" data-copy-class="${item.id}">Copiar</button>
         <button class="mini-btn" data-edit-class="${item.id}">Editar</button>
@@ -1842,12 +1854,12 @@ function renderStudentSchedulePreview() {
   const hasDay = draft.dia_fixo !== '' && draft.dia_fixo !== null && draft.dia_fixo !== undefined;
   const hasTime = Boolean(draft.horario_fixo);
   if (!hasDay && !hasTime) {
-    target.innerHTML = '<span>Agenda opcional</span><strong>Defina dia e horario para vincular automaticamente.</strong>';
+    target.innerHTML = '<span>Agenda opcional</span><strong>Defina dia e horário para vincular automaticamente.</strong>';
     target.className = 'schedule-preview schedule-preview-empty';
     return;
   }
   if (!hasDay || !hasTime) {
-    target.innerHTML = '<span>Agenda incompleta</span><strong>Escolha dia e horario fixo para criar as proximas aulas.</strong>';
+        target.innerHTML = '<span>Agenda incompleta</span><strong>Escolha dia e horário fixo para criar as próximas aulas.</strong>';
     target.className = 'schedule-preview schedule-preview-warn';
     return;
   }
@@ -1923,18 +1935,18 @@ function openStudentReport(id) {
     <div class="report-grid student-report-grid">
       <article class="mini-stat"><span>Semana atual</span><strong>${weekly}/${target || '-'}</strong></article>
       <article class="mini-stat ${nextAction.className ? `kpi-${nextAction.className}` : ''}"><span>Acao sugerida</span><strong>${escapeHTML(nextAction.label)}</strong><small>${escapeHTML(nextAction.detail)}</small></article>
-      <article class="mini-stat"><span>Presencas</span><strong>${summary.present}/${summary.enrolled}</strong></article>
+        <article class="mini-stat"><span>Presenças</span><strong>${summary.present}/${summary.enrolled}</strong></article>
       <article class="mini-stat"><span>Comparecimento</span><strong>${summary.rate}%</strong></article>
       <article class="mini-stat ${paid ? 'kpi-ok' : 'kpi-bad'}"><span>Pagamento</span><strong>${paid ? 'Em dia' : 'Pendente'}</strong></article>
     </div>
     <article class="row-card compact-row schedule-report-card">
       <div>
         <h3>Agenda fixa</h3>
-        <p class="meta">${escapeHTML(scheduleText)}${fixedDates[0] ? ` - proxima em ${formatDate(fixedDates[0])}` : ''}</p>
+        <p class="meta">${escapeHTML(scheduleText)}${fixedDates[0] ? ` - próxima em ${formatDate(fixedDates[0])}` : ''}</p>
         ${fixedDates.length ? `<div class="schedule-preview-dates report-dates">${fixedDates.map((dateIso) => `<small>${formatDate(dateIso)}</small>`).join('')}</div>` : ''}
       </div>
       <div class="actions">
-        <button class="mini-btn" data-sync-student="${student.id}">${hasFixedSchedule(student) ? 'Criar proximas aulas' : 'Definir agenda'}</button>
+        <button class="mini-btn" data-sync-student="${student.id}">${hasFixedSchedule(student) ? 'Criar próximas aulas' : 'Definir agenda'}</button>
       </div>
     </article>
     ${student.observacao ? `<p class="report-note">${escapeHTML(student.observacao)}</p>` : ''}
@@ -1947,11 +1959,11 @@ function openStudentReport(id) {
     <div class="two-col report-columns">
       <section>
         <div class="section-label">Proximas aulas previstas</div>
-        <div class="list">${nextClasses.length ? nextClasses.map((item) => reportClassLine(item, false, id)).join('') : empty('Nenhuma proxima aula vinculada.')}</div>
+        <div class="list">${nextClasses.length ? nextClasses.map((item) => reportClassLine(item, false, id)).join('') : empty('Nenhuma próxima aula vinculada.')}</div>
       </section>
       <section>
         <div class="section-label">Historico recente</div>
-        <div class="list">${recentClasses.length ? recentClasses.map((item) => reportClassLine(item, true, id)).join('') : empty('Sem historico de aulas.')}</div>
+        <div class="list">${recentClasses.length ? recentClasses.map((item) => reportClassLine(item, true, id)).join('') : empty('Sem histórico de aulas.')}</div>
       </section>
     </div>
     <div class="section-label">Pagamentos recentes</div>
@@ -1962,7 +1974,7 @@ function openStudentReport(id) {
           <p class="meta">${escapeHTML(item.referencia || '')} - ${formatDate(item.pago_em || item.vencimento)} - ${escapeHTML(item.forma_pagamento || 'manual')}${item.observacao ? ` - ${escapeHTML(item.observacao)}` : ''}</p>
         </div>
       </article>
-    `).join('') : empty('Sem pagamento registrado neste historico.')}</div>
+    `).join('') : empty('Sem pagamento registrado neste histórico.')}</div>
   `;
   openModal('studentReportModal');
 }
@@ -2095,7 +2107,7 @@ function sortedPaymentStudents(month = selectedPaymentMonth()) {
 async function copyPendingCharges() {
   const month = selectedPaymentMonth();
   const text = pendingChargeText();
-  await copyText(text, 'Lista de cobranca copiada');
+  await copyText(text, 'Lista de cobrança copiada');
   await recordOperationalAction('Cobranca copiada', `Lista de mensalidades pendentes copiada para ${month}.`);
   setPage('payments');
 }
@@ -2124,7 +2136,7 @@ function monthlyOperationText(month = selectedPaymentMonth()) {
     `Recebido: ${money.format(paidThisMonth)}`,
     `A receber: ${money.format(pendingValue)} (${pending.length} aluno(s))`,
     `Aulas no mes: ${monthClasses.length}`,
-    `Presencas: ${present}/${expectedAttendance} (${rate}%)`,
+    `Presenças: ${present}/${expectedAttendance} (${rate}%)`,
     `Avulsos/fora da lista: ${extras}`,
     `Pedidos pendentes/aprovados: ${pendingBookings}/${approvedBookings}`,
     `Interessados em aberto: ${waitingOpen}`
@@ -2148,7 +2160,7 @@ async function copyStudentCharge(studentId) {
 function classShareText(item) {
   const enrolled = classStudents(item);
   const names = enrolled.length ? enrolled.map((student, index) => `${index + 1}. ${student.nome}`).join('\n') : 'Sem alunos previstos.';
-  return `Aula Team Lucao Futevolei\n${formatDate(item.data)} as ${item.horario} - ${item.turma || 'Turma'} (${classType(item)})\nProfessor: ${item.professor || 'nao informado'}\n\nPrevistos:\n${names}`;
+  return `Aula Team Lucao Futevolei\n${formatDate(item.data)} às ${item.horario} - ${item.turma || 'Turma'} (${classType(item)})\nProfessor: ${item.professor || 'não informado'}\n\nPrevistos:\n${names}`;
 }
 
 function classRosterText(item) {
@@ -2193,7 +2205,7 @@ function attendanceSummaryText(item) {
     `Confirmaram que vao (${confirmed.length}):`,
     confirmed.length ? confirmed.map((student) => `- ${student.nome}`).join('\n') : '- nenhum',
     '',
-    `Avisaram que nao vao (${declined.length}):`,
+    `Avisaram que não vão (${declined.length}):`,
     declined.length ? declined.map((student) => `- ${student.nome}`).join('\n') : '- nenhum',
     '',
     `Presentes (${present.length}):`,
@@ -2377,7 +2389,7 @@ async function renderPublicBooking() {
   const bookingStatus = document.getElementById('bookingStatus');
   const studentStatus = document.getElementById('studentConfirmStatus');
   if (!hasServer && bookingStatus && !bookingStatus.textContent) bookingStatus.textContent = 'Modo demo: pedido fica salvo apenas neste navegador.';
-  if (!hasServer && studentStatus && !studentStatus.textContent) studentStatus.textContent = 'Modo demo: confirmacao real precisa do servidor online.';
+  if (!hasServer && studentStatus && !studentStatus.textContent) studentStatus.textContent = 'Modo demo: confirmação real precisa do servidor online.';
   const classes = await loadPublicClasses();
   const availableClasses = classes.filter((item) => Number(item.inscritos ?? classStudentIds(item).length) < Number(item.capacidade || 8));
   select.disabled = !availableClasses.length;
@@ -2386,7 +2398,7 @@ async function renderPublicBooking() {
       const available = Number(item.inscritos ?? classStudentIds(item).length) < Number(item.capacidade || 8);
       return `<option value="${escapeHTML(item.id)}" ${available ? '' : 'disabled'}>${escapeHTML(publicClassLabel(item))}${available ? '' : ' - lotada'}</option>`;
     }).join('')
-    : '<option value="">Sem horario disponivel</option>';
+    : '<option value="">Sem horário disponível</option>';
   list.innerHTML = classes.length ? classes.map((item) => {
     const used = Number(item.inscritos ?? classStudentIds(item).length);
     const capacity = Number(item.capacidade || 8);
@@ -2398,7 +2410,7 @@ async function renderPublicBooking() {
         <small>${available ? `${available} vaga(s) livres` : 'lotada'}</small>
       </button>
     `;
-  }).join('') : empty('Nenhuma aula disponivel agora.');
+  }).join('') : empty('Nenhuma aula disponível agora.');
 }
 
 async function submitBooking(event) {
@@ -2423,7 +2435,7 @@ async function submitBooking(event) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || data.ok === false) throw new Error(data.error || 'Nao foi possivel enviar');
-      document.getElementById('bookingStatus').textContent = 'Pedido enviado. Aguarde a confirmacao pelo WhatsApp.';
+      document.getElementById('bookingStatus').textContent = 'Pedido enviado. Aguarde a confirmação pelo WhatsApp.';
       event.target.reset();
       await renderPublicBooking();
       return;
@@ -2706,7 +2718,7 @@ async function syncStudentScheduleAction(studentId) {
   const student = studentById(studentId);
   if (!student) return;
   if (!hasFixedSchedule(student)) {
-    toast('Defina dia e horario fixo antes de sincronizar');
+    toast('Defina dia e horário fixo antes de sincronizar');
     openStudent(studentId);
     return;
   }
@@ -2745,7 +2757,7 @@ async function saveStudent(event) {
   };
   const hasFixedDay = payload.dia_fixo !== '' && payload.dia_fixo !== null && payload.dia_fixo !== undefined;
   if (hasFixedDay !== Boolean(payload.horario_fixo)) {
-    throw new Error('Para agenda fixa, informe dia e horario.');
+    throw new Error('Para agenda fixa, informe dia e horário.');
   }
   if (apiMode) {
     const saved = await api(id ? `/api/students/${id}` : '/api/students', { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) });
@@ -2879,8 +2891,8 @@ function openAttendance(classId) {
     <strong>${presentCount}/${ids.length} presentes</strong>
     <small>${escapeHTML(classType(item))} - ${escapeHTML(item.status || 'Marcada')}</small>
     <div class="attendance-title-pills">
-      <span class="pill ok">${confirmation.yes} vao</span>
-      ${absentLikely ? `<span class="pill bad">${absentLikely} nao vao</span>` : ''}
+      <span class="pill ok">${confirmation.yes} vão</span>
+      ${absentLikely ? `<span class="pill bad">${absentLikely} não vão</span>` : ''}
       <span class="pill warn">${confirmation.open} sem resposta</span>
       ${extras.length ? `<span class="pill warn">${extras.length} fora da lista</span>` : ''}
     </div>
@@ -2898,7 +2910,7 @@ function openAttendance(classId) {
         <p class="meta">${escapeHTML(fullStudent.plano_nome || student.plano_nome || 'sem plano')} - ${weeklyAttendanceCount(id, item.data)}/${planWeeklyTarget(fullStudent) || '-'} na semana</p>
         <div class="pill-row">
           <span class="pill ${confirmClass}">${confirmText}</span>
-          ${phone ? `<a class="pill" href="${whatsappUrl(phone, `Oi ${student.nome}, tudo bem? Aqui e do Team Lucao Futevolei. Voce confirma a aula de hoje as ${item.horario}?`)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+          ${phone ? `<a class="pill" href="${whatsappUrl(phone, `Oi ${student.nome}, tudo bem? Aqui é do Team Lucao Futevolei. Você confirma a aula de hoje às ${item.horario}?`)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
         </div>
       </div>
       <button class="mini-btn ${present ? 'present' : ''}" data-toggle-attendance="${item.id}:${id}">
