@@ -3,7 +3,7 @@
 const STORE_KEY = 'fv_school_state_v2';
 const PIN_KEY = 'tlf_admin_pin';
 const PAGE_KEY = 'tlf_last_page';
-const VISUAL_THEME_VERSION = 'finanza-clean-20260624';
+const VISUAL_THEME_VERSION = 'web-redo-20260703';
 const ACTION_REFRESH_MS = 15000;
 const MOBILE_MORE_PAGES = ['actions', 'waitlist', 'plans', 'reports'];
 const PAGE_TITLES = {
@@ -623,7 +623,7 @@ function classOperationStatus(item = {}) {
   const present = enrolled.filter((student) => item.presencas?.[student.aluno_id || student.id] || student.presente).length;
   const confirmation = classConfirmationStats(item);
   if ((item.status || '') === 'Finalizada') return ['ok', 'Finalizada'];
-  if (present && present < enrolled.length) return ['warn', 'Finalizar presenca'];
+  if (present) return ['warn', 'Finalizar presenca'];
   if (enrolled.length >= capacity) return ['bad', 'Lotada'];
   if (confirmation.open) return ['warn', `${confirmation.open} sem resposta`];
   if (confirmation.no) return ['bad', `${confirmation.no} nao vai`];
@@ -880,8 +880,10 @@ function setPage(page) {
   const moreActive = isMobile && MOBILE_MORE_PAGES.includes(page);
   document.querySelectorAll('.page').forEach((el) => el.classList.toggle('active', el.id === `page-${page}`));
   document.querySelectorAll('.nav-item').forEach((el) => {
-    const active = el.dataset.page === page || (moreActive && el.dataset.page === 'more');
+    const active = moreActive ? el.dataset.page === 'more' : el.dataset.page === page;
     el.classList.toggle('active', active);
+    if (active) el.setAttribute('aria-current', 'page');
+    else el.removeAttribute('aria-current');
     if (active) el.scrollIntoView({ block: 'nearest', inline: 'center' });
   });
   document.documentElement.dataset.page = page;
@@ -1783,14 +1785,21 @@ function openModal(id) {
       modal.setAttribute('aria-hidden', 'true');
     }
   });
-  document.getElementById(id).classList.add('open');
-  document.getElementById(id).setAttribute('aria-hidden', 'false');
+  const modalWrap = document.getElementById(id);
+  if (!modalWrap) return;
+  modalWrap.classList.add('open');
+  modalWrap.setAttribute('aria-hidden', 'false');
   document.body.classList.add('modal-open');
+  requestAnimationFrame(() => {
+    modalWrap.querySelector('input:not([type="hidden"]), select, textarea, button.close')?.focus();
+  });
 }
 
 function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-  document.getElementById(id).setAttribute('aria-hidden', 'true');
+  const modalWrap = document.getElementById(id);
+  if (!modalWrap) return;
+  modalWrap.classList.remove('open');
+  modalWrap.setAttribute('aria-hidden', 'true');
   if (!document.querySelector('.modal-wrap.open')) document.body.classList.remove('modal-open');
 }
 
@@ -2008,7 +2017,20 @@ function openWaitItem(id) {
 }
 
 async function copyText(text, message = 'Texto copiado') {
-  if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+  } else {
+    const helper = document.createElement('textarea');
+    helper.value = text;
+    helper.setAttribute('readonly', '');
+    helper.style.position = 'fixed';
+    helper.style.opacity = '0';
+    document.body.appendChild(helper);
+    helper.select();
+    const copied = document.execCommand('copy');
+    helper.remove();
+    if (!copied) throw new Error('Nao foi possivel copiar o texto');
+  }
   toast(message);
 }
 
@@ -2339,15 +2361,20 @@ async function renderPublicBooking() {
   if (!hasServer && bookingStatus && !bookingStatus.textContent) bookingStatus.textContent = 'Modo demo: pedido fica salvo apenas neste navegador.';
   if (!hasServer && studentStatus && !studentStatus.textContent) studentStatus.textContent = 'Modo demo: confirmacao real precisa do servidor online.';
   const classes = await loadPublicClasses();
+  const availableClasses = classes.filter((item) => Number(item.inscritos ?? classStudentIds(item).length) < Number(item.capacidade || 8));
+  select.disabled = !availableClasses.length;
   select.innerHTML = classes.length
-    ? classes.map((item) => `<option value="${item.id}">${escapeHTML(publicClassLabel(item))}</option>`).join('')
+    ? classes.map((item) => {
+      const available = Number(item.inscritos ?? classStudentIds(item).length) < Number(item.capacidade || 8);
+      return `<option value="${escapeHTML(item.id)}" ${available ? '' : 'disabled'}>${escapeHTML(publicClassLabel(item))}${available ? '' : ' - lotada'}</option>`;
+    }).join('')
     : '<option value="">Sem horario disponivel</option>';
   list.innerHTML = classes.length ? classes.map((item) => {
     const used = Number(item.inscritos ?? classStudentIds(item).length);
     const capacity = Number(item.capacidade || 8);
     const available = Math.max(0, capacity - used);
     return `
-      <button class="booking-class-card ${available ? '' : 'is-full'}" type="button" data-booking-class="${item.id}">
+      <button class="booking-class-card ${available ? '' : 'is-full'}" type="button" ${available ? '' : 'disabled'} aria-label="${escapeHTML(publicClassLabel(item))}" data-booking-class="${escapeHTML(item.id)}">
         <strong>${formatDate(item.data)} ${escapeHTML(item.horario)}</strong>
         <span>${escapeHTML(item.turma || 'Turma')} - ${escapeHTML(item.tipo || 'Regular')}</span>
         <small>${available ? `${available} vaga(s) livres` : 'lotada'}</small>
@@ -2365,6 +2392,9 @@ async function submitBooking(event) {
     observacao: document.getElementById('bookingNote').value.trim()
   };
   if (!payload.nome || !payload.aula_id) throw new Error('Informe nome e aula');
+  if (document.getElementById('bookingClass')?.selectedOptions[0]?.disabled) {
+    throw new Error('Escolha uma aula com vaga');
+  }
   if (location.protocol !== 'file:') {
     try {
       const res = await fetch('/api/public/bookings', {
@@ -2400,9 +2430,11 @@ async function submitBooking(event) {
 function setPublicTab(tab = 'guest') {
   document.querySelectorAll('[data-public-tab]').forEach((button) => {
     button.classList.toggle('active', button.dataset.publicTab === tab);
+    button.setAttribute('aria-selected', button.dataset.publicTab === tab ? 'true' : 'false');
   });
   document.querySelectorAll('[data-public-pane]').forEach((pane) => {
     pane.classList.toggle('active', pane.dataset.publicPane === tab);
+    pane.setAttribute('aria-hidden', pane.dataset.publicPane === tab ? 'false' : 'true');
   });
   if (tab === 'student') renderStudentConfirmList();
 }
@@ -3152,6 +3184,9 @@ function bindEvents() {
   document.querySelectorAll('[data-open-plan]').forEach((button) => button.addEventListener('click', () => openPlan()));
   document.querySelectorAll('[data-open-waitlist]').forEach((button) => button.addEventListener('click', () => openWaitlist()));
   document.querySelectorAll('[data-close]').forEach((button) => button.addEventListener('click', () => closeModal(button.dataset.close)));
+  document.querySelectorAll('.modal-wrap').forEach((modalWrap) => modalWrap.addEventListener('click', (event) => {
+    if (event.target === modalWrap) closeModal(modalWrap.id);
+  }));
   document.querySelectorAll('[data-refresh]').forEach((button) => button.addEventListener('click', () => refreshApp().catch((err) => toast(err.message))));
   document.querySelectorAll('[data-backup]').forEach((button) => button.addEventListener('click', () => downloadBackup().catch((err) => toast(err.message))));
   document.querySelectorAll('[data-copy-pending]').forEach((button) => button.addEventListener('click', () => copyPendingCharges().catch((err) => toast(err.message))));
@@ -3292,7 +3327,7 @@ function bindEvents() {
 }
 
 if (localStorage.getItem('fv_visual_theme_version') !== VISUAL_THEME_VERSION) {
-  localStorage.setItem('fv_theme', 'dark');
+  localStorage.setItem('fv_theme', 'light');
   localStorage.setItem('fv_visual_theme_version', VISUAL_THEME_VERSION);
 }
 document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'light';

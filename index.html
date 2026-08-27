@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-    <meta name="theme-color" content="#08090d" />
+    <meta name="theme-color" content="#0a0a0a" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="TLF Gestao" />
@@ -12,9 +12,8 @@
     <link rel="manifest" href="manifest.webmanifest?v=20260624-clean1" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20260624-clean1" />
-    <link rel="stylesheet" href="visual-polish.css?v=20260624-clean1" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css?v=20260703-webredo1" />
   </head>
   <body>
     <div class="booking-wall" id="bookingWall" aria-hidden="true">
@@ -30,18 +29,18 @@
           </div>
         </div>
         <div class="booking-tabs" role="tablist" aria-label="Agenda publica">
-          <button class="active" type="button" data-public-tab="guest">Quero agendar</button>
-          <button type="button" data-public-tab="student">Sou aluno</button>
+          <button id="guestTab" class="active" type="button" role="tab" aria-selected="true" aria-controls="guestPane" data-public-tab="guest">Quero agendar</button>
+          <button id="studentTab" type="button" role="tab" aria-selected="false" aria-controls="studentPane" data-public-tab="student">Sou aluno</button>
         </div>
         <div class="booking-layout">
-          <div class="booking-pane active" data-public-pane="guest">
+          <div id="guestPane" class="booking-pane active" role="tabpanel" aria-labelledby="guestTab" data-public-pane="guest">
             <form class="booking-form" id="bookingForm">
               <label>Nome<input id="bookingName" autocomplete="name" placeholder="Seu nome" required /></label>
               <label>WhatsApp<input id="bookingPhone" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" /></label>
               <label>Aula<select id="bookingClass" required></select></label>
               <label>Observacao<input id="bookingNote" placeholder="Nivel, reposicao, experimental..." /></label>
               <button class="primary-btn" type="submit">Pedir vaga</button>
-              <p class="booking-status" id="bookingStatus"></p>
+              <p class="booking-status" id="bookingStatus" role="status" aria-live="polite"></p>
             </form>
             <div class="booking-board">
               <div class="panel-head compact-head">
@@ -53,11 +52,11 @@
               <div class="booking-class-list" id="bookingClassList"></div>
             </div>
           </div>
-          <div class="booking-pane" data-public-pane="student">
+          <div id="studentPane" class="booking-pane" role="tabpanel" aria-labelledby="studentTab" data-public-pane="student">
             <form class="booking-form student-confirm-form" id="studentLookupForm">
               <label>Seu WhatsApp<input id="studentLookupPhone" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" required /></label>
               <button class="primary-btn" type="submit">Ver minhas aulas</button>
-              <p class="booking-status" id="studentConfirmStatus"></p>
+              <p class="booking-status" id="studentConfirmStatus" role="status" aria-live="polite"></p>
             </form>
             <div class="booking-board">
               <div class="panel-head compact-head">
@@ -74,13 +73,13 @@
       </section>
     </div>
     <div class="login-wall" id="loginWall" aria-hidden="true">
-      <form class="login-box" id="loginForm">
+      <form class="login-box" id="loginForm" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
         <span class="brand-mark login-logo" aria-hidden="true">
           <img src="assets/team-lucao-logo.png" alt="" />
         </span>
         <div class="login-copy">
           <p class="eyebrow">acesso restrito</p>
-          <h2>Team Lucao Futevolei</h2>
+          <h2 id="loginTitle">Team Lucao Futevolei</h2>
           <p>Painel rapido para organizar alunos, aulas e cobrancas.</p>
         </div>
         <label>PIN de acesso<input id="loginPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="1234" /></label>
@@ -101,17 +100,17 @@
       </div>
       <nav class="nav" aria-label="Menu principal">
         <span class="nav-label">Operacao</span>
-        <button class="nav-item active" data-page="dashboard">Início</button>
-        <button class="nav-item secondary-nav" data-page="actions"><span>⚡</span> Ações</button>
-        <button class="nav-item" data-page="bookings"><span>✓</span> Pedidos</button>
-        <button class="nav-item" data-page="students"><span>👥</span> Alunos</button>
-        <button class="nav-item" data-page="classes"><span>📅</span> Aulas</button>
-        <button class="nav-item" data-page="payments"><span>💳</span> Cobrar</button>
-        <button class="nav-item" data-page="waitlist"><span>⏳</span> Espera</button>
+        <button class="nav-item active" type="button" aria-current="page" data-page="dashboard">Início</button>
+        <button class="nav-item secondary-nav" type="button" data-page="actions"><span aria-hidden="true">⚡</span> Ações</button>
+        <button class="nav-item" type="button" data-page="bookings"><span aria-hidden="true">✓</span> Pedidos</button>
+        <button class="nav-item" type="button" data-page="students"><span aria-hidden="true">👥</span> Alunos</button>
+        <button class="nav-item" type="button" data-page="classes"><span aria-hidden="true">📅</span> Aulas</button>
+        <button class="nav-item" type="button" data-page="payments"><span aria-hidden="true">💳</span> Cobrar</button>
+        <button class="nav-item" type="button" data-page="waitlist"><span aria-hidden="true">⏳</span> Espera</button>
         <span class="nav-label secondary-nav">Gestao</span>
-        <button class="nav-item secondary-nav" data-page="plans"><span>🏷️</span> Planos</button>
-        <button class="nav-item secondary-nav" data-page="reports">Relatórios</button>
-        <button class="nav-item mobile-only" data-page="more"><span>⋯</span> Mais</button>
+        <button class="nav-item secondary-nav" type="button" data-page="plans"><span aria-hidden="true">🏷️</span> Planos</button>
+        <button class="nav-item secondary-nav" type="button" data-page="reports">Relatórios</button>
+        <button class="nav-item mobile-only" type="button" data-page="more"><span aria-hidden="true">⋯</span> Mais</button>
       </nav>
       <button class="ghost-btn" id="logoutBtn" type="button">Sair</button>
     </aside>
@@ -134,7 +133,7 @@
         </div>
         <div class="top-actions">
           <div class="global-search">
-            <input id="globalSearch" placeholder="Busca rapida..." autocomplete="off" />
+            <input id="globalSearch" aria-label="Busca rápida" placeholder="Busca rapida..." autocomplete="off" />
             <div class="global-results" id="globalResults"></div>
           </div>
           <span class="mode-chip" id="modeStatus">Carregando...</span>
@@ -223,7 +222,7 @@
             </div>
             <button class="soft-btn" type="button" data-open-student>+ Novo aluno</button>
           </div>
-          <input class="search" id="studentSearch" placeholder="Buscar aluno, telefone ou plano..." />
+          <input class="search" id="studentSearch" aria-label="Buscar aluno, telefone ou plano" placeholder="Buscar aluno, telefone ou plano..." />
           <div class="filters student-filters">
             <select id="studentStatusFilter" aria-label="Filtrar por status">
               <option value="">Status</option>
@@ -303,7 +302,7 @@
           <div class="finance-summary payment-summary" id="financeSummary"></div>
           <div class="filters payment-filters">
             <input id="paymentMonth" type="month" aria-label="Mes de referencia" />
-            <input id="paymentSearch" placeholder="Buscar aluno ou telefone..." />
+            <input id="paymentSearch" aria-label="Buscar aluno ou telefone" placeholder="Buscar aluno ou telefone..." />
             <select id="paymentStatusFilter" aria-label="Filtrar mensalidades">
               <option value="">Todos</option>
               <option value="pending">Pendentes</option>
@@ -418,10 +417,10 @@
       </section>
     </main>
 
-    <div class="modal-wrap" id="studentModal" aria-hidden="true">
+    <div class="modal-wrap" id="studentModal" role="dialog" aria-modal="true" aria-labelledby="studentModalTitle" aria-hidden="true">
       <form class="modal" id="studentForm">
-        <button class="close" type="button" data-close="studentModal">x</button>
-        <h2>Aluno</h2>
+        <button class="close" type="button" aria-label="Fechar aluno" data-close="studentModal">x</button>
+        <h2 id="studentModalTitle">Aluno</h2>
         <input type="hidden" id="studentId" />
         <fieldset class="form-group student-form-section student-identity-group">
           <legend>Identificacao</legend>
@@ -481,17 +480,18 @@
       </form>
     </div>
 
-    <div class="modal-wrap" id="studentReportModal" aria-hidden="true">
+    <div class="modal-wrap" id="studentReportModal" role="dialog" aria-modal="true" aria-labelledby="studentReportModalTitle" aria-hidden="true">
       <section class="modal wide-modal">
-        <button class="close" type="button" data-close="studentReportModal">x</button>
+        <button class="close" type="button" aria-label="Fechar relatório do aluno" data-close="studentReportModal">x</button>
+        <h2 id="studentReportModalTitle" class="sr-only">Relatório do aluno</h2>
         <div id="studentReport"></div>
       </section>
     </div>
 
-    <div class="modal-wrap" id="paymentModal" aria-hidden="true">
+    <div class="modal-wrap" id="paymentModal" role="dialog" aria-modal="true" aria-labelledby="paymentModalTitle" aria-hidden="true">
       <form class="modal" id="paymentForm">
-        <button class="close" type="button" data-close="paymentModal">x</button>
-        <h2>Registrar pagamento</h2>
+        <button class="close" type="button" aria-label="Fechar pagamento" data-close="paymentModal">x</button>
+        <h2 id="paymentModalTitle">Registrar pagamento</h2>
         <input type="hidden" id="paymentStudentId" />
         <p class="muted payment-modal-student" id="paymentStudentName"></p>
         <div class="form-row">
@@ -515,10 +515,10 @@
       </form>
     </div>
 
-    <div class="modal-wrap" id="classModal" aria-hidden="true">
+    <div class="modal-wrap" id="classModal" role="dialog" aria-modal="true" aria-labelledby="classModalTitle" aria-hidden="true">
       <form class="modal" id="classForm">
-        <button class="close" type="button" data-close="classModal">x</button>
-        <h2>Aula</h2>
+        <button class="close" type="button" aria-label="Fechar aula" data-close="classModal">x</button>
+        <h2 id="classModalTitle">Aula</h2>
         <input type="hidden" id="classId" />
         <div class="form-row">
           <label>Data<input id="classDate" type="date" required /></label>
@@ -562,10 +562,10 @@
       </form>
     </div>
 
-    <div class="modal-wrap" id="attendanceModal" aria-hidden="true">
+    <div class="modal-wrap" id="attendanceModal" role="dialog" aria-modal="true" aria-labelledby="attendanceModalTitle" aria-hidden="true">
       <section class="modal">
-        <button class="close" type="button" data-close="attendanceModal">x</button>
-        <h2>Presenças</h2>
+        <button class="close" type="button" aria-label="Fechar presenças" data-close="attendanceModal">x</button>
+        <h2 id="attendanceModalTitle">Presenças</h2>
         <p class="muted" id="attendanceTitle"></p>
         <div class="attendance-actions">
           <button class="soft-btn attendance-primary" type="button" id="markAllPresent">Todos presentes</button>
@@ -589,10 +589,10 @@
       </section>
     </div>
 
-    <div class="modal-wrap" id="planModal" aria-hidden="true">
+    <div class="modal-wrap" id="planModal" role="dialog" aria-modal="true" aria-labelledby="planModalTitle" aria-hidden="true">
       <form class="modal" id="planForm">
-        <button class="close" type="button" data-close="planModal">x</button>
-        <h2>Plano</h2>
+        <button class="close" type="button" aria-label="Fechar plano" data-close="planModal">x</button>
+        <h2 id="planModalTitle">Plano</h2>
         <input type="hidden" id="planId" />
         <label>Nome<input id="planName" required placeholder="Ex: 2x semana" /></label>
         <div class="form-row">
@@ -604,10 +604,10 @@
       </form>
     </div>
 
-    <div class="modal-wrap" id="waitlistModal" aria-hidden="true">
+    <div class="modal-wrap" id="waitlistModal" role="dialog" aria-modal="true" aria-labelledby="waitlistModalTitle" aria-hidden="true">
       <form class="modal" id="waitlistForm">
-        <button class="close" type="button" data-close="waitlistModal">x</button>
-        <h2>Lista de espera</h2>
+        <button class="close" type="button" aria-label="Fechar lista de espera" data-close="waitlistModal">x</button>
+        <h2 id="waitlistModalTitle">Lista de espera</h2>
         <input type="hidden" id="waitId" />
         <label>Nome<input id="waitName" required placeholder="Ex: Carla Mendes" /></label>
         <label>Telefone<input id="waitPhone" placeholder="(15) 99999-9999" /></label>
@@ -626,7 +626,7 @@
       </form>
     </div>
 
-    <div class="toast" id="toast"></div>
+    <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
     <script src="app.js?v=20260624-clean1"></script>
   </body>
 </html>

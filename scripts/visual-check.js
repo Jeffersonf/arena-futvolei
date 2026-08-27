@@ -4,7 +4,8 @@ const fs = require('fs');
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
 const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260624-clean1';
-const expectedPolishVersion = process.env.VISUAL_POLISH_VERSION || '20260624-clean1';
+const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260703-webredo1';
+const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined;
 
 const cases = [
   { name: 'mobile-booking', viewport: { width: 390, height: 844 }, page: null },
@@ -30,6 +31,10 @@ const cases = [
   { name: 'desktop-student-report', viewport: { width: 1440, height: 950 }, page: 'students', action: 'student-report' },
   { name: 'desktop-attendance', viewport: { width: 1440, height: 950 }, page: 'classes', action: 'attendance' }
 ];
+
+const selectedCases = process.env.VISUAL_CASE
+  ? cases.filter((item) => item.name === process.env.VISUAL_CASE)
+  : cases;
 
 async function login(page) {
   const bookingOpen = await page.locator('#bookingWall.open').count();
@@ -68,26 +73,35 @@ async function runCaseAction(page, action) {
 (async () => {
   fs.rmSync(outDir, { recursive: true, force: true });
   fs.mkdirSync(outDir, { recursive: true });
-  const browser = await chromium.launch({ headless: true });
-  for (const item of cases) {
+  const browser = await chromium.launch({ headless: true, executablePath });
+  for (const item of selectedCases) {
+    console.log(`Visual check: ${item.name}`);
     const context = await browser.newContext({ viewport: item.viewport, deviceScaleFactor: 1 });
     const page = await context.newPage();
-    await page.goto(`${baseUrl}?visual=${item.name}`, { waitUntil: 'networkidle' });
+    page.setDefaultTimeout(5000);
+    await page.goto(`${baseUrl}?visual=${item.name}`, { waitUntil: 'domcontentloaded', timeout: 10000 });
+    await page.waitForTimeout(300);
+    console.log(`  loaded ${item.name}`);
     const assetVersion = await page.locator('script[src*="app.js"]').getAttribute('src');
     if (baseUrl.includes('127.0.0.1') && !assetVersion.includes(expectedAssetVersion)) {
       throw new Error(`${item.name}: asset version inesperada (${assetVersion})`);
     }
-    const polishVersion = await page.locator('link[href*="visual-polish.css"]').getAttribute('href');
-    if (baseUrl.includes('127.0.0.1') && !polishVersion.includes(expectedPolishVersion)) {
-      throw new Error(`${item.name}: visual polish inesperado (${polishVersion})`);
+    const styleVersion = await page.locator('link[href*="styles.css"]').getAttribute('href');
+    if (baseUrl.includes('127.0.0.1') && !styleVersion.includes(expectedStyleVersion)) {
+      throw new Error(`${item.name}: styles inesperado (${styleVersion})`);
     }
     if (item.page) {
       await login(page);
+      console.log(`  logged ${item.name}`);
       await page.evaluate((target) => window.localStorage.setItem('tlf_last_page', target), item.page);
-      await page.reload({ waitUntil: 'networkidle' });
+      await page.reload({ waitUntil: 'domcontentloaded', timeout: 10000 });
+      await page.waitForTimeout(300);
+      console.log(`  reloaded ${item.name}`);
     }
     if (item.action) await runCaseAction(page, item.action);
+    console.log(`  action ${item.name}`);
     await page.screenshot({ path: `${outDir}/${item.name}.png`, fullPage: false });
+    console.log(`  screenshot ${item.name}`);
     const issueCount = await page.evaluate(() => {
       function hasHorizontalScroller(node) {
         let current = node.parentElement;
@@ -108,9 +122,14 @@ async function runCaseAction(page, action) {
     });
     if (issueCount) throw new Error(`${item.name}: ${issueCount} elemento(s) fora da viewport`);
     await context.close();
+    console.log(`  closed ${item.name}`);
   }
-  await browser.close();
-  console.log(`Visual check ok: ${cases.length} screenshots em ${outDir}`);
+  await Promise.race([
+    browser.close(),
+    new Promise((resolve) => setTimeout(resolve, 1500))
+  ]);
+  console.log(`Visual check ok: ${selectedCases.length} screenshots em ${outDir}`);
+  process.exit(0);
 })().catch((error) => {
   console.error(error);
   process.exit(1);
