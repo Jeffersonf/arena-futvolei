@@ -2385,6 +2385,10 @@ async function renderPublicBooking() {
   const select = document.getElementById('bookingClass');
   const list = document.getElementById('bookingClassList');
   if (!select || !list) return;
+  select.disabled = true;
+  select.innerHTML = '<option value="">Carregando horários...</option>';
+  list.setAttribute('aria-busy', 'true');
+  list.innerHTML = empty('Carregando horários...');
   const hasServer = await detectServer();
   const bookingStatus = document.getElementById('bookingStatus');
   const studentStatus = document.getElementById('studentConfirmStatus');
@@ -2411,6 +2415,7 @@ async function renderPublicBooking() {
       </button>
     `;
   }).join('') : empty('Nenhuma aula disponível agora.');
+  list.setAttribute('aria-busy', 'false');
 }
 
 async function submitBooking(event) {
