@@ -914,7 +914,12 @@ function toggleTheme() {
 
 function updateThemeButton() {
   const button = document.getElementById('themeBtn');
-  if (button) button.textContent = document.documentElement.dataset.theme === 'dark' ? '\u{1F319}' : '\u2600\uFE0F';
+  if (!button) return;
+  const dark = document.documentElement.dataset.theme === 'dark';
+  button.textContent = dark ? '\u{1F319}' : '\u2600\uFE0F';
+  button.setAttribute('aria-pressed', dark ? 'true' : 'false');
+  button.setAttribute('aria-label', dark ? 'Usar tema claro' : 'Usar tema escuro');
+  button.title = dark ? 'Usar tema claro' : 'Usar tema escuro';
 }
 
 function logout() {
@@ -3372,7 +3377,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260624-clean1', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260827-a11y1', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

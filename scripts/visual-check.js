@@ -12,6 +12,7 @@ const cases = [
   { name: 'mobile-student-confirm-public', viewport: { width: 390, height: 844 }, page: null, action: 'public-student-tab' },
   { name: 'desktop-booking', viewport: { width: 1440, height: 950 }, page: null },
   { name: 'mobile-dashboard', viewport: { width: 390, height: 844 }, page: 'dashboard' },
+  { name: 'mobile-dashboard-dark', viewport: { width: 390, height: 844 }, page: 'dashboard', theme: 'dark' },
   { name: 'mobile-actions', viewport: { width: 390, height: 844 }, page: 'actions' },
   { name: 'mobile-students', viewport: { width: 390, height: 844 }, page: 'students' },
   { name: 'mobile-classes', viewport: { width: 390, height: 844 }, page: 'classes' },
@@ -25,6 +26,7 @@ const cases = [
   { name: 'mobile-class-modal', viewport: { width: 390, height: 844 }, page: 'classes', action: 'class-modal' },
   { name: 'mobile-more', viewport: { width: 390, height: 844 }, page: 'more' },
   { name: 'desktop-dashboard', viewport: { width: 1440, height: 950 }, page: 'dashboard' },
+  { name: 'desktop-dashboard-dark', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'dark' },
   { name: 'desktop-actions', viewport: { width: 1440, height: 950 }, page: 'actions' },
   { name: 'desktop-students', viewport: { width: 1440, height: 950 }, page: 'students' },
   { name: 'desktop-bookings', viewport: { width: 1440, height: 950 }, page: 'bookings' },
@@ -78,6 +80,11 @@ async function runCaseAction(page, action) {
     console.log(`Visual check: ${item.name}`);
     const context = await browser.newContext({ viewport: item.viewport, deviceScaleFactor: 1 });
     const page = await context.newPage();
+    const runtimeErrors = [];
+    page.on('pageerror', (error) => runtimeErrors.push(`pageerror: ${error.message}`));
+    page.on('console', (message) => {
+      if (message.type() === 'error') runtimeErrors.push(`console: ${message.text()} (${message.location().url || 'sem origem'})`);
+    });
     page.setDefaultTimeout(5000);
     await page.goto(`${baseUrl}?visual=${item.name}`, { waitUntil: 'domcontentloaded', timeout: 10000 });
     await page.waitForTimeout(300);
@@ -98,8 +105,16 @@ async function runCaseAction(page, action) {
       await page.waitForTimeout(300);
       console.log(`  reloaded ${item.name}`);
     }
+    if (item.theme) {
+      await page.evaluate((theme) => {
+        document.documentElement.dataset.theme = theme;
+        localStorage.setItem('fv_theme', theme);
+      }, item.theme);
+      await page.waitForTimeout(100);
+    }
     if (item.action) await runCaseAction(page, item.action);
     console.log(`  action ${item.name}`);
+    if (runtimeErrors.length) throw new Error(`${item.name}: ${runtimeErrors.join(' | ')}`);
     await page.screenshot({ path: `${outDir}/${item.name}.png`, fullPage: false });
     console.log(`  screenshot ${item.name}`);
     const issueCount = await page.evaluate(() => {
