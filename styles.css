@@ -11,6 +11,7 @@
   --muted: #737373;
   --line: #e5e5e5;
   --line-strong: #c8c8c8;
+  --input-border: #171717;
   --accent: #2563eb;
   --accent-2: #1e40af;
   --accent-soft: #dbeafe;
@@ -39,6 +40,7 @@
   --muted: #a3a3a3;
   --line: rgba(255, 255, 255, .09);
   --line-strong: rgba(255, 255, 255, .18);
+  --input-border: #525252;
   --accent: #60a5fa;
   --accent-2: #93c5fd;
   --accent-soft: rgba(37, 99, 235, .25);
@@ -393,7 +395,7 @@ select,
 textarea {
   width: 100%;
   min-height: 40px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--input-border);
   border-radius: 6px;
   outline: none;
   padding: 0 12px;
