@@ -51,6 +51,10 @@
   color-scheme: dark;
 }
 
+[data-theme="dark"] body {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, .1) 1px, transparent 1.2px);
+}
+
 * { box-sizing: border-box; }
 
 html {
@@ -64,7 +68,9 @@ body {
   min-height: 100vh;
   margin: 0;
   overflow-x: hidden;
-  background: var(--bg);
+  background-color: var(--bg);
+  background-image: radial-gradient(circle, rgba(23, 23, 23, .08) 1px, transparent 1.2px);
+  background-size: 24px 24px;
   color: var(--text);
   font-family: var(--font-ui);
   font-size: 14px;
@@ -135,7 +141,7 @@ input:disabled {
 
 .app {
   min-height: 100vh;
-  padding: 22px 24px 40px calc(var(--sidebar) + 40px);
+  padding: 24px 28px 48px calc(var(--sidebar) + 40px);
 }
 
 .page,
@@ -154,7 +160,7 @@ input:disabled {
   width: var(--sidebar);
   padding: 14px;
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--surface);
   box-shadow: var(--shadow-soft);
 }
@@ -190,7 +196,7 @@ input:disabled {
   overflow: hidden;
   color: var(--text);
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -214,7 +220,7 @@ input:disabled {
 .panel-head span {
   color: var(--muted);
   font-size: 10px;
-  font-weight: 900;
+  font-weight: 600;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
@@ -233,7 +239,7 @@ input:disabled {
   background: transparent;
   color: var(--muted);
   font-size: 13px;
-  font-weight: 750;
+  font-weight: 500;
   text-align: left;
 }
 
@@ -245,6 +251,7 @@ input:disabled {
 .nav-item.active {
   background: var(--accent-soft);
   color: var(--accent);
+  font-weight: 600;
 }
 
 .ghost-btn,
@@ -255,10 +262,10 @@ input:disabled {
   align-items: center;
   justify-content: center;
   min-height: 38px;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 0 13px;
-  font-size: 12px;
-  font-weight: 800;
+  font-size: 13px;
+  font-weight: 600;
   white-space: nowrap;
 }
 
@@ -291,8 +298,9 @@ input:disabled {
 
 .mini-btn {
   min-height: 32px;
-  border-radius: 9px;
+  border-radius: 8px;
   padding-inline: 10px;
+  font-size: 12px;
 }
 
 .danger-mini,
@@ -331,8 +339,8 @@ input:disabled {
   margin-top: 3px;
   color: var(--text);
   font-family: var(--font-display);
-  font-size: clamp(30px, 3vw, 42px);
-  font-weight: 800;
+  font-size: clamp(32px, 3.5vw, 48px);
+  font-weight: 500;
   line-height: 1;
   letter-spacing: 0;
 }
@@ -357,7 +365,7 @@ input:disabled {
   background: var(--surface);
   color: var(--muted);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 input,
@@ -476,13 +484,13 @@ textarea::placeholder {
   border-radius: var(--radius);
   background: var(--surface);
   color: var(--text);
-  box-shadow: var(--shadow-soft);
+  box-shadow: none;
 }
 
 .panel {
   display: grid;
   gap: 14px;
-  padding: 18px;
+  padding: 16px;
 }
 
 .panel-head {
@@ -496,7 +504,7 @@ textarea::placeholder {
   margin-top: 2px;
   color: var(--text);
   font-size: 20px;
-  font-weight: 850;
+  font-weight: 600;
   line-height: 1.08;
 }
 
@@ -531,7 +539,7 @@ textarea::placeholder {
   display: block;
   color: var(--muted);
   font-size: 11px;
-  font-weight: 850;
+  font-weight: 600;
 }
 
 .kpi strong,
@@ -541,7 +549,7 @@ textarea::placeholder {
   overflow-wrap: normal;
   color: var(--text);
   font-size: clamp(22px, 2.4vw, 32px);
-  font-weight: 900;
+  font-weight: 600;
   line-height: 1;
 }
 
@@ -565,14 +573,14 @@ textarea::placeholder {
 .kpi-ok,
 .mini-stat.kpi-ok,
 .payment-paid,
-.confirm-yes { border-left: 4px solid var(--ok); }
+.confirm-yes { border-left-color: var(--line); }
 .kpi-warn,
 .mini-stat.kpi-warn,
 .payment-pending,
-.confirm-no { border-left: 4px solid var(--warn); }
+.confirm-no { border-left-color: var(--line); }
 .kpi-bad,
 .mini-stat.kpi-bad,
-.wait-needs-reply { border-left: 4px solid var(--bad); }
+.wait-needs-reply { border-left-color: var(--line); }
 
 .focus-strip { display: grid; }
 
@@ -584,11 +592,10 @@ textarea::placeholder {
   gap: 18px;
   align-items: center;
   border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 20px;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--accent-soft) 70%, transparent), transparent 70%),
-    var(--surface);
+  border-radius: 16px;
+  border-top: 2px solid var(--accent);
+  padding: 24px;
+  background: var(--surface);
   box-shadow: var(--shadow-soft);
 }
 
@@ -599,7 +606,7 @@ textarea::placeholder {
   color: var(--text);
   font-family: var(--font-display);
   font-size: clamp(28px, 4.2vw, 50px);
-  font-weight: 800;
+  font-weight: 500;
   line-height: 1;
   letter-spacing: 0;
 }
@@ -654,7 +661,7 @@ textarea::placeholder {
 .operation-card h3 {
   color: var(--text);
   font-size: 15px;
-  font-weight: 850;
+  font-weight: 600;
 }
 
 .link-title {
@@ -662,7 +669,7 @@ textarea::placeholder {
   padding: 0;
   background: transparent;
   color: var(--text);
-  font-weight: 850;
+  font-weight: 600;
   text-align: left;
 }
 
@@ -693,7 +700,7 @@ textarea::placeholder {
   background: var(--surface-2);
   color: var(--muted);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   white-space: nowrap;
 }
 
@@ -703,6 +710,17 @@ textarea::placeholder {
 .warn { background: var(--warn-bg); color: var(--warn); }
 .pill.bad,
 .bad { background: var(--bad-bg); color: var(--bad); }
+
+.pill.ok::before,
+.pill.warn::before,
+.pill.bad::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
 
 .empty {
   display: grid;
@@ -727,7 +745,7 @@ textarea::placeholder {
   padding: 0 12px 2px;
   color: var(--muted);
   font-size: 10px;
-  font-weight: 900;
+  font-weight: 600;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
@@ -794,7 +812,7 @@ textarea::placeholder {
 .class-timebox span {
   color: var(--text);
   font-size: 20px;
-  font-weight: 900;
+  font-weight: 600;
   line-height: 1;
 }
 
@@ -962,7 +980,7 @@ textarea::placeholder {
   display: grid;
   gap: 5px;
   color: var(--text);
-  font-weight: 900;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
@@ -990,7 +1008,7 @@ textarea::placeholder {
   font-size: 11px;
 }
 
-.action-line span { font-weight: 850; }
+.action-line span { font-weight: 600; }
 .action-item p { margin-top: 6px; color: var(--muted); font-size: 13px; }
 
 .action-day {
@@ -1000,7 +1018,7 @@ textarea::placeholder {
   margin: 8px 0 2px;
   color: var(--muted);
   font-size: 10px;
-  font-weight: 900;
+  font-weight: 600;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
@@ -1043,7 +1061,7 @@ label {
   gap: 6px;
   color: var(--muted);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .form-row {
@@ -1067,7 +1085,7 @@ label {
   padding: 0 4px;
   color: var(--muted);
   font-size: 10px;
-  font-weight: 900;
+  font-weight: 600;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
@@ -1080,7 +1098,7 @@ label {
   box-shadow: none;
 }
 
-.schedule-preview span { color: var(--muted); font-size: 11px; font-weight: 850; }
+.schedule-preview span { color: var(--muted); font-size: 11px; font-weight: 600; }
 .schedule-preview strong { font-size: 13px; }
 
 .schedule-preview-dates {
@@ -1114,7 +1132,7 @@ label {
 .class-picker-head span {
   color: var(--muted);
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 600;
 }
 
 .class-student-list {
@@ -1178,6 +1196,7 @@ label {
   max-height: calc(100vh - 32px);
   overflow: auto;
   padding: 18px;
+  box-shadow: var(--shadow);
 }
 
 .modal {
@@ -1205,7 +1224,7 @@ label {
   width: 34px;
   height: 34px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--surface);
   color: var(--text);
 }
@@ -1250,7 +1269,7 @@ label {
   width: fit-content;
   max-width: 100%;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 4px;
   background: var(--surface);
 }
@@ -1258,11 +1277,11 @@ label {
 .booking-tabs button {
   min-height: 38px;
   border: 0;
-  border-radius: 9px;
+  border-radius: 8px;
   padding: 0 14px;
   background: transparent;
   color: var(--muted);
-  font-weight: 850;
+  font-weight: 600;
 }
 
 .booking-tabs button.active {
