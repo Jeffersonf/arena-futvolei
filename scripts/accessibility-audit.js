@@ -45,6 +45,15 @@ async function auditPage(page, name) {
   if (violations.length) throw new Error(`${name}: ${violations.join(' | ')}`);
 }
 
+async function auditSkipLink(page) {
+  await page.keyboard.press('Tab');
+  const target = await page.evaluate(() => ({
+    href: document.activeElement?.getAttribute('href') || '',
+    text: document.activeElement?.textContent?.trim() || ''
+  }));
+  if (target.href !== '#mainContent' || !target.text) throw new Error('atalho de conteudo principal ausente ou sem foco');
+}
+
 async function audit() {
   const browser = await chromium.launch({ headless: true, executablePath });
   try {
@@ -52,6 +61,7 @@ async function audit() {
     mobile.setDefaultTimeout(5000);
     await mobile.goto(`${baseUrl}?audit=public-mobile`, { waitUntil: 'domcontentloaded', timeout: 10000 });
     await mobile.waitForTimeout(350);
+    await auditSkipLink(mobile);
     await auditPage(mobile, 'public-mobile-guest');
     await mobile.locator('[data-public-tab="student"]').click();
     await auditPage(mobile, 'public-mobile-student');

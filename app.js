@@ -406,13 +406,13 @@ async function loadData() {
   apiMode = await detectServer();
   if (!apiMode) {
     const modeStatus = document.getElementById('modeStatus');
-    if (modeStatus) modeStatus.textContent = 'Local no navegador';
+    if (modeStatus) modeStatus.textContent = 'Modo local';
     updateSystemNotice();
     restorePage();
     return;
   }
   const modeStatus = document.getElementById('modeStatus');
-  if (modeStatus) modeStatus.textContent = 'Servidor Node + SQLite';
+  if (modeStatus) modeStatus.textContent = 'Servidor online';
   updateSystemNotice();
   const [students, classes, plans, waitlist, payments, bookings, logs] = await Promise.all([
     api('/api/students'),
@@ -928,7 +928,9 @@ function updateThemeButton() {
   const button = document.getElementById('themeBtn');
   if (!button) return;
   const dark = document.documentElement.dataset.theme === 'dark';
-  button.textContent = dark ? '\u{1F319}' : '\u2600\uFE0F';
+  button.innerHTML = dark
+    ? '<svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42" /></svg>'
+    : '<svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3 6.5 6.5 0 0 0 21 12.8Z" /></svg>';
   button.setAttribute('aria-pressed', dark ? 'true' : 'false');
   button.setAttribute('aria-label', dark ? 'Usar tema claro' : 'Usar tema escuro');
   button.title = dark ? 'Usar tema claro' : 'Usar tema escuro';
@@ -3403,7 +3405,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260827-release1', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260827-release5', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
@@ -3415,7 +3417,7 @@ if (localStorage.getItem(PIN_KEY)) {
       return;
     }
     const modeStatus = document.getElementById('modeStatus');
-    if (modeStatus) modeStatus.textContent = 'Local no navegador';
+    if (modeStatus) modeStatus.textContent = 'Modo local';
     apiMode = false;
     updateSystemNotice();
     toast(err.message);

@@ -3,8 +3,8 @@ const fs = require('fs');
 
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
-const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260827-release2';
-const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260827-editorial3';
+const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260827-release5';
+const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260827-editorial10';
 const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined;
 
 const cases = [
@@ -14,6 +14,7 @@ const cases = [
   { name: 'mobile-dashboard', viewport: { width: 390, height: 844 }, page: 'dashboard' },
   { name: 'mobile-narrow-dashboard', viewport: { width: 320, height: 700 }, page: 'dashboard' },
   { name: 'mobile-global-search', viewport: { width: 390, height: 844 }, page: 'dashboard', action: 'global-search' },
+  { name: 'mobile-theme-toggle', viewport: { width: 390, height: 844 }, page: 'dashboard', action: 'theme-toggle' },
   { name: 'mobile-dashboard-dark', viewport: { width: 390, height: 844 }, page: 'dashboard', theme: 'dark' },
   { name: 'mobile-actions', viewport: { width: 390, height: 844 }, page: 'actions' },
   { name: 'mobile-students', viewport: { width: 390, height: 844 }, page: 'students' },
@@ -81,6 +82,24 @@ async function runCaseAction(page, action) {
     await page.keyboard.press('Escape');
     if (await page.locator('#globalResults.open').count()) throw new Error('Busca global nao fechou com Escape');
     if (await input.getAttribute('aria-expanded') !== 'false') throw new Error('Busca global nao sincronizou aria-expanded ao fechar');
+  }
+  if (action === 'theme-toggle') {
+    const before = await page.evaluate(() => document.documentElement.dataset.theme || 'light');
+    if (page.viewportSize().width <= 520) {
+      await page.locator('.nav-item[data-page="more"]').click();
+      await page.locator('[data-more-action="theme"]').click();
+    } else {
+      await page.locator('#themeBtn').click();
+    }
+    const state = await page.evaluate(() => ({
+      theme: document.documentElement.dataset.theme || 'light',
+      pressed: document.getElementById('themeBtn')?.getAttribute('aria-pressed'),
+      icon: document.querySelectorAll('#themeBtn .theme-icon').length
+    }));
+    if (state.theme === before || state.icon !== 1 || state.pressed !== (state.theme === 'dark' ? 'true' : 'false')) {
+      throw new Error(`Tema nao alternou corretamente (${JSON.stringify(state)})`);
+    }
+    await page.waitForTimeout(250);
   }
   if (action === 'public-student-tab') {
     await page.locator('[data-public-tab="student"]').click();

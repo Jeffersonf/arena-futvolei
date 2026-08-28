@@ -10,13 +10,14 @@
     <title>Team Lucão Futevôlei</title>
     <link rel="icon" type="image/png" href="assets/team-lucao-logo.png" />
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260827-release2" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260827-release5" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20260827-editorial3" />
+    <link rel="stylesheet" href="styles.css?v=20260827-editorial10" />
   </head>
   <body>
+    <a class="skip-link" href="#mainContent">Pular para o conteúdo principal</a>
     <div class="booking-wall" id="bookingWall" aria-hidden="true">
       <section class="booking-shell">
         <div class="booking-hero">
@@ -101,23 +102,23 @@
       </div>
       <nav class="nav" aria-label="Menu principal">
         <span class="nav-label">Operação</span>
-        <button class="nav-item active" type="button" aria-current="page" data-page="dashboard"><span aria-hidden="true">⌂</span> Início</button>
-        <button class="nav-item secondary-nav" type="button" data-page="actions"><span aria-hidden="true">⚡</span> Ações</button>
-        <button class="nav-item" type="button" data-page="bookings"><span aria-hidden="true">✓</span> Pedidos</button>
-        <button class="nav-item" type="button" data-page="students"><span aria-hidden="true">👥</span> Alunos</button>
-        <button class="nav-item" type="button" data-page="classes"><span aria-hidden="true">📅</span> Aulas</button>
-        <button class="nav-item" type="button" data-page="payments"><span aria-hidden="true">💳</span> Cobrar</button>
-        <button class="nav-item secondary-nav" type="button" data-page="waitlist"><span aria-hidden="true">⏳</span> Espera</button>
+        <button class="nav-item active" type="button" aria-current="page" data-page="dashboard"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg> Início</button>
+        <button class="nav-item secondary-nav" type="button" data-page="actions"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m13 2-8 11h6l-1 9 8-11h-6z" /></svg> Ações</button>
+        <button class="nav-item" type="button" data-page="bookings"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg> Pedidos</button>
+        <button class="nav-item" type="button" data-page="students"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3" /><path d="M3 20a6 6 0 0 1 12 0M16 11a3 3 0 1 0 0-6M17 14a5 5 0 0 1 4 6" /></svg> Alunos</button>
+        <button class="nav-item" type="button" data-page="classes"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg> Aulas</button>
+        <button class="nav-item" type="button" data-page="payments"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 10h18M7 15h3" /></svg> Cobrar</button>
+        <button class="nav-item secondary-nav" type="button" data-page="waitlist"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12M6 21h12M8 4c0 4 8 4 8 8s-8 4-8 8M16 4c0 4-8 4-8 8s8 4 8 8" /></svg> Espera</button>
         <span class="nav-label secondary-nav">Gestão</span>
-        <button class="nav-item secondary-nav" type="button" data-page="plans"><span aria-hidden="true">🏷️</span> Planos</button>
-        <button class="nav-item secondary-nav" type="button" data-page="reports">Relatórios</button>
-        <button class="nav-item mobile-only" type="button" data-page="more"><span aria-hidden="true">⋯</span> Mais</button>
+        <button class="nav-item secondary-nav" type="button" data-page="plans"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m20 13-7 7-9-9V4h7z" /><circle cx="7.5" cy="8.5" r="1" /></svg> Planos</button>
+        <button class="nav-item secondary-nav" type="button" data-page="reports"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h17" /><path d="m7 15 4-5 3 2 5-6" /></svg> Relatórios</button>
+        <button class="nav-item mobile-only" type="button" data-page="more"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /></svg> Mais</button>
       </nav>
       <button class="ghost-btn" id="logoutBtn" type="button">Sair</button>
     </aside>
-    <button class="theme-float" id="themeBtn" type="button" aria-label="Usar tema escuro" aria-pressed="false" title="Usar tema escuro">🌙</button>
+    <button class="theme-float" id="themeBtn" type="button" aria-label="Usar tema escuro" aria-pressed="false" title="Usar tema escuro"><svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3 6.5 6.5 0 0 0 21 12.8Z" /></svg></button>
 
-    <main class="app">
+    <main class="app" id="mainContent">
       <header class="topbar">
         <div>
           <p class="eyebrow" id="topbarEyebrow">operação de hoje</p>
@@ -628,6 +629,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-    <script src="app.js?v=20260827-release2"></script>
+    <script src="app.js?v=20260827-release5"></script>
   </body>
 </html>
