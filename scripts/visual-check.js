@@ -3,8 +3,8 @@ const fs = require('fs');
 
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
-const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260828-release9';
-const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260828-patterns2';
+const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260828-release11';
+const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260828-patterns4';
 const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined;
 
 const cases = [
@@ -12,6 +12,7 @@ const cases = [
   { name: 'mobile-public-student-flow', viewport: { width: 390, height: 844 }, page: null, action: 'public-student-flow' },
   { name: 'mobile-student-confirm-public', viewport: { width: 390, height: 844 }, page: null, action: 'public-student-tab' },
   { name: 'desktop-booking', viewport: { width: 1440, height: 950 }, page: null },
+  { name: 'desktop-public-student-flow', viewport: { width: 1440, height: 950 }, page: null, action: 'public-student-flow' },
   { name: 'mobile-dashboard', viewport: { width: 390, height: 844 }, page: 'dashboard' },
   { name: 'mobile-narrow-dashboard', viewport: { width: 320, height: 700 }, page: 'dashboard' },
   { name: 'mobile-global-search', viewport: { width: 390, height: 844 }, page: 'dashboard', action: 'global-search' },
@@ -95,9 +96,12 @@ async function runCaseAction(page, action) {
     const initial = await page.evaluate(() => ({
       selected: document.querySelector('[data-public-tab="student"]')?.getAttribute('aria-selected'),
       pane: document.querySelector('[data-public-pane="student"]')?.classList.contains('active'),
-      experimental: document.getElementById('studentBookingList') !== null
+      experimental: document.getElementById('studentBookingList') !== null,
+      columns: getComputedStyle(document.getElementById('studentPane')).gridTemplateColumns
     }));
     if (initial.selected !== 'true' || !initial.pane || !initial.experimental) throw new Error(`Fluxo experimental de aluno nao iniciou primeiro (${JSON.stringify(initial)})`);
+    const expectedColumns = page.viewportSize().width > 760 ? 2 : 1;
+    if (initial.columns.split(' ').length !== expectedColumns) throw new Error(`Blocos publicos nao se organizaram corretamente (${JSON.stringify(initial)})`);
     await page.locator('#studentLookupPhone').fill('(15) 99110028');
     await page.locator('#studentLookupForm').evaluate((form) => form.requestSubmit());
     await page.waitForTimeout(450);
@@ -106,8 +110,11 @@ async function runCaseAction(page, action) {
       hasScheduleAction: Boolean(document.querySelector('#studentBookingList [data-student-booking]'))
     }));
     if (!result.hasScheduleAction && !/nenhuma|nao encontrado|modo demo/i.test(result.status)) throw new Error(`Busca publica nao carregou o estado esperado (${JSON.stringify(result)})`);
-    await page.locator('#guestTab').click();
-    if (await page.locator('#guestPane.active').count() !== 1) throw new Error('Aba publica de agendamento nao abriu');
+    if (page.viewportSize().width <= 760) {
+      await page.locator('#guestTab').click();
+      if (await page.locator('#guestPane.active').count() !== 1) throw new Error('Aba publica de agendamento nao abriu');
+      await page.locator('#studentTab').click();
+    }
   }
   if (action === 'class-operations') {
     await page.locator('[data-open-schedule]').click();

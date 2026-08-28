@@ -212,6 +212,7 @@ let apiMode = false;
 let state = loadLocalState();
 let activeAttendanceClassId = '';
 let publicStudentLookup = { telefone: '', student: null, items: [] };
+let publicStudentPendingBookings = new Set();
 let actionRefreshTimer = null;
 let renderFrame = 0;
 let stateVersion = 0;
@@ -2858,6 +2859,7 @@ function localStudentClassesByPhone(telefone = '') {
 
 async function loadStudentConfirmations(telefone) {
   const status = document.getElementById('studentConfirmStatus');
+  if (phoneDigits(publicStudentLookup.telefone) !== phoneDigits(telefone)) publicStudentPendingBookings = new Set();
   publicStudentLookup = { telefone, student: null, items: [] };
   if (status) status.textContent = 'Buscando suas aulas...';
   if (location.protocol !== 'file:') {
@@ -2884,15 +2886,17 @@ async function loadStudentConfirmations(telefone) {
 async function renderStudentBookingOptions() {
   const target = document.getElementById('studentBookingList');
   if (!target) return;
+  target.setAttribute('aria-busy', 'true');
   if (!publicStudentLookup.student) {
     target.innerHTML = empty('Busque seu WhatsApp acima para liberar o agendamento.');
+    target.setAttribute('aria-busy', 'false');
     return;
   }
   const classes = await loadPublicClasses();
   const currentIds = new Set((publicStudentLookup.items || []).map((item) => String(item.id)));
   const available = classes.filter((item) => {
     const used = Number(item.inscritos ?? classStudentIds(item).length);
-    return !currentIds.has(String(item.id)) && used < Number(item.capacidade || 8);
+    return !currentIds.has(String(item.id)) && !publicStudentPendingBookings.has(String(item.id)) && used < Number(item.capacidade || 8);
   });
   target.innerHTML = available.length ? available.map((item) => {
     const remaining = Number(item.capacidade || 8) - Number(item.inscritos ?? classStudentIds(item).length);
@@ -2903,13 +2907,21 @@ async function renderStudentBookingOptions() {
       </article>
     `;
   }).join('') : empty('Nenhum horario livre para agendar agora.');
+  target.setAttribute('aria-busy', 'false');
 }
 
 async function submitStudentBooking(classId) {
   const student = publicStudentLookup.student;
   const telefone = publicStudentLookup.telefone || document.getElementById('studentLookupPhone')?.value.trim();
   if (!student || !telefone) throw new Error('Busque seu WhatsApp antes de agendar');
-  await sendPublicBooking({ nome: student.nome, telefone, aula_id: classId, observacao: 'Agendamento feito pelo fluxo experimental do aluno.' });
+  if (publicStudentPendingBookings.has(String(classId))) return;
+  publicStudentPendingBookings.add(String(classId));
+  try {
+    await sendPublicBooking({ nome: student.nome, telefone, aula_id: classId, observacao: 'Agendamento feito pelo fluxo experimental do aluno.' });
+  } catch (error) {
+    publicStudentPendingBookings.delete(String(classId));
+    throw error;
+  }
   const status = document.getElementById('studentConfirmStatus');
   if (status) status.textContent = 'Pedido de agendamento enviado. Aguarde a confirmacao.';
   await loadStudentConfirmations(telefone);
@@ -3794,7 +3806,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260828-release9', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260828-release11', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

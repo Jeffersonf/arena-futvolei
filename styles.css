@@ -1365,6 +1365,24 @@ label {
 
 .booking-pane.active { display: grid; }
 
+.student-pane {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.student-pane .student-confirm-form {
+  grid-column: 1 / -1;
+  position: static;
+}
+
+.student-pane > .booking-board { min-width: 0; }
+
+.student-booking-board {
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--line));
+  background: color-mix(in srgb, var(--accent-soft) 34%, var(--surface));
+}
+
+.student-booking-board .booking-class-card { background: var(--surface); }
+
 .booking-form {
   display: grid;
   gap: 12px;
@@ -2598,4 +2616,8 @@ label {
   [data-theme="modern-dark"] .topbar h1 { font-size: 25px; }
   [data-theme="web-light"] .sidebar,
   [data-theme="web-dark"] .sidebar { background: #26382d; }
+}
+
+@media (min-width: 981px) {
+  .student-pane > .student-booking-board { grid-column: auto; }
 }

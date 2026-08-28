@@ -10,11 +10,11 @@
     <title data-config-text="brandName">Team Lucão Futevôlei</title>
     <link rel="icon" type="image/png" href="assets/team-lucao-logo.png" />
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260828-release9" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260828-release11" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20260828-patterns2" />
+    <link rel="stylesheet" href="styles.css?v=20260828-patterns4" />
   </head>
   <body>
     <a class="skip-link" href="#mainContent">Pular para o conteúdo principal</a>
@@ -54,7 +54,7 @@
               <div class="booking-class-list" id="bookingClassList" aria-live="polite" aria-busy="true"></div>
             </div>
           </div>
-          <div id="studentPane" class="booking-pane active" role="tabpanel" aria-labelledby="studentTab" aria-hidden="false" data-public-pane="student">
+          <div id="studentPane" class="booking-pane student-pane active" role="tabpanel" aria-labelledby="studentTab" aria-hidden="false" data-public-pane="student">
             <form class="booking-form student-confirm-form" id="studentLookupForm">
               <label>Seu WhatsApp<input id="studentLookupPhone" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" required /></label>
               <button class="primary-btn" type="submit">Buscar minhas aulas</button>
@@ -64,7 +64,7 @@
               <div class="panel-head compact-head">
                 <div>
                   <span>confirmação rápida</span>
-                  <h2>Minhas próximas aulas</h2>
+                  <h2>Minhas aulas agendadas</h2>
                 </div>
               </div>
               <div class="student-confirm-list" id="studentClassList"></div>
@@ -73,7 +73,7 @@
               <div class="panel-head compact-head">
                 <div>
                   <span>agendamento experimental</span>
-                  <h2>Agendar outra aula</h2>
+                  <h2>Agendar experimental</h2>
                 </div>
               </div>
               <p class="meta">Depois de buscar seu WhatsApp, escolha um horario livre para pedir uma nova aula.</p>
@@ -612,7 +612,7 @@
                 <option value="0">Domingo</option>
               </select>
             </label>
-            <label>Horario fixo<input id="studentFixedTime" type="time" /></label>
+            <label>Horario fixo<input id="studentFixedTime" type="time" list="classTimeOptions" /></label>
           </div>
           <label>Turma fixa<input id="studentFixedGroup" placeholder="Ex: Iniciantes 18h" /></label>
           <div class="schedule-preview" id="studentSchedulePreview"></div>
@@ -863,6 +863,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-    <script src="app.js?v=20260828-release9"></script>
+    <script src="app.js?v=20260828-release11"></script>
   </body>
 </html>
