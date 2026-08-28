@@ -3,7 +3,7 @@ const fs = require('fs');
 
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
-const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260827-release1';
+const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260827-release2';
 const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260827-editorial3';
 const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined;
 
@@ -67,6 +67,8 @@ async function assertModalFocus(page, modalSelector, triggerSelector) {
   if (!restored) throw new Error(`${modalSelector}: foco nao foi restaurado ao fechar`);
   await page.locator(triggerSelector).first().click();
   await page.waitForSelector(`${modalSelector}.open`);
+  const scrollTop = await page.locator(`${modalSelector}.open .modal`).evaluate((element) => element.scrollTop);
+  if (scrollTop !== 0) throw new Error(`${modalSelector}: modal reabriu fora do topo`);
 }
 
 async function runCaseAction(page, action) {

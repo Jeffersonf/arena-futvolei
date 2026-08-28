@@ -1822,6 +1822,8 @@ function openModal(id) {
   modalWrap.classList.add('open');
   modalWrap.setAttribute('aria-hidden', 'false');
   document.body.classList.add('modal-open');
+  const modal = modalWrap.querySelector('.modal');
+  if (modal) modal.scrollTop = 0;
   requestAnimationFrame(() => {
     modalWrap.querySelector('input:not([type="hidden"]), select, textarea, button.close')?.focus();
   });
