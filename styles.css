@@ -517,7 +517,11 @@ textarea::placeholder {
   align-items: center;
 }
 
-.system-notice strong { color: var(--text); }
+.system-notice strong {
+  flex: 0 0 auto;
+  color: var(--text);
+  white-space: nowrap;
+}
 
 .panel,
 .row-card,
@@ -1510,6 +1514,26 @@ label {
   .page-dashboard .panel,
   #page-dashboard .panel {
     min-height: 0;
+  }
+}
+
+@media (min-width: 981px) and (max-width: 1100px) {
+  .topbar {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 10px;
+  }
+
+  .topbar h1 {
+    white-space: nowrap;
+  }
+
+  .top-actions {
+    justify-content: flex-start;
+  }
+
+  .global-search {
+    width: min(360px, 48vw);
   }
 }
 

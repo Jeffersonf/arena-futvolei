@@ -4,7 +4,7 @@ const fs = require('fs');
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
 const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260827-release5';
-const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260827-editorial10';
+const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260827-editorial12';
 const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined;
 
 const cases = [
@@ -28,6 +28,8 @@ const cases = [
   { name: 'mobile-reports', viewport: { width: 390, height: 844 }, page: 'reports' },
   { name: 'mobile-class-modal', viewport: { width: 390, height: 844 }, page: 'classes', action: 'class-modal' },
   { name: 'mobile-more', viewport: { width: 390, height: 844 }, page: 'more' },
+  { name: 'tablet-dashboard', viewport: { width: 768, height: 1024 }, page: 'dashboard' },
+  { name: 'desktop-compact-dashboard', viewport: { width: 1024, height: 768 }, page: 'dashboard' },
   { name: 'desktop-dashboard', viewport: { width: 1440, height: 950 }, page: 'dashboard' },
   { name: 'desktop-dashboard-dark', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'dark' },
   { name: 'desktop-actions', viewport: { width: 1440, height: 950 }, page: 'actions' },
@@ -175,7 +177,7 @@ async function runCaseAction(page, action) {
       await page.waitForTimeout(100);
     }
     if (item.action) await runCaseAction(page, item.action);
-    if (item.page && item.viewport.width <= 520) {
+    if (item.page && item.viewport.width <= 980) {
       const mobileNav = await page.evaluate(() => {
         const sidebar = document.querySelector('.sidebar');
         const visibleItems = Array.from(document.querySelectorAll('.sidebar .nav-item'))
