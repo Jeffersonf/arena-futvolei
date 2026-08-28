@@ -44,23 +44,20 @@ const DEFAULT_APP_CONFIG = Object.freeze({
   onlineNoticeTitle: 'Operação real',
   localNoticeTitle: 'Demo local',
   onlineNoticeText: 'Servidor ativo, dados compartilhados e backups disponíveis.',
-  localNoticeText: 'Dados neste navegador. Para uso diário no iPhone, publique o servidor.',
-  accentColor: '',
-  primaryColor: '',
-  useThemeColors: true
+  localNoticeText: 'Dados neste navegador. Para uso diário no iPhone, publique o servidor.'
 });
-const FINEXT_THEMES = Object.freeze([
-  { id: 'amber', label: 'Amarelo', hex: '#f5e95f', soft: '#fff9c7', dark: '#8f7d00', description: 'Claro, quente e direto para decisões rápidas.' },
-  { id: 'lime', label: 'Lima', hex: '#d7f26a', soft: '#f1fac4', dark: '#557000', description: 'Vivo e esportivo para uma operação com ritmo.' },
-  { id: 'mint', label: 'Menta', hex: '#78e8c5', soft: '#d9faef', dark: '#08745c', description: 'Leve e fresco para uma rotina mais tranquila.' },
-  { id: 'blue', label: 'Azul', hex: '#80b8ff', soft: '#e0eeff', dark: '#1f5da8', description: 'Organizado e confiável para acompanhar dados.' },
-  { id: 'violet', label: 'Violeta', hex: '#b6a8ff', soft: '#ebe7ff', dark: '#5b45b8', description: 'Editorial e expressivo sem perder legibilidade.' },
-  { id: 'coral', label: 'Coral', hex: '#ff9b79', soft: '#ffe4da', dark: '#a9472c', description: 'Humano e caloroso para relacionamento com alunos.' }
+const FINEXT_PATTERNS = Object.freeze([
+  { id: 'modern-light', label: 'Moderno claro', family: 'Moderno', mode: 'claro', description: 'Composicao fluida, cards amplos e hierarquia forte para leitura rapida.', swatches: ['#f3f3f5', '#ffffff', '#191919'] },
+  { id: 'modern-dark', label: 'Moderno escuro', family: 'Moderno', mode: 'escuro', description: 'A experiencia escura do Finanza com foco, contraste e superficies profundas.', swatches: ['#101319', '#191919', '#f4f5f7'] },
+  { id: 'classic-light', label: 'Classico claro', family: 'Classico', mode: 'claro', description: 'Interface essencial, densa e orientada por bordas para operacao diaria.', swatches: ['#f7f7f4', '#ffffff', '#242424'] },
+  { id: 'classic-dark', label: 'Classico escuro', family: 'Classico', mode: 'escuro', description: 'Controle compacto com contraste alto e leitura de dados em primeiro plano.', swatches: ['#121212', '#1d1d1d', '#f1f1ed'] },
+  { id: 'web-light', label: 'Finanza Web claro', family: 'Finanza Web', mode: 'claro', description: 'Estrutura web equilibrada, modular e preparada para telas largas.', swatches: ['#eef1ed', '#ffffff', '#20231f'] },
+  { id: 'web-dark', label: 'Finanza Web escuro', family: 'Finanza Web', mode: 'escuro', description: 'Painel web noturno com camadas claras e navegacao bem marcada.', swatches: ['#111512', '#1c211d', '#f2f5ef'] }
 ]);
 const THEME_OPTIONS = Object.freeze([
   { id: 'light', label: 'Padrão claro', description: 'Visual atual do Arena, recomendado.', group: 'base', swatches: ['#2563eb', '#ffffff', '#171717'] },
   { id: 'dark', label: 'Padrão escuro', description: 'Visual atual em modo noturno.', group: 'base', swatches: ['#60a5fa', '#171717', '#f5f5f5'] },
-  ...FINEXT_THEMES.map((item) => ({ ...item, group: 'finext', swatches: [item.hex, item.soft, '#171717'] }))
+  ...FINEXT_PATTERNS.map((item) => ({ ...item, group: 'finext' }))
 ]);
 
 function loadAppConfig() {
@@ -918,15 +915,6 @@ function updateTopbar(page) {
   if (titleEl) titleEl.textContent = title;
 }
 
-function applyCustomColors() {
-  const root = document.documentElement;
-  const useThemeColors = appConfig.useThemeColors !== false;
-  if (useThemeColors || !appConfig.accentColor) root.style.removeProperty('--accent');
-  else root.style.setProperty('--accent', appConfig.accentColor);
-  if (useThemeColors || !appConfig.primaryColor) root.style.removeProperty('--primary-action');
-  else root.style.setProperty('--primary-action', appConfig.primaryColor);
-}
-
 function applyAppConfig() {
   PAGE_TITLES.dashboard = [appConfig.dashboardEyebrow, appConfig.dashboardTitle];
   ['actions', 'bookings', 'students', 'classes', 'payments', 'waitlist', 'plans', 'reports'].forEach((page) => {
@@ -946,7 +934,6 @@ function applyAppConfig() {
   document.querySelectorAll('[data-preview-subtitle]').forEach((element) => { element.textContent = appConfig.brandSubtitle; });
   document.querySelectorAll('[data-preview-title]').forEach((element) => { element.textContent = appConfig.dashboardTitle; });
   document.querySelectorAll('[data-preview-description]').forEach((element) => { element.textContent = appConfig.publicDescription; });
-  applyCustomColors();
   updateTopbar(currentPage());
 }
 
@@ -955,7 +942,6 @@ function setTheme(theme, { persist = true } = {}) {
   const next = valid ? theme : 'light';
   document.documentElement.dataset.theme = next;
   if (persist) localStorage.setItem('fv_theme', next);
-  applyCustomColors();
   updateThemeButton();
   if (document.getElementById('themePicker')) renderSettings();
 }
@@ -965,18 +951,18 @@ function renderSettings() {
   if (!picker) return;
   const current = document.documentElement.dataset.theme || 'light';
   const renderTheme = (item) => `
-    <button class="theme-choice ${item.id === current ? 'is-active' : ''}" type="button" role="option" aria-selected="${item.id === current}" data-theme-choice="${item.id}">
+    <button class="theme-choice theme-choice-${item.family ? item.family.toLowerCase().replace(/\s+/g, '-') : 'base'} ${item.id === current ? 'is-active' : ''}" type="button" role="option" aria-selected="${item.id === current}" data-theme-choice="${item.id}">
       <span class="theme-choice-preview" aria-hidden="true">
         <i style="--theme-swatch:${item.swatches[0]}"></i><i style="--theme-swatch:${item.swatches[1]}"></i><i style="--theme-swatch:${item.swatches[2]}"></i>
       </span>
-      <span class="theme-choice-copy"><strong>${item.label}</strong><small>${item.description}</small></span>
+      <span class="theme-choice-copy"><strong>${item.label}</strong><small>${item.family ? `${item.family} · ${item.mode}` : 'base atual'}<br>${item.description}</small></span>
       <span class="theme-choice-check" aria-hidden="true">${item.id === current ? '✓' : ''}</span>
     </button>`;
   const base = THEME_OPTIONS.filter((item) => item.group === 'base');
   const finext = THEME_OPTIONS.filter((item) => item.group === 'finext');
   picker.innerHTML = `
     <div class="theme-group"><span class="section-label">base atual</span><div class="theme-choice-grid">${base.map(renderTheme).join('')}</div></div>
-    <div class="theme-group"><span class="section-label">6 temas experimentais</span><div class="theme-choice-grid">${finext.map(renderTheme).join('')}</div></div>`;
+    <div class="theme-group"><span class="section-label">6 padroes visuais Finanza</span><div class="theme-choice-grid">${finext.map(renderTheme).join('')}</div></div>`;
   syncSettingsForm();
   updateSettingsPreview();
 }
@@ -984,20 +970,7 @@ function renderSettings() {
 function syncSettingsForm() {
   document.querySelectorAll('[data-settings-field]').forEach((field) => {
     const value = appConfig[field.dataset.settingsField] || '';
-    if (field.type === 'color') field.value = /^#[0-9a-f]{6}$/i.test(value) ? value : (field.id.includes('Primary') ? '#0a0a0a' : '#2563eb');
-    else field.value = value;
-  });
-  const themeColors = document.getElementById('settingsThemeColors');
-  if (themeColors) themeColors.checked = appConfig.useThemeColors !== false;
-  updateCustomColorControls();
-}
-
-function updateCustomColorControls() {
-  const themeColors = document.getElementById('settingsThemeColors');
-  const disabled = themeColors?.checked !== false;
-  ['settingsAccentColor', 'settingsPrimaryColor'].forEach((id) => {
-    const field = document.getElementById(id);
-    if (field) field.disabled = disabled;
+    field.value = value;
   });
 }
 
@@ -1006,12 +979,6 @@ function readSettingsForm() {
   document.querySelectorAll('[data-settings-field]').forEach((field) => {
     next[field.dataset.settingsField] = field.value.trim();
   });
-  const themeColors = document.getElementById('settingsThemeColors');
-  next.useThemeColors = themeColors?.checked !== false;
-  if (next.useThemeColors) {
-    next.accentColor = '';
-    next.primaryColor = '';
-  }
   return next;
 }
 
@@ -3433,7 +3400,6 @@ function bindEvents() {
     if (target) setTheme(target.dataset.themeChoice);
   });
   document.getElementById('settingsForm')?.addEventListener('input', updateSettingsPreview);
-  document.getElementById('settingsThemeColors')?.addEventListener('change', updateCustomColorControls);
   document.querySelectorAll('[data-settings-default-theme]').forEach((button) => button.addEventListener('click', () => {
     setTheme('light');
     toast('Tema padrão restaurado');
@@ -3608,7 +3574,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260827-release7', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260828-release8', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

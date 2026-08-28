@@ -3,8 +3,8 @@ const fs = require('fs');
 
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
-const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260827-release7';
-const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260827-editorial14';
+const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260828-release8';
+const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260828-patterns1';
 const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined;
 
 const cases = [
@@ -29,16 +29,21 @@ const cases = [
   { name: 'mobile-class-modal', viewport: { width: 390, height: 844 }, page: 'classes', action: 'class-modal' },
   { name: 'mobile-more', viewport: { width: 390, height: 844 }, page: 'more' },
   { name: 'mobile-settings', viewport: { width: 390, height: 844 }, page: 'settings' },
-  { name: 'mobile-theme-violet', viewport: { width: 390, height: 844 }, page: 'dashboard', theme: 'violet' },
+  { name: 'mobile-pattern-modern-light', viewport: { width: 390, height: 844 }, page: 'dashboard', theme: 'modern-light' },
+  { name: 'mobile-pattern-modern-dark', viewport: { width: 390, height: 844 }, page: 'dashboard', theme: 'modern-dark' },
+  { name: 'mobile-pattern-classic-light', viewport: { width: 390, height: 844 }, page: 'dashboard', theme: 'classic-light' },
+  { name: 'mobile-pattern-classic-dark', viewport: { width: 390, height: 844 }, page: 'dashboard', theme: 'classic-dark' },
+  { name: 'mobile-pattern-web-light', viewport: { width: 390, height: 844 }, page: 'dashboard', theme: 'web-light' },
+  { name: 'mobile-pattern-web-dark', viewport: { width: 390, height: 844 }, page: 'dashboard', theme: 'web-dark' },
   { name: 'tablet-dashboard', viewport: { width: 768, height: 1024 }, page: 'dashboard' },
   { name: 'desktop-compact-dashboard', viewport: { width: 1024, height: 768 }, page: 'dashboard' },
   { name: 'desktop-settings', viewport: { width: 1440, height: 950 }, page: 'settings', action: 'settings-theme-cycle' },
-  { name: 'desktop-theme-amber', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'amber' },
-  { name: 'desktop-theme-lime', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'lime' },
-  { name: 'desktop-theme-mint', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'mint' },
-  { name: 'desktop-theme-blue', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'blue' },
-  { name: 'desktop-theme-violet', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'violet' },
-  { name: 'desktop-theme-coral', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'coral' },
+  { name: 'desktop-pattern-modern-light', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'modern-light' },
+  { name: 'desktop-pattern-modern-dark', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'modern-dark' },
+  { name: 'desktop-pattern-classic-light', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'classic-light' },
+  { name: 'desktop-pattern-classic-dark', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'classic-dark' },
+  { name: 'desktop-pattern-web-light', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'web-light' },
+  { name: 'desktop-pattern-web-dark', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'web-dark' },
   { name: 'desktop-dashboard', viewport: { width: 1440, height: 950 }, page: 'dashboard' },
   { name: 'desktop-dashboard-dark', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'dark' },
   { name: 'desktop-actions', viewport: { width: 1440, height: 950 }, page: 'actions' },
@@ -132,7 +137,7 @@ async function runCaseAction(page, action) {
     await assertModalFocus(page, '#studentModal', '#page-students.active .student-row [data-edit-student]');
   }
   if (action === 'settings-theme-cycle') {
-    const themes = ['amber', 'lime', 'mint', 'blue', 'violet', 'coral'];
+    const themes = ['modern-light', 'modern-dark', 'classic-light', 'classic-dark', 'web-light', 'web-dark'];
     const signatures = new Set();
     const choiceCount = await page.locator('[data-theme-choice]').count();
     if (choiceCount !== 8) throw new Error(`Configuração deveria exibir 8 opções (${choiceCount})`);
@@ -140,7 +145,7 @@ async function runCaseAction(page, action) {
       await page.locator(`[data-theme-choice="${theme}"]`).click();
       const actual = await page.evaluate(() => {
         const style = getComputedStyle(document.documentElement);
-        return `${document.documentElement.dataset.theme}|${style.getPropertyValue('--bg')}|${style.getPropertyValue('--surface')}|${style.getPropertyValue('--accent')}`;
+        return `${document.documentElement.dataset.theme}|${style.getPropertyValue('--bg')}|${style.getPropertyValue('--surface')}|${style.getPropertyValue('--radius')}|${style.getPropertyValue('--shadow')}|${style.getPropertyValue('--sidebar')}`;
       });
       const actualTheme = actual.split('|')[0];
       signatures.add(actual);
@@ -166,7 +171,7 @@ async function runCaseAction(page, action) {
       brand: document.querySelector('[data-config-text="brandName"]')?.textContent,
       title: document.querySelector('[data-config-page-title="studentsTitle"]')?.textContent
     }));
-    if (persisted.theme !== 'coral' || persisted.brand !== 'Arena Lucao Futevolei' || persisted.title !== 'Alunos teste') {
+    if (persisted.theme !== 'web-dark' || persisted.brand !== 'Arena Lucao Futevolei' || persisted.title !== 'Alunos teste') {
       throw new Error(`Configuração não sobreviveu ao reload (${JSON.stringify(persisted)})`);
     }
   }

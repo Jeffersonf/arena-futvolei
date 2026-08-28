@@ -51,7 +51,7 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Cards mobile mais compactos, com acoes em trilho horizontal
 - Polimento visual global para desktop e iPhone
 - Configuração administrativa temporária para temas completos, marca e textos
-- Seis temas experimentais inspirados na referência Finext, mantendo claro/escuro como padrão
+- Seis padrões visuais completos inspirados no Finanza Android Kotlin: Moderno, Clássico e Finanza Web em claro e escuro
 - Dashboard com contexto visual de agenda, cobranca e conversao
 - Estados visuais nos cards de alunos, aulas, cobrancas e espera
 - Ficha do aluno redesenhada com perfil, plano, pagamento e frequencia
