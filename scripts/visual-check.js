@@ -3,8 +3,8 @@ const fs = require('fs');
 
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
-const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260827-release5';
-const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260827-editorial12';
+const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260827-release7';
+const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260827-editorial14';
 const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined;
 
 const cases = [
@@ -28,8 +28,17 @@ const cases = [
   { name: 'mobile-reports', viewport: { width: 390, height: 844 }, page: 'reports' },
   { name: 'mobile-class-modal', viewport: { width: 390, height: 844 }, page: 'classes', action: 'class-modal' },
   { name: 'mobile-more', viewport: { width: 390, height: 844 }, page: 'more' },
+  { name: 'mobile-settings', viewport: { width: 390, height: 844 }, page: 'settings' },
+  { name: 'mobile-theme-violet', viewport: { width: 390, height: 844 }, page: 'dashboard', theme: 'violet' },
   { name: 'tablet-dashboard', viewport: { width: 768, height: 1024 }, page: 'dashboard' },
   { name: 'desktop-compact-dashboard', viewport: { width: 1024, height: 768 }, page: 'dashboard' },
+  { name: 'desktop-settings', viewport: { width: 1440, height: 950 }, page: 'settings', action: 'settings-theme-cycle' },
+  { name: 'desktop-theme-amber', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'amber' },
+  { name: 'desktop-theme-lime', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'lime' },
+  { name: 'desktop-theme-mint', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'mint' },
+  { name: 'desktop-theme-blue', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'blue' },
+  { name: 'desktop-theme-violet', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'violet' },
+  { name: 'desktop-theme-coral', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'coral' },
   { name: 'desktop-dashboard', viewport: { width: 1440, height: 950 }, page: 'dashboard' },
   { name: 'desktop-dashboard-dark', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'dark' },
   { name: 'desktop-actions', viewport: { width: 1440, height: 950 }, page: 'actions' },
@@ -121,6 +130,45 @@ async function runCaseAction(page, action) {
     await page.locator('#page-students.active .student-row [data-edit-student]').first().click();
     await page.waitForSelector('#studentModal.open', { timeout: 5000 });
     await assertModalFocus(page, '#studentModal', '#page-students.active .student-row [data-edit-student]');
+  }
+  if (action === 'settings-theme-cycle') {
+    const themes = ['amber', 'lime', 'mint', 'blue', 'violet', 'coral'];
+    const signatures = new Set();
+    const choiceCount = await page.locator('[data-theme-choice]').count();
+    if (choiceCount !== 8) throw new Error(`Configuração deveria exibir 8 opções (${choiceCount})`);
+    for (const theme of themes) {
+      await page.locator(`[data-theme-choice="${theme}"]`).click();
+      const actual = await page.evaluate(() => {
+        const style = getComputedStyle(document.documentElement);
+        return `${document.documentElement.dataset.theme}|${style.getPropertyValue('--bg')}|${style.getPropertyValue('--surface')}|${style.getPropertyValue('--accent')}`;
+      });
+      const actualTheme = actual.split('|')[0];
+      signatures.add(actual);
+      if (actualTheme !== theme) throw new Error(`Tema experimental não aplicado: ${theme} / ${actualTheme}`);
+    }
+    if (signatures.size !== themes.length) throw new Error(`Temas completos não alteraram tokens (${signatures.size}/${themes.length})`);
+    await page.locator('#settingsBrandName').fill('Arena Lucao Futevolei');
+    await page.locator('#settingsStudentsTitle').fill('Alunos teste');
+    await page.locator('#settingsForm button[type="submit"]').click();
+    await page.waitForTimeout(100);
+    const saved = await page.evaluate(() => ({
+      brand: document.querySelector('[data-config-text="brandName"]')?.textContent,
+      title: document.querySelector('[data-config-page-title="studentsTitle"]')?.textContent,
+      config: JSON.parse(localStorage.getItem('tlf_admin_config_v1') || '{}')
+    }));
+    if (saved.brand !== 'Arena Lucao Futevolei' || saved.title !== 'Alunos teste' || saved.config.brandName !== saved.brand || saved.config.studentsTitle !== saved.title) {
+      throw new Error(`Configuração de texto não persistiu (${JSON.stringify(saved)})`);
+    }
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 10000 });
+    await page.waitForTimeout(250);
+    const persisted = await page.evaluate(() => ({
+      theme: document.documentElement.dataset.theme,
+      brand: document.querySelector('[data-config-text="brandName"]')?.textContent,
+      title: document.querySelector('[data-config-page-title="studentsTitle"]')?.textContent
+    }));
+    if (persisted.theme !== 'coral' || persisted.brand !== 'Arena Lucao Futevolei' || persisted.title !== 'Alunos teste') {
+      throw new Error(`Configuração não sobreviveu ao reload (${JSON.stringify(persisted)})`);
+    }
   }
   if (action === 'payment-modal') {
     await page.locator('#page-payments.active [data-pay]').first().click();

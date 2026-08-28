@@ -7,14 +7,14 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="TLF Gestão" />
-    <title>Team Lucão Futevôlei</title>
+    <title data-config-text="brandName">Team Lucão Futevôlei</title>
     <link rel="icon" type="image/png" href="assets/team-lucao-logo.png" />
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260827-release5" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260827-release7" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20260827-editorial12" />
+    <link rel="stylesheet" href="styles.css?v=20260827-editorial14" />
   </head>
   <body>
     <a class="skip-link" href="#mainContent">Pular para o conteúdo principal</a>
@@ -25,9 +25,9 @@
             <img src="assets/team-lucao-logo.png" alt="" />
           </span>
           <div>
-            <p class="eyebrow">agenda da escola</p>
-            <h1>Team Lucao Futevolei</h1>
-            <p>Peça uma vaga ou confirme as aulas em que você já está marcado.</p>
+            <p class="eyebrow" data-config-text="publicEyebrow">agenda da escola</p>
+            <h1 data-config-text="publicTitle">Team Lucao Futevolei</h1>
+            <p data-config-text="publicDescription">Peça uma vaga ou confirme as aulas em que você já está marcado.</p>
           </div>
         </div>
         <div class="booking-tabs" role="tablist" aria-label="Agenda publica">
@@ -80,9 +80,9 @@
           <img src="assets/team-lucao-logo.png" alt="" />
         </span>
         <div class="login-copy">
-          <p class="eyebrow">acesso restrito</p>
-          <h2 id="loginTitle">Team Lucao Futevolei</h2>
-          <p>Painel rápido para organizar alunos, aulas e cobranças.</p>
+          <p class="eyebrow" data-config-text="loginEyebrow">acesso restrito</p>
+          <h2 id="loginTitle" data-config-text="brandName">Team Lucao Futevolei</h2>
+          <p data-config-text="loginDescription">Painel rápido para organizar alunos, aulas e cobranças.</p>
         </div>
         <label>PIN de acesso<input id="loginPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="1234" /></label>
         <button class="primary-btn" type="submit">Entrar</button>
@@ -96,8 +96,8 @@
           <img src="assets/team-lucao-logo.png" alt="" />
         </span>
         <div>
-          <strong>Team Lucão Futevôlei</strong>
-          <small>gestão da escola</small>
+          <strong data-config-text="brandName">Team Lucão Futevôlei</strong>
+          <small data-config-text="brandSubtitle">gestão da escola</small>
         </div>
       </div>
       <nav class="nav" aria-label="Menu principal">
@@ -112,6 +112,7 @@
         <span class="nav-label secondary-nav">Gestão</span>
         <button class="nav-item secondary-nav" type="button" data-page="plans"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m20 13-7 7-9-9V4h7z" /><circle cx="7.5" cy="8.5" r="1" /></svg> Planos</button>
         <button class="nav-item secondary-nav" type="button" data-page="reports"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h17" /><path d="m7 15 4-5 3 2 5-6" /></svg> Relatórios</button>
+        <button class="nav-item secondary-nav" type="button" data-page="settings"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /><circle cx="9" cy="6" r="2" /><circle cx="15" cy="12" r="2" /><circle cx="11" cy="18" r="2" /></svg> Config.</button>
         <button class="nav-item mobile-only" type="button" data-page="more"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /></svg> Mais</button>
       </nav>
       <button class="ghost-btn" id="logoutBtn" type="button">Sair</button>
@@ -121,16 +122,16 @@
     <main class="app" id="mainContent">
       <header class="topbar">
         <div>
-          <p class="eyebrow" id="topbarEyebrow">operação de hoje</p>
-          <h1 id="topbarTitle">Painel do dia</h1>
+          <p class="eyebrow" id="topbarEyebrow" data-config-text="dashboardEyebrow">operação de hoje</p>
+          <h1 id="topbarTitle" data-config-text="dashboardTitle">Painel do dia</h1>
         </div>
         <div class="mobile-top-brand">
           <span class="brand-mark" aria-hidden="true">
             <img src="assets/team-lucao-logo.png" alt="" />
           </span>
           <div>
-            <strong>Team Lucao</strong>
-            <small>gestao da escola</small>
+            <strong data-config-text="brandShort">Team Lucao</strong>
+            <small data-config-text="brandSubtitle">gestao da escola</small>
           </div>
         </div>
         <div class="top-actions">
@@ -187,7 +188,7 @@
           <div class="panel-head">
             <div>
               <span>histórico</span>
-              <h2>Central de ações</h2>
+              <h2 data-config-page-title="actionsTitle">Central de ações</h2>
             </div>
           </div>
           <div class="finance-summary" id="actionSummary"></div>
@@ -220,7 +221,7 @@
           <div class="panel-head">
             <div>
               <span>cadastro</span>
-              <h2>Alunos</h2>
+              <h2 data-config-page-title="studentsTitle">Alunos</h2>
             </div>
             <button class="soft-btn" type="button" data-open-student>+ Novo aluno</button>
           </div>
@@ -247,7 +248,7 @@
           <div class="panel-head">
             <div>
               <span>agenda</span>
-              <h2>Aulas</h2>
+              <h2 data-config-page-title="classesTitle">Aulas</h2>
             </div>
             <button class="soft-btn" type="button" data-open-class>+ Nova aula</button>
           </div>
@@ -285,7 +286,7 @@
           <div class="panel-head">
             <div>
               <span>alunos</span>
-              <h2>Pedidos de aula</h2>
+              <h2 data-config-page-title="bookingsTitle">Pedidos de aula</h2>
             </div>
           </div>
           <div class="finance-summary" id="bookingSummary"></div>
@@ -298,7 +299,7 @@
           <div class="panel-head">
             <div>
               <span>financeiro</span>
-              <h2>Mensalidades</h2>
+              <h2 data-config-page-title="paymentsTitle">Mensalidades</h2>
             </div>
           </div>
           <div class="finance-summary payment-summary" id="financeSummary"></div>
@@ -322,7 +323,7 @@
           <div class="panel-head">
             <div>
               <span>oferta</span>
-              <h2>Planos e tipos de aula</h2>
+              <h2 data-config-page-title="plansTitle">Planos e tipos de aula</h2>
             </div>
             <button class="soft-btn" type="button" data-open-plan>+ Plano</button>
           </div>
@@ -335,7 +336,7 @@
           <div class="panel-head">
             <div>
               <span>demanda</span>
-              <h2>Lista de espera</h2>
+              <h2 data-config-page-title="waitlistTitle">Lista de espera</h2>
             </div>
             <button class="soft-btn" type="button" data-open-waitlist>+ Interessado</button>
           </div>
@@ -358,7 +359,7 @@
           <div class="panel-head">
             <div>
               <span>gestão</span>
-              <h2>Relatórios rápidos</h2>
+              <h2 data-config-page-title="reportsTitle">Relatórios rápidos</h2>
             </div>
           </div>
           <div class="report-grid" id="reportGrid"></div>
@@ -409,12 +410,160 @@
               <strong>Claro / escuro</strong>
               <small>Alternar visual do painel.</small>
             </button>
+            <button class="more-card" type="button" data-more-page="settings">
+              <span>administração</span>
+              <strong>Configuração</strong>
+              <small>Temas, textos e identidade visual.</small>
+            </button>
             <button class="more-card danger-more" type="button" data-more-action="logout">
               <span>sessao</span>
               <strong>Sair</strong>
               <small>Voltar para a tela do PIN.</small>
             </button>
           </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-settings">
+        <div class="settings-layout">
+          <section class="panel settings-intro">
+            <div>
+              <span class="eyebrow">laboratório administrativo</span>
+              <h2>Configuração da marca</h2>
+              <p>Área temporária para testar linguagem, cores e proporções antes de fechar a versão final.</p>
+            </div>
+            <div class="settings-notice">
+              <strong>Modo de teste</strong>
+              <span>As alterações ficam salvas neste navegador e não mexem nos dados das aulas.</span>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <span>aparência</span>
+                <h2>Temas Finext experimentais</h2>
+              </div>
+              <button class="soft-btn" type="button" data-settings-default-theme>Usar padrão</button>
+            </div>
+            <p class="meta settings-helper">Seis temas completos inspirados na referência: Amarelo, Lima, Menta, Azul, Violeta e Coral.</p>
+            <div class="theme-picker" id="themePicker" role="listbox" aria-label="Escolher tema visual"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <span>identidade</span>
+                <h2>Textos e ajustes</h2>
+              </div>
+              <span class="settings-saved" id="settingsSavedState">salvo neste navegador</span>
+            </div>
+            <form class="settings-form" id="settingsForm">
+              <fieldset class="form-group">
+                <legend>Marca</legend>
+                <div class="form-row">
+                  <label>Nome completo<input id="settingsBrandName" data-settings-field="brandName" required /></label>
+                  <label>Nome curto<input id="settingsBrandShort" data-settings-field="brandShort" required /></label>
+                </div>
+                <label>Descrição curta<input id="settingsBrandSubtitle" data-settings-field="brandSubtitle" required /></label>
+                <div class="settings-color-row">
+                  <label>Cor da interface<input id="settingsAccentColor" type="color" data-settings-field="accentColor" value="#2563eb" /></label>
+                  <label>Cor da ação principal<input id="settingsPrimaryColor" type="color" data-settings-field="primaryColor" value="#0a0a0a" /></label>
+                  <label class="check-control"><input id="settingsThemeColors" type="checkbox" checked /> Seguir cores do tema</label>
+                </div>
+              </fieldset>
+              <fieldset class="form-group">
+                <legend>Painel</legend>
+                <div class="form-row">
+                  <label>Chapéu do dashboard<input id="settingsDashboardEyebrow" data-settings-field="dashboardEyebrow" required /></label>
+                  <label>Título do dashboard<input id="settingsDashboardTitle" data-settings-field="dashboardTitle" required /></label>
+                </div>
+                <div class="form-row">
+                  <label>Estado online<input id="settingsOnlineModeLabel" data-settings-field="onlineModeLabel" required /></label>
+                  <label>Estado local<input id="settingsLocalModeLabel" data-settings-field="localModeLabel" required /></label>
+                </div>
+              </fieldset>
+              <fieldset class="form-group">
+                <legend>Áreas do painel</legend>
+                <div class="form-row">
+                  <label>Ações<input id="settingsActionsTitle" data-settings-field="actionsTitle" required /></label>
+                  <label>Pedidos<input id="settingsBookingsTitle" data-settings-field="bookingsTitle" required /></label>
+                </div>
+                <div class="form-row">
+                  <label>Alunos<input id="settingsStudentsTitle" data-settings-field="studentsTitle" required /></label>
+                  <label>Aulas<input id="settingsClassesTitle" data-settings-field="classesTitle" required /></label>
+                </div>
+                <div class="form-row">
+                  <label>Mensalidades<input id="settingsPaymentsTitle" data-settings-field="paymentsTitle" required /></label>
+                  <label>Lista de espera<input id="settingsWaitlistTitle" data-settings-field="waitlistTitle" required /></label>
+                </div>
+                <div class="form-row">
+                  <label>Planos<input id="settingsPlansTitle" data-settings-field="plansTitle" required /></label>
+                  <label>Relatórios<input id="settingsReportsTitle" data-settings-field="reportsTitle" required /></label>
+                </div>
+              </fieldset>
+              <fieldset class="form-group">
+                <legend>Entrada pública e login</legend>
+                <label>Chapéu público<input id="settingsPublicEyebrow" data-settings-field="publicEyebrow" required /></label>
+                <label>Título público<input id="settingsPublicTitle" data-settings-field="publicTitle" required /></label>
+                <label>Descrição pública<textarea id="settingsPublicDescription" data-settings-field="publicDescription" required></textarea></label>
+                <label>Chapéu do login<input id="settingsLoginEyebrow" data-settings-field="loginEyebrow" required /></label>
+                <label>Descrição do login<textarea id="settingsLoginDescription" data-settings-field="loginDescription" required></textarea></label>
+              </fieldset>
+              <fieldset class="form-group">
+                <legend>Avisos de operação</legend>
+                <div class="form-row">
+                  <label>Título online<input id="settingsOnlineNoticeTitle" data-settings-field="onlineNoticeTitle" required /></label>
+                  <label>Título local<input id="settingsLocalNoticeTitle" data-settings-field="localNoticeTitle" required /></label>
+                </div>
+                <label>Texto online<textarea id="settingsOnlineNoticeText" data-settings-field="onlineNoticeText" required></textarea></label>
+                <label>Texto local<textarea id="settingsLocalNoticeText" data-settings-field="localNoticeText" required></textarea></label>
+              </fieldset>
+              <div class="settings-actions">
+                <button class="soft-btn" type="button" data-settings-reset>Descartar alterações</button>
+                <button class="primary-btn" type="submit">Salvar ajustes</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="panel settings-preview">
+            <div class="panel-head">
+              <div>
+                <span>prévia ao vivo</span>
+                <h2>Leitura do tema</h2>
+              </div>
+              <span class="pill ok">sem dados reais</span>
+            </div>
+            <div class="settings-preview-card">
+              <div class="settings-preview-head">
+                <div class="preview-avatar">TL</div>
+                <div>
+                  <strong data-preview-brand>Team Lucão Futevôlei</strong>
+                  <span data-preview-subtitle>gestão da escola</span>
+                </div>
+                <span class="preview-chevron">›</span>
+              </div>
+              <div class="settings-preview-balance">
+                <span>próxima aula</span>
+                <strong data-preview-title>Painel do dia</strong>
+                <p data-preview-description>Resumo visual para testar contraste, peso e respiro.</p>
+              </div>
+              <div class="settings-preview-stats">
+                <span><small>alunos ativos</small><strong>48</strong></span>
+                <span><small>pedidos</small><strong>02</strong></span>
+                <span><small>a receber</small><strong>R$ 9.420</strong></span>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel settings-danger-zone">
+            <div>
+              <span>encerramento do teste</span>
+              <h2>Limpar personalizações</h2>
+              <p>Restaura o tema claro padrão e todos os textos iniciais. Esta área pode ser removida ao fechar os testes.</p>
+            </div>
+            <button class="soft-btn danger-mini" type="button" data-settings-clear>Limpar testes</button>
+          </section>
         </div>
       </section>
     </main>
@@ -629,6 +778,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-    <script src="app.js?v=20260827-release5"></script>
+    <script src="app.js?v=20260827-release7"></script>
   </body>
 </html>

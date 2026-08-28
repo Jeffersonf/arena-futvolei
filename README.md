@@ -50,6 +50,8 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Tela Mais no mobile para atalhos secundarios sem lotar o rodape
 - Cards mobile mais compactos, com acoes em trilho horizontal
 - Polimento visual global para desktop e iPhone
+- Configuração administrativa temporária para temas completos, marca e textos
+- Seis temas experimentais inspirados na referência Finext, mantendo claro/escuro como padrão
 - Dashboard com contexto visual de agenda, cobranca e conversao
 - Estados visuais nos cards de alunos, aulas, cobrancas e espera
 - Ficha do aluno redesenhada com perfil, plano, pagamento e frequencia
@@ -89,6 +91,10 @@ http://localhost:3020
 ```
 
 Tambem da para abrir `index.html` diretamente no navegador para usar em modo local.
+
+## Laboratorio visual temporario
+
+Depois de entrar como professor, abra `Config.` no menu desktop ou `Mais > Configuração` no celular. A tela permite testar seis temas completos (Amarelo, Lima, Menta, Azul, Violeta e Coral), editar a identidade e revisar textos principais do painel. As alterações ficam no `localStorage` deste navegador; `Limpar testes` restaura o tema claro e os textos padrão. Essa seção foi isolada para ser removida quando a linguagem final for aprovada.
 
 Live local usado durante o polimento visual:
 

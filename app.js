@@ -3,9 +3,10 @@
 const STORE_KEY = 'fv_school_state_v2';
 const PIN_KEY = 'tlf_admin_pin';
 const PAGE_KEY = 'tlf_last_page';
+const CONFIG_KEY = 'tlf_admin_config_v1';
 const VISUAL_THEME_VERSION = 'web-redo-20260703';
 const ACTION_REFRESH_MS = 15000;
-const MOBILE_MORE_PAGES = ['actions', 'waitlist', 'plans', 'reports'];
+const MOBILE_MORE_PAGES = ['actions', 'waitlist', 'plans', 'reports', 'settings'];
 const PAGE_TITLES = {
   dashboard: ['operação de hoje', 'Painel do dia'],
   actions: ['histórico', 'Central de ações'],
@@ -16,8 +17,63 @@ const PAGE_TITLES = {
   waitlist: ['demanda', 'Lista de espera'],
   plans: ['oferta', 'Planos'],
   reports: ['gestão', 'Relatórios'],
-  more: ['atalhos', 'Mais']
+  more: ['atalhos', 'Mais'],
+  settings: ['administração', 'Configuração']
 };
+const DEFAULT_APP_CONFIG = Object.freeze({
+  brandName: 'Team Lucão Futevôlei',
+  brandShort: 'Team Lucao',
+  brandSubtitle: 'gestão da escola',
+  dashboardEyebrow: 'operação de hoje',
+  dashboardTitle: 'Painel do dia',
+  actionsTitle: 'Central de ações',
+  bookingsTitle: 'Pedidos de aula',
+  studentsTitle: 'Alunos',
+  classesTitle: 'Aulas',
+  paymentsTitle: 'Mensalidades',
+  waitlistTitle: 'Lista de espera',
+  plansTitle: 'Planos',
+  reportsTitle: 'Relatórios',
+  onlineModeLabel: 'Servidor online',
+  localModeLabel: 'Modo local',
+  publicEyebrow: 'agenda da escola',
+  publicTitle: 'Team Lucao Futevolei',
+  publicDescription: 'Peça uma vaga ou confirme as aulas em que você já está marcado.',
+  loginEyebrow: 'acesso restrito',
+  loginDescription: 'Painel rápido para organizar alunos, aulas e cobranças.',
+  onlineNoticeTitle: 'Operação real',
+  localNoticeTitle: 'Demo local',
+  onlineNoticeText: 'Servidor ativo, dados compartilhados e backups disponíveis.',
+  localNoticeText: 'Dados neste navegador. Para uso diário no iPhone, publique o servidor.',
+  accentColor: '',
+  primaryColor: '',
+  useThemeColors: true
+});
+const FINEXT_THEMES = Object.freeze([
+  { id: 'amber', label: 'Amarelo', hex: '#f5e95f', soft: '#fff9c7', dark: '#8f7d00', description: 'Claro, quente e direto para decisões rápidas.' },
+  { id: 'lime', label: 'Lima', hex: '#d7f26a', soft: '#f1fac4', dark: '#557000', description: 'Vivo e esportivo para uma operação com ritmo.' },
+  { id: 'mint', label: 'Menta', hex: '#78e8c5', soft: '#d9faef', dark: '#08745c', description: 'Leve e fresco para uma rotina mais tranquila.' },
+  { id: 'blue', label: 'Azul', hex: '#80b8ff', soft: '#e0eeff', dark: '#1f5da8', description: 'Organizado e confiável para acompanhar dados.' },
+  { id: 'violet', label: 'Violeta', hex: '#b6a8ff', soft: '#ebe7ff', dark: '#5b45b8', description: 'Editorial e expressivo sem perder legibilidade.' },
+  { id: 'coral', label: 'Coral', hex: '#ff9b79', soft: '#ffe4da', dark: '#a9472c', description: 'Humano e caloroso para relacionamento com alunos.' }
+]);
+const THEME_OPTIONS = Object.freeze([
+  { id: 'light', label: 'Padrão claro', description: 'Visual atual do Arena, recomendado.', group: 'base', swatches: ['#2563eb', '#ffffff', '#171717'] },
+  { id: 'dark', label: 'Padrão escuro', description: 'Visual atual em modo noturno.', group: 'base', swatches: ['#60a5fa', '#171717', '#f5f5f5'] },
+  ...FINEXT_THEMES.map((item) => ({ ...item, group: 'finext', swatches: [item.hex, item.soft, '#171717'] }))
+]);
+
+function loadAppConfig() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CONFIG_KEY));
+    return saved ? { ...DEFAULT_APP_CONFIG, ...saved } : { ...DEFAULT_APP_CONFIG };
+  } catch {
+    return { ...DEFAULT_APP_CONFIG };
+  }
+}
+
+let appConfig = loadAppConfig();
+
 const LIST_PAGE_SIZE = 24;
 let lastModalTrigger = null;
 const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -395,24 +451,24 @@ function updateSystemNotice() {
   if (!notice) return;
   if (apiMode) {
     notice.className = 'system-notice online';
-    notice.innerHTML = '<strong>Operação real</strong><span>Servidor ativo, dados compartilhados e backups disponíveis.</span>';
+    notice.innerHTML = `<strong>${escapeHTML(appConfig.onlineNoticeTitle)}</strong><span>${escapeHTML(appConfig.onlineNoticeText)}</span>`;
     return;
   }
   notice.className = 'system-notice demo';
-  notice.innerHTML = '<strong>Demo local</strong><span>Dados neste navegador. Para uso diário no iPhone, publique o servidor.</span>';
+  notice.innerHTML = `<strong>${escapeHTML(appConfig.localNoticeTitle)}</strong><span>${escapeHTML(appConfig.localNoticeText)}</span>`;
 }
 
 async function loadData() {
   apiMode = await detectServer();
   if (!apiMode) {
     const modeStatus = document.getElementById('modeStatus');
-    if (modeStatus) modeStatus.textContent = 'Modo local';
+    if (modeStatus) modeStatus.textContent = appConfig.localModeLabel;
     updateSystemNotice();
     restorePage();
     return;
   }
   const modeStatus = document.getElementById('modeStatus');
-  if (modeStatus) modeStatus.textContent = 'Servidor online';
+  if (modeStatus) modeStatus.textContent = appConfig.onlineModeLabel;
   updateSystemNotice();
   const [students, classes, plans, waitlist, payments, bookings, logs] = await Promise.all([
     api('/api/students'),
@@ -862,6 +918,141 @@ function updateTopbar(page) {
   if (titleEl) titleEl.textContent = title;
 }
 
+function applyCustomColors() {
+  const root = document.documentElement;
+  const useThemeColors = appConfig.useThemeColors !== false;
+  if (useThemeColors || !appConfig.accentColor) root.style.removeProperty('--accent');
+  else root.style.setProperty('--accent', appConfig.accentColor);
+  if (useThemeColors || !appConfig.primaryColor) root.style.removeProperty('--primary-action');
+  else root.style.setProperty('--primary-action', appConfig.primaryColor);
+}
+
+function applyAppConfig() {
+  PAGE_TITLES.dashboard = [appConfig.dashboardEyebrow, appConfig.dashboardTitle];
+  ['actions', 'bookings', 'students', 'classes', 'payments', 'waitlist', 'plans', 'reports'].forEach((page) => {
+    const title = appConfig[`${page}Title`];
+    if (title) PAGE_TITLES[page][1] = title;
+  });
+  document.title = appConfig.brandName;
+  document.querySelectorAll('[data-config-text]').forEach((element) => {
+    const value = appConfig[element.dataset.configText];
+    if (typeof value === 'string' && value.trim()) element.textContent = value;
+  });
+  document.querySelectorAll('[data-config-page-title]').forEach((element) => {
+    const value = appConfig[element.dataset.configPageTitle];
+    if (typeof value === 'string' && value.trim()) element.textContent = value;
+  });
+  document.querySelectorAll('[data-preview-brand]').forEach((element) => { element.textContent = appConfig.brandName; });
+  document.querySelectorAll('[data-preview-subtitle]').forEach((element) => { element.textContent = appConfig.brandSubtitle; });
+  document.querySelectorAll('[data-preview-title]').forEach((element) => { element.textContent = appConfig.dashboardTitle; });
+  document.querySelectorAll('[data-preview-description]').forEach((element) => { element.textContent = appConfig.publicDescription; });
+  applyCustomColors();
+  updateTopbar(currentPage());
+}
+
+function setTheme(theme, { persist = true } = {}) {
+  const valid = THEME_OPTIONS.some((item) => item.id === theme);
+  const next = valid ? theme : 'light';
+  document.documentElement.dataset.theme = next;
+  if (persist) localStorage.setItem('fv_theme', next);
+  applyCustomColors();
+  updateThemeButton();
+  if (document.getElementById('themePicker')) renderSettings();
+}
+
+function renderSettings() {
+  const picker = document.getElementById('themePicker');
+  if (!picker) return;
+  const current = document.documentElement.dataset.theme || 'light';
+  const renderTheme = (item) => `
+    <button class="theme-choice ${item.id === current ? 'is-active' : ''}" type="button" role="option" aria-selected="${item.id === current}" data-theme-choice="${item.id}">
+      <span class="theme-choice-preview" aria-hidden="true">
+        <i style="--theme-swatch:${item.swatches[0]}"></i><i style="--theme-swatch:${item.swatches[1]}"></i><i style="--theme-swatch:${item.swatches[2]}"></i>
+      </span>
+      <span class="theme-choice-copy"><strong>${item.label}</strong><small>${item.description}</small></span>
+      <span class="theme-choice-check" aria-hidden="true">${item.id === current ? '✓' : ''}</span>
+    </button>`;
+  const base = THEME_OPTIONS.filter((item) => item.group === 'base');
+  const finext = THEME_OPTIONS.filter((item) => item.group === 'finext');
+  picker.innerHTML = `
+    <div class="theme-group"><span class="section-label">base atual</span><div class="theme-choice-grid">${base.map(renderTheme).join('')}</div></div>
+    <div class="theme-group"><span class="section-label">6 temas experimentais</span><div class="theme-choice-grid">${finext.map(renderTheme).join('')}</div></div>`;
+  syncSettingsForm();
+  updateSettingsPreview();
+}
+
+function syncSettingsForm() {
+  document.querySelectorAll('[data-settings-field]').forEach((field) => {
+    const value = appConfig[field.dataset.settingsField] || '';
+    if (field.type === 'color') field.value = /^#[0-9a-f]{6}$/i.test(value) ? value : (field.id.includes('Primary') ? '#0a0a0a' : '#2563eb');
+    else field.value = value;
+  });
+  const themeColors = document.getElementById('settingsThemeColors');
+  if (themeColors) themeColors.checked = appConfig.useThemeColors !== false;
+  updateCustomColorControls();
+}
+
+function updateCustomColorControls() {
+  const themeColors = document.getElementById('settingsThemeColors');
+  const disabled = themeColors?.checked !== false;
+  ['settingsAccentColor', 'settingsPrimaryColor'].forEach((id) => {
+    const field = document.getElementById(id);
+    if (field) field.disabled = disabled;
+  });
+}
+
+function readSettingsForm() {
+  const next = { ...appConfig };
+  document.querySelectorAll('[data-settings-field]').forEach((field) => {
+    next[field.dataset.settingsField] = field.value.trim();
+  });
+  const themeColors = document.getElementById('settingsThemeColors');
+  next.useThemeColors = themeColors?.checked !== false;
+  if (next.useThemeColors) {
+    next.accentColor = '';
+    next.primaryColor = '';
+  }
+  return next;
+}
+
+function updateSettingsPreview() {
+  const getValue = (id, fallback) => document.getElementById(id)?.value.trim() || fallback;
+  const brand = getValue('settingsBrandName', appConfig.brandName);
+  const subtitle = getValue('settingsBrandSubtitle', appConfig.brandSubtitle);
+  const title = getValue('settingsDashboardTitle', appConfig.dashboardTitle);
+  const description = getValue('settingsPublicDescription', appConfig.publicDescription);
+  document.querySelectorAll('[data-preview-brand]').forEach((element) => { element.textContent = brand; });
+  document.querySelectorAll('[data-preview-subtitle]').forEach((element) => { element.textContent = subtitle; });
+  document.querySelectorAll('[data-preview-title]').forEach((element) => { element.textContent = title; });
+  document.querySelectorAll('[data-preview-description]').forEach((element) => { element.textContent = description; });
+}
+
+function saveSettings(event) {
+  event.preventDefault();
+  appConfig = readSettingsForm();
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(appConfig));
+  applyAppConfig();
+  updateSystemNotice();
+  renderSettings();
+  toast('Ajustes salvos neste navegador');
+}
+
+function resetSettingsForm() {
+  syncSettingsForm();
+  updateSettingsPreview();
+  toast('Alterações descartadas');
+}
+
+function clearSettings() {
+  appConfig = { ...DEFAULT_APP_CONFIG };
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(appConfig));
+  setTheme('light');
+  applyAppConfig();
+  updateSystemNotice();
+  renderSettings();
+  toast('Personalizações limpas');
+}
+
 function currentPage() {
   return document.documentElement.dataset.page
     || document.querySelector('.page.active')?.id?.replace('page-', '')
@@ -919,9 +1110,7 @@ function restorePage() {
 
 function toggleTheme() {
   const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-  document.documentElement.dataset.theme = next;
-  localStorage.setItem('fv_theme', next);
-  updateThemeButton();
+  setTheme(next);
 }
 
 function updateThemeButton() {
@@ -967,7 +1156,8 @@ function renderPage(page = currentPage()) {
     plans: renderPlans,
     waitlist: renderWaitlist,
     reports: renderReports,
-    more: () => {}
+    more: () => {},
+    settings: renderSettings
   };
   (renderers[page] || renderDashboard)();
 }
@@ -3237,6 +3427,19 @@ function bindEvents() {
   document.querySelectorAll('[data-backup]').forEach((button) => button.addEventListener('click', () => downloadBackup().catch((err) => toast(err.message))));
   document.querySelectorAll('[data-copy-pending]').forEach((button) => button.addEventListener('click', () => copyPendingCharges().catch((err) => toast(err.message))));
   document.querySelectorAll('[data-server-backup]').forEach((button) => button.addEventListener('click', () => createServerBackup().catch((err) => toast(err.message))));
+  document.getElementById('settingsForm')?.addEventListener('submit', saveSettings);
+  document.getElementById('themePicker')?.addEventListener('click', (event) => {
+    const target = event.target.closest('[data-theme-choice]');
+    if (target) setTheme(target.dataset.themeChoice);
+  });
+  document.getElementById('settingsForm')?.addEventListener('input', updateSettingsPreview);
+  document.getElementById('settingsThemeColors')?.addEventListener('change', updateCustomColorControls);
+  document.querySelectorAll('[data-settings-default-theme]').forEach((button) => button.addEventListener('click', () => {
+    setTheme('light');
+    toast('Tema padrão restaurado');
+  }));
+  document.querySelectorAll('[data-settings-reset]').forEach((button) => button.addEventListener('click', resetSettingsForm));
+  document.querySelectorAll('[data-settings-clear]').forEach((button) => button.addEventListener('click', clearSettings));
   document.querySelectorAll('[data-clear-class-filter]').forEach((button) => button.addEventListener('click', () => {
     document.getElementById('classDateFilter').value = '';
     document.getElementById('classTypeFilter').value = '';
@@ -3392,9 +3595,9 @@ if (localStorage.getItem('fv_visual_theme_version') !== VISUAL_THEME_VERSION) {
   localStorage.setItem('fv_theme', 'light');
   localStorage.setItem('fv_visual_theme_version', VISUAL_THEME_VERSION);
 }
-document.documentElement.dataset.theme = localStorage.getItem('fv_theme') || 'light';
+applyAppConfig();
+setTheme(localStorage.getItem('fv_theme') || 'light', { persist: false });
 updatePerformanceMode();
-updateThemeButton();
 bindEvents();
 window.addEventListener('resize', updatePerformanceMode);
 document.addEventListener('visibilitychange', () => {
@@ -3405,7 +3608,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260827-release5', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260827-release7', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
@@ -3417,7 +3620,7 @@ if (localStorage.getItem(PIN_KEY)) {
       return;
     }
     const modeStatus = document.getElementById('modeStatus');
-    if (modeStatus) modeStatus.textContent = 'Modo local';
+    if (modeStatus) modeStatus.textContent = appConfig.localModeLabel;
     apiMode = false;
     updateSystemNotice();
     toast(err.message);

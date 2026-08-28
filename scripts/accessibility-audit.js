@@ -67,7 +67,7 @@ async function audit() {
     await auditPage(mobile, 'public-mobile-student');
     await mobile.locator('#adminAccessBtn').click();
     await login(mobile);
-    for (const pageName of ['dashboard', 'actions', 'students', 'classes', 'payments', 'bookings', 'waitlist', 'plans', 'reports']) {
+    for (const pageName of ['dashboard', 'actions', 'students', 'classes', 'payments', 'bookings', 'waitlist', 'plans', 'reports', 'settings']) {
       await mobile.evaluate((target) => window.setPage(target), pageName);
       await mobile.waitForTimeout(120);
       await auditPage(mobile, `admin-mobile-${pageName}`);
@@ -88,7 +88,7 @@ async function audit() {
     await desktop.waitForTimeout(200);
     await auditPage(desktop, 'admin-desktop-dashboard');
     await desktop.close();
-    console.log('Accessibility audit ok: 13 estados verificados');
+    console.log('Accessibility audit ok: 14 estados verificados');
     process.exit(0);
   } finally {
     await Promise.race([browser.close(), new Promise((resolve) => setTimeout(resolve, 1500))]);
