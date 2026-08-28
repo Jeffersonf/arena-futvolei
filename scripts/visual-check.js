@@ -3,12 +3,13 @@ const fs = require('fs');
 
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
-const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260828-release8';
-const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260828-patterns1';
+const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260828-release9';
+const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260828-patterns2';
 const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined;
 
 const cases = [
   { name: 'mobile-booking', viewport: { width: 390, height: 844 }, page: null },
+  { name: 'mobile-public-student-flow', viewport: { width: 390, height: 844 }, page: null, action: 'public-student-flow' },
   { name: 'mobile-student-confirm-public', viewport: { width: 390, height: 844 }, page: null, action: 'public-student-tab' },
   { name: 'desktop-booking', viewport: { width: 1440, height: 950 }, page: null },
   { name: 'mobile-dashboard', viewport: { width: 390, height: 844 }, page: 'dashboard' },
@@ -38,6 +39,7 @@ const cases = [
   { name: 'tablet-dashboard', viewport: { width: 768, height: 1024 }, page: 'dashboard' },
   { name: 'desktop-compact-dashboard', viewport: { width: 1024, height: 768 }, page: 'dashboard' },
   { name: 'desktop-settings', viewport: { width: 1440, height: 950 }, page: 'settings', action: 'settings-theme-cycle' },
+  { name: 'desktop-class-operations', viewport: { width: 1440, height: 950 }, page: 'classes', action: 'class-operations' },
   { name: 'desktop-pattern-modern-light', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'modern-light' },
   { name: 'desktop-pattern-modern-dark', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'modern-dark' },
   { name: 'desktop-pattern-classic-light', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'classic-light' },
@@ -89,6 +91,41 @@ async function assertModalFocus(page, modalSelector, triggerSelector) {
 }
 
 async function runCaseAction(page, action) {
+  if (action === 'public-student-flow') {
+    const initial = await page.evaluate(() => ({
+      selected: document.querySelector('[data-public-tab="student"]')?.getAttribute('aria-selected'),
+      pane: document.querySelector('[data-public-pane="student"]')?.classList.contains('active'),
+      experimental: document.getElementById('studentBookingList') !== null
+    }));
+    if (initial.selected !== 'true' || !initial.pane || !initial.experimental) throw new Error(`Fluxo experimental de aluno nao iniciou primeiro (${JSON.stringify(initial)})`);
+    await page.locator('#studentLookupPhone').fill('(15) 99110028');
+    await page.locator('#studentLookupForm').evaluate((form) => form.requestSubmit());
+    await page.waitForTimeout(450);
+    const result = await page.evaluate(() => ({
+      status: document.getElementById('studentConfirmStatus')?.textContent || '',
+      hasScheduleAction: Boolean(document.querySelector('#studentBookingList [data-student-booking]'))
+    }));
+    if (!result.hasScheduleAction && !/nenhuma|nao encontrado|modo demo/i.test(result.status)) throw new Error(`Busca publica nao carregou o estado esperado (${JSON.stringify(result)})`);
+    await page.locator('#guestTab').click();
+    if (await page.locator('#guestPane.active').count() !== 1) throw new Error('Aba publica de agendamento nao abriu');
+  }
+  if (action === 'class-operations') {
+    await page.locator('[data-open-schedule]').click();
+    const slots = await page.locator('[data-schedule-slot]').count();
+    if (slots !== 19) throw new Error(`Grade padrao deveria ter 19 horarios (${slots})`);
+    await page.locator('#scheduleWeeks').fill('2');
+    await page.locator('[data-close="scheduleModal"]').click();
+    await page.locator('[data-open-group-message]').first().click();
+    if (await page.locator('#groupMessageTemplate option').count() !== 5) throw new Error('Modelos de mensagem para grupo incompletos');
+    await page.locator('#groupMessageTemplate').selectOption('cancel');
+    const message = await page.locator('#groupMessageText').inputValue();
+    if (!message.includes('Pessoal')) throw new Error('Mensagem de grupo nao foi gerada');
+    await page.locator('[data-close="groupMessageModal"]').click();
+    await page.locator('#page-classes.active [data-edit-class]').first().click();
+    await page.locator('#classStatus').selectOption('Cancelada');
+    if (await page.locator('#classNotice').count() !== 1 || await page.locator('#classRecurrence').count() !== 1) throw new Error('Opcoes de cancelamento/recorrencia ausentes');
+    await page.locator('[data-close="classModal"]').click();
+  }
   if (action === 'global-search') {
     const input = page.locator('#globalSearch');
     await input.fill('Ana');

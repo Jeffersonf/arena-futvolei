@@ -10,11 +10,11 @@
     <title data-config-text="brandName">Team Lucão Futevôlei</title>
     <link rel="icon" type="image/png" href="assets/team-lucao-logo.png" />
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260828-release8" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260828-release9" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20260828-patterns1" />
+    <link rel="stylesheet" href="styles.css?v=20260828-patterns2" />
   </head>
   <body>
     <a class="skip-link" href="#mainContent">Pular para o conteúdo principal</a>
@@ -31,11 +31,11 @@
           </div>
         </div>
         <div class="booking-tabs" role="tablist" aria-label="Agenda publica">
-          <button id="guestTab" class="active" type="button" role="tab" aria-selected="true" aria-controls="guestPane" data-public-tab="guest">Quero agendar</button>
-          <button id="studentTab" type="button" role="tab" aria-selected="false" aria-controls="studentPane" data-public-tab="student">Sou aluno</button>
+          <button id="studentTab" class="active" type="button" role="tab" aria-selected="true" aria-controls="studentPane" data-public-tab="student">Sou aluno - experimental</button>
+          <button id="guestTab" type="button" role="tab" aria-selected="false" aria-controls="guestPane" data-public-tab="guest">Quero agendar</button>
         </div>
         <div class="booking-layout">
-          <div id="guestPane" class="booking-pane active" role="tabpanel" aria-labelledby="guestTab" aria-hidden="false" data-public-pane="guest">
+          <div id="guestPane" class="booking-pane" role="tabpanel" aria-labelledby="guestTab" aria-hidden="true" data-public-pane="guest">
             <form class="booking-form" id="bookingForm">
               <label>Nome<input id="bookingName" autocomplete="name" placeholder="Seu nome" required /></label>
               <label>WhatsApp<input id="bookingPhone" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" required /></label>
@@ -54,10 +54,10 @@
               <div class="booking-class-list" id="bookingClassList" aria-live="polite" aria-busy="true"></div>
             </div>
           </div>
-          <div id="studentPane" class="booking-pane" role="tabpanel" aria-labelledby="studentTab" aria-hidden="true" data-public-pane="student">
+          <div id="studentPane" class="booking-pane active" role="tabpanel" aria-labelledby="studentTab" aria-hidden="false" data-public-pane="student">
             <form class="booking-form student-confirm-form" id="studentLookupForm">
               <label>Seu WhatsApp<input id="studentLookupPhone" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" required /></label>
-              <button class="primary-btn" type="submit">Ver minhas aulas</button>
+              <button class="primary-btn" type="submit">Buscar minhas aulas</button>
               <p class="booking-status" id="studentConfirmStatus" role="status" aria-live="polite"></p>
             </form>
             <div class="booking-board">
@@ -68,6 +68,16 @@
                 </div>
               </div>
               <div class="student-confirm-list" id="studentClassList"></div>
+            </div>
+            <div class="booking-board student-booking-board">
+              <div class="panel-head compact-head">
+                <div>
+                  <span>agendamento experimental</span>
+                  <h2>Agendar outra aula</h2>
+                </div>
+              </div>
+              <p class="meta">Depois de buscar seu WhatsApp, escolha um horario livre para pedir uma nova aula.</p>
+              <div class="booking-class-list" id="studentBookingList" aria-live="polite"></div>
             </div>
           </div>
         </div>
@@ -250,7 +260,18 @@
               <span>agenda</span>
               <h2 data-config-page-title="classesTitle">Aulas</h2>
             </div>
-            <button class="soft-btn" type="button" data-open-class>+ Nova aula</button>
+            <div class="actions class-head-actions">
+              <button class="soft-btn" type="button" data-open-class>+ Nova aula</button>
+              <button class="primary-btn" type="button" data-open-schedule>Grade padrao</button>
+            </div>
+          </div>
+          <div class="class-tools">
+            <div>
+              <span class="section-label">operacao</span>
+              <strong>Horarios padrao</strong>
+              <p class="meta">Seg a sex: 18:30, 19:30 e 20:30. Sabado: 09:00, 10:00, 14:00 e 15:00.</p>
+            </div>
+            <button class="soft-btn" type="button" data-open-group-message>Mensagens para grupo</button>
           </div>
           <div class="section-label">Hoje</div>
           <div class="today-planner" id="classesTodayPlanner"></div>
@@ -668,8 +689,12 @@
         <input type="hidden" id="classId" />
         <div class="form-row">
           <label>Data<input id="classDate" type="date" required /></label>
-          <label>Horário<input id="classTime" type="time" required /></label>
+          <label>Horário<input id="classTime" type="time" list="classTimeOptions" required /></label>
         </div>
+        <datalist id="classTimeOptions">
+          <option value="18:30"></option><option value="19:30"></option><option value="20:30"></option>
+          <option value="09:00"></option><option value="10:00"></option><option value="14:00"></option><option value="15:00"></option>
+        </datalist>
         <label>Turma<input id="classGroup" placeholder="Ex: Iniciantes, Intermediário, Kids" /></label>
         <label>Professor<input id="classCoach" placeholder="Nome do professor" /></label>
         <div class="form-row">
@@ -693,6 +718,12 @@
               <option value="Cancelada">Cancelada</option>
             </select>
           </label>
+          <label>Recorrência
+            <select id="classRecurrence">
+              <option value="weekly">Semanal</option>
+              <option value="once">Uma vez</option>
+            </select>
+          </label>
         </div>
         <label class="native-class-select">Alunos da aula<select id="classStudents" multiple></select></label>
         <div class="class-students-picker">
@@ -703,8 +734,67 @@
           </div>
           <div class="class-student-list" id="classStudentChecklist"></div>
         </div>
-        <label>Repetir por semanas<input id="classRepeatWeeks" type="number" min="1" max="12" step="1" value="1" /></label>
+        <label>Semanas da recorrência<input id="classRepeatWeeks" type="number" min="1" max="12" step="1" value="4" /></label>
+        <label>Motivo ou aviso da aula<textarea id="classNotice" rows="2" placeholder="Use para cancelamento, troca de horario ou recado para o grupo."></textarea></label>
         <button class="primary-btn" type="submit">Salvar aula</button>
+      </form>
+    </div>
+
+    <div class="modal-wrap" id="scheduleModal" role="dialog" aria-modal="true" aria-labelledby="scheduleModalTitle" aria-hidden="true">
+      <form class="modal wide-modal" id="scheduleForm">
+        <button class="close" type="button" aria-label="Fechar grade" data-close="scheduleModal">x</button>
+        <p class="eyebrow">grade recorrente</p>
+        <h2 id="scheduleModalTitle">Criar horarios padrao</h2>
+        <p class="meta">Crie varias semanas de uma vez. Os horarios ja vem marcados conforme a grade da Arena e podem ser ajustados antes de salvar.</p>
+        <div class="form-row">
+          <label>Segunda da primeira semana<input id="scheduleStart" type="date" required /></label>
+          <label>Repetir por semanas<input id="scheduleWeeks" type="number" min="1" max="12" step="1" value="4" required /></label>
+        </div>
+        <div class="form-row">
+          <label>Turma padrao<input id="scheduleGroup" value="Turma Arena" placeholder="Ex: Iniciantes" /></label>
+          <label>Professor<input id="scheduleCoach" value="Lucao" placeholder="Nome do professor" /></label>
+        </div>
+        <div class="form-row">
+          <label>Capacidade<input id="scheduleCapacity" type="number" min="1" max="30" value="8" required /></label>
+          <label>Tipo
+            <select id="scheduleType">
+              <option value="Regular">Regular</option>
+              <option value="Experimental">Experimental</option>
+              <option value="Avulso">Avulso</option>
+              <option value="Evento">Evento</option>
+            </select>
+          </label>
+        </div>
+        <fieldset class="schedule-slots-field">
+          <legend>Horarios que serao criados</legend>
+          <div class="schedule-slots" id="scheduleSlots"></div>
+        </fieldset>
+        <label class="check-control schedule-notify-control"><input id="scheduleNotify" type="checkbox" checked /> Preparar mensagem de aviso para o grupo ao terminar</label>
+        <button class="primary-btn" type="submit">Criar grade</button>
+      </form>
+    </div>
+
+    <div class="modal-wrap" id="groupMessageModal" role="dialog" aria-modal="true" aria-labelledby="groupMessageModalTitle" aria-hidden="true">
+      <form class="modal" id="groupMessageForm">
+        <button class="close" type="button" aria-label="Fechar mensagens" data-close="groupMessageModal">x</button>
+        <p class="eyebrow">comunicacao</p>
+        <h2 id="groupMessageModalTitle">Mensagem para o grupo</h2>
+        <p class="meta">Mensagem geral, sem mencionar um aluno especifico. Edite antes de copiar ou abrir o WhatsApp.</p>
+        <label>Aula<select id="groupMessageClass"></select></label>
+        <label>Modelo
+          <select id="groupMessageTemplate">
+            <option value="confirm">Confirmacao de aula</option>
+            <option value="reminder">Lembrete de horario</option>
+            <option value="cancel">Aviso de cancelamento</option>
+            <option value="change">Troca de horario</option>
+            <option value="week">Agenda da semana</option>
+          </select>
+        </label>
+        <label>Texto para revisar<textarea id="groupMessageText" rows="9"></textarea></label>
+        <div class="actions modal-actions">
+          <button class="soft-btn" type="button" data-copy-group-message>Copiar mensagem</button>
+          <a class="primary-btn" id="groupMessageWhatsapp" href="#" target="_blank" rel="noopener">Abrir WhatsApp</a>
+        </div>
       </form>
     </div>
 
@@ -773,6 +863,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-    <script src="app.js?v=20260828-release8"></script>
+    <script src="app.js?v=20260828-release9"></script>
   </body>
 </html>

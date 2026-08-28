@@ -2007,6 +2007,82 @@ label {
 
 .theme-choice-copy small { display: block; }
 
+/* Public experimental flow and class operations */
+.booking-tabs [data-public-tab="student"] { order: -1; }
+.booking-layout [data-public-pane="student"] { order: -1; }
+
+.student-booking-board {
+  grid-column: 1 / -1;
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--line));
+  background: color-mix(in srgb, var(--accent-soft) 34%, var(--surface));
+}
+
+.student-booking-option {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 82px;
+  background: var(--surface);
+}
+
+.student-booking-option > div { display: grid; gap: 4px; }
+.student-booking-option .mini-btn { align-self: center; }
+
+.class-head-actions { align-items: center; }
+
+.class-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 13px 15px;
+  background: var(--surface-2);
+}
+
+.class-tools > div { display: grid; gap: 3px; min-width: 0; }
+.class-tools strong { color: var(--text); font-size: 14px; }
+.class-tools .meta { margin-top: 0; }
+
+.schedule-slots-field {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  background: var(--surface-2);
+}
+
+.schedule-slots-field legend { padding-inline: 4px; color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.schedule-slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.schedule-slot-day { display: grid; gap: 7px; min-width: 0; }
+.schedule-slot-day > strong { color: var(--text); font-size: 12px; }
+.schedule-slot-day > div { display: grid; gap: 5px; }
+.schedule-slot-day label { display: flex; flex-direction: row; align-items: center; gap: 6px; min-height: 30px; border: 1px solid var(--line); border-radius: 7px; padding: 4px 7px; background: var(--surface); color: var(--text); font-size: 11px; }
+.schedule-slot-day input { width: 15px; min-height: 15px; accent-color: var(--accent); }
+.schedule-notify-control { padding: 8px 0; }
+
+.modal-actions { justify-content: flex-end; }
+
+@media (max-width: 760px) {
+  .class-head-actions { align-items: stretch; flex-direction: column; }
+  .class-head-actions > * { width: 100%; }
+  .class-tools { align-items: stretch; flex-direction: column; }
+  .class-tools > button { width: 100%; }
+  .schedule-slots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 520px) {
+  .booking-tabs { width: 100%; }
+  .booking-tabs button { flex: 1 1 0; padding-inline: 8px; font-size: 11px; }
+  .student-booking-option { grid-template-columns: 1fr; }
+  .student-booking-option .mini-btn { width: 100%; }
+  .schedule-slots { grid-template-columns: 1fr; }
+  .modal-actions { align-items: stretch; flex-direction: column; }
+  .modal-actions > * { width: 100%; }
+}
+
 @media (max-width: 520px) {
   .panel { padding: 14px; }
 
@@ -2358,4 +2434,168 @@ label {
   [data-theme="web-dark"] .nav-item { border-radius: 12px; }
   [data-theme="web-light"] .panel,
   [data-theme="web-dark"] .panel { border-radius: 16px; }
+}
+
+/* Pattern refinements: the six Finanza options use different layout rules. */
+[data-theme="modern-light"] body,
+[data-theme="modern-dark"] body {
+  background-image: none;
+}
+
+[data-theme="modern-light"] .page.active,
+[data-theme="modern-dark"] .page.active { gap: 20px; }
+
+[data-theme="modern-light"] .panel-head h2,
+[data-theme="modern-dark"] .panel-head h2 { font-size: 22px; letter-spacing: -.035em; }
+
+[data-theme="modern-light"] .class-row,
+[data-theme="modern-dark"] .class-row,
+[data-theme="modern-light"] .row-card,
+[data-theme="modern-dark"] .row-card,
+[data-theme="modern-light"] .student-row,
+[data-theme="modern-dark"] .student-row {
+  border: 0;
+  border-radius: 20px;
+  box-shadow: var(--shadow-soft);
+}
+
+[data-theme="modern-light"] .form-group,
+[data-theme="modern-dark"] .form-group,
+[data-theme="modern-light"] .class-tools,
+[data-theme="modern-dark"] .class-tools {
+  border: 0;
+  border-radius: 20px;
+  background: var(--surface-2);
+}
+
+[data-theme="modern-light"] input,
+[data-theme="modern-light"] select,
+[data-theme="modern-light"] textarea,
+[data-theme="modern-dark"] input,
+[data-theme="modern-dark"] select,
+[data-theme="modern-dark"] textarea {
+  min-height: 44px;
+  border-color: transparent;
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+[data-theme="modern-light"] .theme-choice-preview,
+[data-theme="modern-dark"] .theme-choice-preview { border-radius: 15px; }
+[data-theme="modern-light"] .theme-choice-preview i:first-child,
+[data-theme="modern-dark"] .theme-choice-preview i:first-child { width: 17px; border-radius: 9px; }
+[data-theme="modern-light"] .theme-choice-preview i:nth-child(2),
+[data-theme="modern-dark"] .theme-choice-preview i:nth-child(2) { width: 9px; height: 17px; border-radius: 99px; }
+
+[data-theme="classic-light"] body,
+[data-theme="classic-dark"] body {
+  background-image: radial-gradient(circle, var(--grid-dot) .8px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+[data-theme="classic-light"] .topbar h1,
+[data-theme="classic-dark"] .topbar h1,
+[data-theme="classic-light"] .day-command h2,
+[data-theme="classic-dark"] .day-command h2,
+[data-theme="classic-light"] .report-hero h2,
+[data-theme="classic-dark"] .report-hero h2,
+[data-theme="classic-light"] .booking-hero h1,
+[data-theme="classic-dark"] .booking-hero h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: -.02em;
+}
+
+[data-theme="classic-light"] .panel,
+[data-theme="classic-dark"] .panel { border-radius: 6px; }
+[data-theme="classic-light"] .class-row,
+[data-theme="classic-dark"] .class-row,
+[data-theme="classic-light"] .row-card,
+[data-theme="classic-dark"] .row-card,
+[data-theme="classic-light"] .student-row,
+[data-theme="classic-dark"] .student-row {
+  border-radius: 5px;
+  border-left: 3px solid var(--line-strong);
+}
+
+[data-theme="classic-light"] .sidebar,
+[data-theme="classic-dark"] .sidebar {
+  border-radius: 4px;
+  border-left: 0;
+  border-top: 0;
+  border-bottom: 0;
+}
+
+[data-theme="classic-light"] .nav-item,
+[data-theme="classic-dark"] .nav-item { text-transform: uppercase; font-size: 11px; letter-spacing: .035em; }
+[data-theme="classic-light"] .primary-btn,
+[data-theme="classic-dark"] .primary-btn,
+[data-theme="classic-light"] .soft-btn,
+[data-theme="classic-dark"] .soft-btn { text-transform: uppercase; letter-spacing: .035em; }
+[data-theme="classic-light"] .theme-choice-preview,
+[data-theme="classic-dark"] .theme-choice-preview { border-radius: 3px; }
+[data-theme="classic-light"] .theme-choice-preview i,
+[data-theme="classic-dark"] .theme-choice-preview i { border-radius: 1px; }
+
+[data-theme="web-light"] body,
+[data-theme="web-dark"] body {
+  background-image: linear-gradient(135deg, color-mix(in srgb, var(--accent-soft) 55%, transparent), transparent 36%), none;
+}
+
+[data-theme="web-light"] .sidebar,
+[data-theme="web-dark"] .sidebar {
+  border: 0;
+  background: #26382d;
+  color: #f2f5ef;
+}
+
+[data-theme="web-light"] .sidebar .brand strong,
+[data-theme="web-dark"] .sidebar .brand strong,
+[data-theme="web-light"] .sidebar .brand small,
+[data-theme="web-dark"] .sidebar .brand small,
+[data-theme="web-light"] .sidebar .nav-item,
+[data-theme="web-dark"] .sidebar .nav-item { color: #dce9dc; }
+
+[data-theme="web-light"] .sidebar .nav-item:hover,
+[data-theme="web-dark"] .sidebar .nav-item:hover { background: rgba(255, 255, 255, .1); color: #fff; }
+[data-theme="web-light"] .sidebar .nav-item.active,
+[data-theme="web-dark"] .sidebar .nav-item.active { background: #e1efe1; color: #26382d; }
+
+[data-theme="web-light"] .panel,
+[data-theme="web-dark"] .panel {
+  border-top: 3px solid var(--accent);
+  border-radius: 14px;
+}
+
+[data-theme="web-light"] .class-row,
+[data-theme="web-dark"] .class-row,
+[data-theme="web-light"] .row-card,
+[data-theme="web-dark"] .row-card,
+[data-theme="web-light"] .student-row,
+[data-theme="web-dark"] .student-row { border-radius: 12px; }
+
+[data-theme="web-light"] .theme-choice-preview,
+[data-theme="web-dark"] .theme-choice-preview { border-radius: 6px; transform: skew(-5deg); }
+[data-theme="web-light"] .theme-choice-preview i:first-child,
+[data-theme="web-dark"] .theme-choice-preview i:first-child { height: 18px; }
+[data-theme="web-light"] .theme-choice-preview i:last-child,
+[data-theme="web-dark"] .theme-choice-preview i:last-child { height: 30px; }
+
+@media (max-width: 980px) {
+  .class-row .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; gap: 7px; }
+  .class-row .actions > * { width: 100%; min-width: 0; }
+  .student-booking-board { min-width: 0; }
+
+  [data-theme="web-light"] .sidebar,
+  [data-theme="web-dark"] .sidebar { border: 1px solid rgba(255, 255, 255, .08); }
+}
+
+@media (max-width: 520px) {
+  .class-row .actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .student-booking-board .panel-head { align-items: flex-start; }
+  .booking-hero { padding: 18px; }
+  .booking-logo { width: 68px; height: 68px; }
+  [data-theme="modern-light"] .topbar h1,
+  [data-theme="modern-dark"] .topbar h1 { font-size: 25px; }
+  [data-theme="web-light"] .sidebar,
+  [data-theme="web-dark"] .sidebar { background: #26382d; }
 }

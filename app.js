@@ -6,6 +6,14 @@ const PAGE_KEY = 'tlf_last_page';
 const CONFIG_KEY = 'tlf_admin_config_v1';
 const VISUAL_THEME_VERSION = 'web-redo-20260703';
 const ACTION_REFRESH_MS = 15000;
+const STANDARD_CLASS_SLOTS = Object.freeze([
+  { day: 1, label: 'Segunda', times: ['18:30', '19:30', '20:30'] },
+  { day: 2, label: 'Terca', times: ['18:30', '19:30', '20:30'] },
+  { day: 3, label: 'Quarta', times: ['18:30', '19:30', '20:30'] },
+  { day: 4, label: 'Quinta', times: ['18:30', '19:30', '20:30'] },
+  { day: 5, label: 'Sexta', times: ['18:30', '19:30', '20:30'] },
+  { day: 6, label: 'Sabado', times: ['09:00', '10:00', '14:00', '15:00'] }
+]);
 const MOBILE_MORE_PAGES = ['actions', 'waitlist', 'plans', 'reports', 'settings'];
 const PAGE_TITLES = {
   dashboard: ['operação de hoje', 'Painel do dia'],
@@ -122,12 +130,12 @@ function demoState() {
   const classTemplates = [
     ['Iniciantes', '18:30', 8],
     ['Intermediario', '19:30', 8],
-    ['Kids', '18:00', 6],
-    ['Avancado', '20:00', 8],
-    ['Sabado livre', '08:00', 10],
-    ['Experimental', '09:00', 8],
-    ['Feminino iniciante', '19:00', 8],
-    ['Treino competitivo', '20:30', 8]
+    ['Kids', '20:30', 6],
+    ['Avancado', '18:30', 8],
+    ['Sabado livre', '09:00', 10],
+    ['Experimental', '10:00', 8],
+    ['Feminino iniciante', '14:00', 8],
+    ['Treino competitivo', '15:00', 8]
   ];
   const classes = Array.from({ length: 24 }, (_item, index) => {
     const template = classTemplates[index % classTemplates.length];
@@ -878,6 +886,16 @@ function addDaysIso(dateIso, days = 7) {
   return date.toISOString().slice(0, 10);
 }
 
+function nextMondayIso(fromIso = todayISO()) {
+  const date = new Date(`${fromIso}T12:00:00`);
+  const offset = date.getDay() === 0 ? 1 : 8 - date.getDay();
+  return addDaysIso(fromIso, offset === 7 ? 0 : offset);
+}
+
+function standardClassSlots() {
+  return STANDARD_CLASS_SLOTS.flatMap((day) => day.times.map((time) => ({ day: day.day, label: day.label, time })));
+}
+
 function daysBetween(dateIso, endIso = todayISO()) {
   if (!dateIso) return 0;
   const start = new Date(`${dateIso}T12:00:00`);
@@ -952,7 +970,7 @@ function renderSettings() {
   const current = document.documentElement.dataset.theme || 'light';
   const renderTheme = (item) => `
     <button class="theme-choice theme-choice-${item.family ? item.family.toLowerCase().replace(/\s+/g, '-') : 'base'} ${item.id === current ? 'is-active' : ''}" type="button" role="option" aria-selected="${item.id === current}" data-theme-choice="${item.id}">
-      <span class="theme-choice-preview" aria-hidden="true">
+      <span class="theme-choice-preview pattern-${item.family ? item.family.toLowerCase().replace(/\s+/g, '-') : 'base'}" aria-hidden="true">
         <i style="--theme-swatch:${item.swatches[0]}"></i><i style="--theme-swatch:${item.swatches[1]}"></i><i style="--theme-swatch:${item.swatches[2]}"></i>
       </span>
       <span class="theme-choice-copy"><strong>${item.label}</strong><small>${item.family ? `${item.family} · ${item.mode}` : 'base atual'}<br>${item.description}</small></span>
@@ -1551,6 +1569,7 @@ function renderClassesTodayPlanner() {
             <button class="mini-btn" data-attendance="${item.id}">Presenças</button>
             ${classStatusActions(item)}
             <a class="mini-btn" href="${whatsappShareUrl(classShareText(item))}" target="_blank" rel="noopener">WhatsApp</a>
+            <button class="mini-btn" data-open-group-message="${item.id}">Avisar grupo</button>
             <button class="mini-btn" data-copy-class="${item.id}">Copiar</button>
           </div>
         </div>
@@ -1920,6 +1939,7 @@ function classRow(item) {
         <button class="mini-btn" data-attendance="${item.id}">Presenças</button>
         ${classStatusActions(item)}
         <button class="mini-btn" data-copy-class="${item.id}">Copiar</button>
+        <button class="mini-btn" data-open-group-message="${item.id}">Avisar grupo</button>
         <button class="mini-btn" data-edit-class="${item.id}">Editar</button>
       </div>
     </article>
@@ -1934,8 +1954,8 @@ function classStatusActions(item) {
   if (item.status === 'Cancelada') {
     return `<button class="mini-btn" data-class-status="${id}:Marcada">Reativar</button>`;
   }
-  if (item.status === 'Confirmada') return `<button class="mini-btn" data-class-status="${id}:Finalizada">Finalizar</button>`;
-  return `<button class="mini-btn" data-class-status="${id}:Confirmada">Confirmar</button>`;
+  if (item.status === 'Confirmada') return `<button class="mini-btn" data-class-status="${id}:Finalizada">Finalizar</button><button class="mini-btn danger-mini" data-cancel-class="${id}">Cancelar</button>`;
+  return `<button class="mini-btn" data-class-status="${id}:Confirmada">Confirmar</button><button class="mini-btn danger-mini" data-cancel-class="${id}">Cancelar</button>`;
 }
 
 function rosterPerson(student, dateIso, present = false) {
@@ -2173,12 +2193,96 @@ function openClass(id = '') {
   document.getElementById('classType').value = classType(item);
   document.getElementById('classCapacity').value = item.capacidade || 8;
   document.getElementById('classStatus').value = item.status || 'Marcada';
+  document.getElementById('classRecurrence').value = item.id ? 'once' : 'weekly';
   document.getElementById('classRepeatWeeks').value = item.id ? 1 : 4;
   document.getElementById('classRepeatWeeks').disabled = Boolean(item.id);
+  document.getElementById('classNotice').value = item.observacao || '';
   const classSearch = document.getElementById('classStudentSearch');
   if (classSearch) classSearch.value = '';
   fillClassStudents(item.aluno_ids || []);
   openModal('classModal');
+}
+
+function mondayOfIso(dateIso = todayISO()) {
+  const date = new Date(`${dateIso}T12:00:00`);
+  const day = date.getDay();
+  return addDaysIso(dateIso, day === 0 ? -6 : 1 - day);
+}
+
+function renderScheduleSlots() {
+  const target = document.getElementById('scheduleSlots');
+  if (!target) return;
+  target.innerHTML = STANDARD_CLASS_SLOTS.map((day) => `
+    <div class="schedule-slot-day">
+      <strong>${day.label}</strong>
+      <div>${day.times.map((time) => `<label><input type="checkbox" data-schedule-slot="${day.day}:${time}" checked /><span>${time}</span></label>`).join('')}</div>
+    </div>
+  `).join('');
+}
+
+function openSchedule() {
+  document.getElementById('scheduleStart').value = mondayOfIso(addDaysIso(todayISO(), 1));
+  document.getElementById('scheduleWeeks').value = 4;
+  document.getElementById('scheduleGroup').value = 'Turma Arena';
+  document.getElementById('scheduleCoach').value = 'Lucao';
+  document.getElementById('scheduleCapacity').value = 8;
+  document.getElementById('scheduleType').value = 'Regular';
+  document.getElementById('scheduleNotify').checked = true;
+  renderScheduleSlots();
+  openModal('scheduleModal');
+}
+
+async function saveSchedule(event) {
+  event.preventDefault();
+  const start = mondayOfIso(document.getElementById('scheduleStart').value || todayISO());
+  const weeks = Math.min(12, Math.max(1, Number(document.getElementById('scheduleWeeks').value || 1)));
+  const group = document.getElementById('scheduleGroup').value.trim() || 'Turma Arena';
+  const coach = document.getElementById('scheduleCoach').value.trim();
+  const capacity = Math.min(30, Math.max(1, Number(document.getElementById('scheduleCapacity').value || 8)));
+  const type = document.getElementById('scheduleType').value || 'Regular';
+  const selectedSlots = [...document.querySelectorAll('[data-schedule-slot]:checked')].map((input) => {
+    const raw = input.dataset.scheduleSlot;
+    const separator = raw.indexOf(':');
+    return { day: Number(raw.slice(0, separator)), time: raw.slice(separator + 1) };
+  });
+  if (!selectedSlots.length) throw new Error('Selecione pelo menos um horario');
+  const created = [];
+  for (let week = 0; week < weeks; week += 1) {
+    for (const slot of selectedSlots) {
+      const date = addDaysIso(start, week * 7 + slot.day - 1);
+      const duplicate = state.classes.find((item) => item.data === date && item.horario === slot.time && String(item.turma || '') === group);
+      if (duplicate) continue;
+      const payload = {
+        data: date,
+        horario: slot.time,
+        turma: group,
+        professor: coach,
+        tipo: type,
+        capacidade: capacity,
+        status: 'Marcada',
+        observacao: 'Criada pela grade padrao.',
+        aluno_ids: [],
+        presencas: {},
+        extra_presentes: []
+      };
+      if (apiMode) {
+        const result = await api('/api/classes', { method: 'POST', body: JSON.stringify(payload) });
+        created.push(result.item);
+      } else {
+        created.push({ ...payload, id: uid() });
+      }
+    }
+  }
+  if (!apiMode) {
+    state.classes.push(...created);
+    recordAction('Professor', 'Grade criada', `${created.length} aulas criadas na grade padrao.`);
+    saveAndRender();
+  } else {
+    await loadData();
+  }
+  closeModal('scheduleModal');
+  toast(created.length ? `${created.length} aulas criadas na grade` : 'A grade ja estava criada');
+  if (created.length && document.getElementById('scheduleNotify').checked) openGroupMessage(created[0].id);
 }
 
 function openPlan(id = '') {
@@ -2328,6 +2432,57 @@ function classShareText(item) {
   const enrolled = classStudents(item);
   const names = enrolled.length ? enrolled.map((student, index) => `${index + 1}. ${student.nome}`).join('\n') : 'Sem alunos previstos.';
   return `Aula Team Lucao Futevolei\n${formatDate(item.data)} às ${item.horario} - ${item.turma || 'Turma'} (${classType(item)})\nProfessor: ${item.professor || 'não informado'}\n\nPrevistos:\n${names}`;
+}
+
+function classGroupMessageText(item, template = 'confirm') {
+  if (!item) {
+    if (template === 'cancel') return 'Pessoal, aviso importante: uma aula foi cancelada. Vamos avisar uma nova opcao assim que estiver definida.';
+    if (template === 'reminder') return 'Pessoal, lembrete da aula de hoje: cheguem alguns minutos antes para aquecer. Nos vemos na quadra!';
+    if (template === 'change') return 'Pessoal, tivemos uma atualizacao na agenda de aulas. Confiram os horarios no painel e avisem qualquer duvida.';
+    if (template === 'week') return 'Pessoal, agenda da semana atualizada. Confiram seus horarios no painel e avisem qualquer necessidade de ajuste.';
+    return 'Pessoal, confirmando a agenda de aulas. Quem for participar, responda com um ok aqui no grupo. Ate la!';
+  }
+  const classLine = `${formatDate(item.data)} as ${item.horario} - ${item.turma || 'Turma'}`;
+  const reason = item.observacao || 'um imprevisto operacional';
+  if (template === 'reminder') return `Pessoal, lembrete da aula de hoje: ${classLine}. Cheguem alguns minutos antes para aquecer. Nos vemos na quadra!`;
+  if (template === 'cancel') return `Pessoal, aviso importante: a aula de ${classLine} foi cancelada. Motivo: ${reason}. Vamos avisar uma nova opcao assim que estiver definida.`;
+  if (template === 'change') return `Pessoal, o horario da aula foi atualizado para ${classLine}. Por favor, confirmem a leitura no grupo. Qualquer duvida, falem com a equipe.`;
+  if (template === 'week') return `Pessoal, agenda da semana: a aula de ${classLine} esta prevista. Confiram seus demais horarios no painel e avisem qualquer necessidade de ajuste.`;
+  return `Pessoal, confirmando a aula de ${classLine}. Quem for participar, responda com um ok aqui no grupo. Ate la!`;
+}
+
+function renderGroupMessageOptions(selectedId = '') {
+  const select = document.getElementById('groupMessageClass');
+  if (!select) return;
+  const classes = [...state.classes].filter((item) => item.data >= todayISO()).sort(sortClass).slice(0, 80);
+  select.innerHTML = classes.length ? classes.map((item) => `<option value="${escapeHTML(item.id)}" ${String(item.id) === String(selectedId) ? 'selected' : ''}>${escapeHTML(publicClassLabel(item))}</option>`).join('') : '<option value="">Nenhuma aula futura</option>';
+}
+
+function updateGroupMessagePreview() {
+  const classItem = classById(document.getElementById('groupMessageClass')?.value);
+  const template = document.getElementById('groupMessageTemplate')?.value || 'confirm';
+  const text = classGroupMessageText(classItem, template);
+  const field = document.getElementById('groupMessageText');
+  if (field) field.value = text;
+  const whatsapp = document.getElementById('groupMessageWhatsapp');
+  if (whatsapp) whatsapp.href = whatsappShareUrl(text);
+}
+
+function openGroupMessage(classId = '') {
+  renderGroupMessageOptions(classId);
+  const classSelect = document.getElementById('groupMessageClass');
+  const selectedClass = classById(classId) || classById(classSelect?.value);
+  if (classSelect && selectedClass) classSelect.value = selectedClass.id;
+  document.getElementById('groupMessageTemplate').value = selectedClass?.status === 'Cancelada' ? 'cancel' : 'confirm';
+  updateGroupMessagePreview();
+  openModal('groupMessageModal');
+}
+
+async function copyGroupMessage() {
+  const text = document.getElementById('groupMessageText')?.value.trim();
+  if (!text) throw new Error('Escolha uma aula para gerar a mensagem');
+  await copyText(text, 'Mensagem do grupo copiada');
+  await recordOperationalAction('Mensagem de grupo copiada', 'Mensagem geral preparada para o grupo da aula.');
 }
 
 function classRosterText(item) {
@@ -2531,6 +2686,35 @@ function publicClassLabel(item) {
   return `${formatDate(item.data)} ${item.horario} - ${item.turma || 'Turma'} (${used}/${capacity})`;
 }
 
+async function sendPublicBooking(payload) {
+  if (!payload.nome || !payload.aula_id) throw new Error('Informe nome e aula');
+  if (phoneDigits(payload.telefone).length < 8) throw new Error('Informe pelo menos 8 numeros do WhatsApp');
+  if (location.protocol !== 'file:') {
+    try {
+      const res = await fetch('/api/public/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.ok === false) throw new Error(data.error || 'Nao foi possivel enviar');
+      return data.item;
+    } catch (err) {
+      if (await detectServer()) throw err;
+    }
+  }
+  const classItem = classById(payload.aula_id);
+  if (!classItem) throw new Error('Aula nao encontrada');
+  if (classItem.status === 'Cancelada') throw new Error('Aula cancelada');
+  const used = classStudentIds(classItem).length;
+  if (used >= Number(classItem.capacidade || 8)) throw new Error('Aula lotada');
+  state.bookings = state.bookings || [];
+  state.bookings.unshift({ id: uid(), ...payload, status: 'Pendente', criado_em: todayISO(), respondido_em: '' });
+  recordAction('Aluno', 'Pedido de aula', `${payload.nome} solicitou vaga pelo formulario publico.`);
+  saveLocalState();
+  return state.bookings[0];
+}
+
 async function loadPublicClasses() {
   if (location.protocol !== 'file:') {
     try {
@@ -2593,41 +2777,13 @@ async function submitBooking(event) {
     aula_id: document.getElementById('bookingClass').value,
     observacao: document.getElementById('bookingNote').value.trim()
   };
-  if (!payload.nome || !payload.aula_id) throw new Error('Informe nome e aula');
-  if (phoneDigits(payload.telefone).length < 8) throw new Error('Informe pelo menos 8 numeros do WhatsApp');
   if (document.getElementById('bookingClass')?.selectedOptions[0]?.disabled) {
     throw new Error('Escolha uma aula com vaga');
   }
-  if (location.protocol !== 'file:') {
-    try {
-      const res = await fetch('/api/public/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || data.ok === false) throw new Error(data.error || 'Nao foi possivel enviar');
-      document.getElementById('bookingStatus').textContent = 'Pedido enviado. Aguarde a confirmação pelo WhatsApp.';
-      event.target.reset();
-      await renderPublicBooking();
-      return;
-    } catch (err) {
-      if (await detectServer()) throw err;
-    }
-  }
-  state.bookings = state.bookings || [];
-  state.bookings.unshift({
-    id: uid(),
-    ...payload,
-    status: 'Pendente',
-    criado_em: todayISO(),
-    respondido_em: ''
-  });
-  recordAction('Aluno', 'Pedido de aula', `${payload.nome} solicitou vaga pelo formulario publico.`);
-  saveLocalState();
-  document.getElementById('bookingStatus').textContent = 'Pedido salvo na demo. Entre no painel para aprovar.';
+  await sendPublicBooking(payload);
+  document.getElementById('bookingStatus').textContent = apiMode ? 'Pedido enviado. Aguarde a confirmacao pelo WhatsApp.' : 'Pedido salvo na demo. Entre no painel para aprovar.';
   event.target.reset();
-  renderPublicBooking();
+  await renderPublicBooking();
 }
 
 function setPublicTab(tab = 'guest') {
@@ -2712,6 +2868,7 @@ async function loadStudentConfirmations(telefone) {
       publicStudentLookup = { telefone, student: data.student, items: data.items || [] };
       if (status) status.textContent = data.items?.length ? 'Escolha em quais aulas voce vai.' : 'Nenhuma aula futura encontrada.';
       renderStudentConfirmList();
+      await renderStudentBookingOptions();
       return;
     } catch (err) {
       if (await detectServer()) throw err;
@@ -2721,6 +2878,41 @@ async function loadStudentConfirmations(telefone) {
   publicStudentLookup = { telefone, student: local.student, items: local.items };
   if (status) status.textContent = local.student ? 'Modo demo local.' : 'Aluno nao encontrado na demo.';
   renderStudentConfirmList();
+  await renderStudentBookingOptions();
+}
+
+async function renderStudentBookingOptions() {
+  const target = document.getElementById('studentBookingList');
+  if (!target) return;
+  if (!publicStudentLookup.student) {
+    target.innerHTML = empty('Busque seu WhatsApp acima para liberar o agendamento.');
+    return;
+  }
+  const classes = await loadPublicClasses();
+  const currentIds = new Set((publicStudentLookup.items || []).map((item) => String(item.id)));
+  const available = classes.filter((item) => {
+    const used = Number(item.inscritos ?? classStudentIds(item).length);
+    return !currentIds.has(String(item.id)) && used < Number(item.capacidade || 8);
+  });
+  target.innerHTML = available.length ? available.map((item) => {
+    const remaining = Number(item.capacidade || 8) - Number(item.inscritos ?? classStudentIds(item).length);
+    return `
+      <article class="booking-class-card student-booking-option">
+        <div><strong>${formatDate(item.data)} ${escapeHTML(item.horario)}</strong><span>${escapeHTML(item.turma || 'Turma')} - ${escapeHTML(item.tipo || 'Regular')}</span><small>${remaining} vaga(s) livres</small></div>
+        <button class="mini-btn" type="button" data-student-booking="${escapeHTML(item.id)}">Agendar</button>
+      </article>
+    `;
+  }).join('') : empty('Nenhum horario livre para agendar agora.');
+}
+
+async function submitStudentBooking(classId) {
+  const student = publicStudentLookup.student;
+  const telefone = publicStudentLookup.telefone || document.getElementById('studentLookupPhone')?.value.trim();
+  if (!student || !telefone) throw new Error('Busque seu WhatsApp antes de agendar');
+  await sendPublicBooking({ nome: student.nome, telefone, aula_id: classId, observacao: 'Agendamento feito pelo fluxo experimental do aluno.' });
+  const status = document.getElementById('studentConfirmStatus');
+  if (status) status.textContent = 'Pedido de agendamento enviado. Aguarde a confirmacao.';
+  await loadStudentConfirmations(telefone);
 }
 
 async function submitStudentConfirmation(classId, confirmado) {
@@ -2965,11 +3157,13 @@ async function saveClass(event) {
     tipo: document.getElementById('classType').value,
     capacidade: Number(document.getElementById('classCapacity').value || 8),
     status: document.getElementById('classStatus').value,
+    observacao: document.getElementById('classNotice').value.trim(),
     aluno_ids: alunoIds,
     presencas,
     extra_presentes: classExtras(previous)
   };
-  const repeatWeeks = id ? 1 : Math.min(12, Math.max(1, Number(document.getElementById('classRepeatWeeks').value || 1)));
+  const recurrence = document.getElementById('classRecurrence').value;
+  const repeatWeeks = id || recurrence === 'once' ? 1 : Math.min(12, Math.max(1, Number(document.getElementById('classRepeatWeeks').value || 1)));
   const classPayloads = Array.from({ length: repeatWeeks }, (_item, index) => ({
     ...payload,
     data: addDaysIso(payload.data, index * 7),
@@ -3121,6 +3315,17 @@ async function updateClassStatus(id, status) {
   if (!apiMode) recordAction('Professor', 'Status da aula', `${item.horario} - ${item.turma || 'Turma'} mudou para ${status}.`);
   await saveClassItem(item);
   toast(`Aula ${status.toLowerCase()}`);
+}
+
+async function cancelClass(id) {
+  const item = classById(id);
+  if (!item) return;
+  const reason = prompt('Motivo ou aviso para o cancelamento', item.observacao || 'Aula cancelada pela escola.');
+  if (reason === null) return;
+  item.status = 'Cancelada';
+  item.observacao = reason.trim() || 'Aula cancelada pela escola.';
+  await saveClassItem(item);
+  toast('Aula cancelada. Use Avisar grupo para enviar o comunicado.');
 }
 
 async function finishAttendance() {
@@ -3367,6 +3572,13 @@ function bindEvents() {
       document.getElementById('studentConfirmStatus').textContent = err.message;
     });
   });
+  document.getElementById('studentBookingList')?.addEventListener('click', (event) => {
+    const target = event.target.closest('[data-student-booking]');
+    if (!target) return;
+    submitStudentBooking(target.dataset.studentBooking).catch((err) => {
+      document.getElementById('studentConfirmStatus').textContent = err.message;
+    });
+  });
   document.getElementById('adminAccessBtn')?.addEventListener('click', () => {
     showBooking(false);
     showLogin(true);
@@ -3423,6 +3635,12 @@ function bindEvents() {
   document.getElementById('studentForm').addEventListener('submit', (event) => saveStudent(event).catch((err) => toast(err.message)));
   document.getElementById('paymentForm').addEventListener('submit', (event) => savePayment(event).catch((err) => toast(err.message)));
   document.getElementById('classForm').addEventListener('submit', (event) => saveClass(event).catch((err) => toast(err.message)));
+  document.getElementById('scheduleForm')?.addEventListener('submit', (event) => saveSchedule(event).catch((err) => toast(err.message)));
+  document.getElementById('groupMessageForm')?.addEventListener('submit', (event) => event.preventDefault());
+  document.getElementById('groupMessageClass')?.addEventListener('change', updateGroupMessagePreview);
+  document.getElementById('groupMessageTemplate')?.addEventListener('change', updateGroupMessagePreview);
+  document.querySelector('[data-copy-group-message]')?.addEventListener('click', () => copyGroupMessage().catch((err) => toast(err.message)));
+  document.querySelector('[data-open-schedule]')?.addEventListener('click', openSchedule);
   document.getElementById('planForm').addEventListener('submit', (event) => savePlan(event).catch((err) => toast(err.message)));
   document.getElementById('waitlistForm').addEventListener('submit', (event) => saveWaitlist(event).catch((err) => toast(err.message)));
   document.getElementById('extraAttendanceForm').addEventListener('submit', (event) => addExtraAttendance(event).catch((err) => toast(err.message)));
@@ -3511,7 +3729,7 @@ function bindEvents() {
     toggleClassStudent(target.value, target.checked);
   });
   document.body.addEventListener('click', (event) => {
-    const target = event.target.closest('[data-action],[data-report-student],[data-edit-student],[data-sync-student],[data-edit-class],[data-duplicate-class],[data-class-status],[data-copy-class],[data-copy-report],[data-edit-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-copy-charge],[data-edit-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day],[data-more-page],[data-more-action],[data-booking-action]');
+    const target = event.target.closest('[data-action],[data-report-student],[data-edit-student],[data-sync-student],[data-edit-class],[data-duplicate-class],[data-class-status],[data-cancel-class],[data-copy-class],[data-open-group-message],[data-copy-report],[data-edit-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-copy-charge],[data-edit-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day],[data-more-page],[data-more-action],[data-booking-action]');
     if (!target) return;
     if (target.dataset.action && !target.closest('#quickActions')) handleQuickAction(target.dataset.action);
     if (target.dataset.morePage) setPage(target.dataset.morePage);
@@ -3526,6 +3744,8 @@ function bindEvents() {
       const [id, status] = target.dataset.classStatus.split(':');
       updateClassStatus(id, status).catch((err) => toast(err.message));
     }
+    if (target.dataset.cancelClass) cancelClass(target.dataset.cancelClass).catch((err) => toast(err.message));
+    if (target.dataset.openGroupMessage !== undefined) openGroupMessage(target.dataset.openGroupMessage || '');
     if (target.dataset.copyClass) copyClassRoster(target.dataset.copyClass).catch((err) => toast(err.message));
     if (target.dataset.copyReport) copyMonthlyReport().catch((err) => toast(err.message));
     if (target.dataset.editPlan) openPlan(target.dataset.editPlan);
@@ -3574,7 +3794,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260828-release8', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260828-release9', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

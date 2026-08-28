@@ -36,9 +36,15 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Backup JSON pelo painel operacional
 - Login simples por PIN no servidor
 - Primeira tela publica para o aluno pedir vaga em uma aula
+- Fluxo experimental publico iniciado pelo aluno para buscar aulas pelo WhatsApp
+- Agendamento de outra aula pelo proprio fluxo do aluno
 - Area publica do aluno com resumo de confirmacoes futuras
 - Fila de pedidos para professor aprovar ou recusar
 - Limite de capacidade considerado antes de aceitar pedidos
+- Grade padrao: segunda a sexta as 18:30, 19:30 e 20:30; sabado as 09:00, 10:00, 14:00 e 15:00
+- Criacao de aulas em lote com recorrencia por ate 12 semanas
+- Cancelamento com motivo, reativacao e aviso para o grupo
+- Modelos editaveis para confirmacao, lembrete, cancelamento, troca e agenda semanal no grupo
 - PWA instalavel no celular
 - Fluxo pensado para uso rapido no iPhone
 - Layout otimizado para navegador mobile
@@ -94,7 +100,7 @@ Tambem da para abrir `index.html` diretamente no navegador para usar em modo loc
 
 ## Laboratorio visual temporario
 
-Depois de entrar como professor, abra `Config.` no menu desktop ou `Mais > Configuração` no celular. A tela permite testar seis temas completos (Amarelo, Lima, Menta, Azul, Violeta e Coral), editar a identidade e revisar textos principais do painel. As alterações ficam no `localStorage` deste navegador; `Limpar testes` restaura o tema claro e os textos padrão. Essa seção foi isolada para ser removida quando a linguagem final for aprovada.
+Depois de entrar como professor, abra `Config.` no menu desktop ou `Mais > Configuracao` no celular. A tela permite testar seis padroes completos inspirados no Finanza Android Kotlin: Moderno, Classico e Finanza Web, cada um em claro e escuro. Cada padrao altera tipografia, espacamento, bordas, sombras, navegacao e superficies; nao sao apenas cores. Tambem e possivel editar a identidade e revisar textos principais do painel. As alteracoes ficam no `localStorage` deste navegador; `Limpar testes` restaura o tema claro e os textos padrao. Essa secao foi isolada para ser removida quando a linguagem final for aprovada.
 
 Live local usado durante o polimento visual:
 
