@@ -260,12 +260,22 @@ function upsertClassStudents(classId, studentIds = [], attendance = {}) {
   });
 }
 
+const ACTIVE_WAITLIST_STATUSES = ['Novo', 'Contatado', 'Experimental marcado'];
+
+function waitlistPosition(classId, waitlistId) {
+  return Number(scalar(`
+    SELECT COUNT(*) AS total FROM lista_espera
+    WHERE aula_id=? AND status IN (${ACTIVE_WAITLIST_STATUSES.map(() => '?').join(',')}) AND id<=?
+  `, [classId, ...ACTIVE_WAITLIST_STATUSES, waitlistId], 0));
+}
+
 app.get('/', (_req, res) => res.sendFile(path.join(ROOT_DIR, 'index.html')));
 app.get('/health', (_req, res) => res.json(publicState(stateSnapshot({ includeLogs: false }))));
 app.get('/api/public/classes', (_req, res) => {
   const items = rows(`
     SELECT a.*,
-      (SELECT COUNT(*) FROM aula_alunos aa WHERE aa.aula_id=a.id) AS inscritos
+      (SELECT COUNT(*) FROM aula_alunos aa WHERE aa.aula_id=a.id) AS inscritos,
+      (SELECT COUNT(*) FROM lista_espera w WHERE w.aula_id=a.id AND w.status IN ('Novo', 'Contatado', 'Experimental marcado')) AS espera
     FROM aulas a
     WHERE a.status != 'Cancelada' AND a.data >= ?
     ORDER BY a.data, a.horario
@@ -278,7 +288,8 @@ app.get('/api/public/classes', (_req, res) => {
     tipo: item.tipo,
     professor: item.professor,
     capacidade: item.capacidade,
-    inscritos: item.inscritos
+    inscritos: item.inscritos,
+    espera: item.espera
   }));
   res.json({ ok: true, items });
 });
@@ -324,13 +335,12 @@ app.post('/api/public/waitlist', (req, res) => {
     if (phone.length < 8) throw new Error('Informe pelo menos 8 numeros do WhatsApp');
     const nome = String(req.body.nome || '').trim();
     if (!nome) throw new Error('Informe seu nome');
-    const activeStatuses = ['Novo', 'Contatado', 'Experimental marcado'];
     const duplicate = row(`
       SELECT id FROM lista_espera
-      WHERE aula_id=? AND status IN (${activeStatuses.map(() => '?').join(',')})
+      WHERE aula_id=? AND status IN (${ACTIVE_WAITLIST_STATUSES.map(() => '?').join(',')})
         AND ${phoneSql()} LIKE ?
       LIMIT 1
-    `, [classItem.id, ...activeStatuses, `%${phone.slice(-8)}`]);
+    `, [classItem.id, ...ACTIVE_WAITLIST_STATUSES, `%${phone.slice(-8)}`]);
     if (duplicate) throw new Error('Voce ja esta na espera dessa aula');
     const enrolled = scalar('SELECT COUNT(*) AS total FROM aula_alunos WHERE aula_id=?', [classItem.id]);
     if (enrolled < Number(classItem.capacidade || 8)) throw new Error('Ainda existe vaga nessa aula');
@@ -344,8 +354,28 @@ app.post('/api/public/waitlist', (req, res) => {
       data_cadastro: today()
     };
     const result = insertRow('lista_espera', payload);
+    const position = waitlistPosition(classItem.id, result.id);
     logAction('Entrada na espera', `${payload.nome} entrou na espera da aula ${classItem.horario} - ${classItem.turma || 'Turma'} em ${classItem.data}.`, 'Aluno');
-    res.json({ ok: true, item: row('SELECT * FROM lista_espera WHERE id=?', [result.id]) });
+    res.json({ ok: true, position, item: { ...row('SELECT * FROM lista_espera WHERE id=?', [result.id]), posicao: position } });
+  } catch (err) {
+    jsonError(res, err);
+  }
+});
+app.get('/api/public/student-waitlist', (req, res) => {
+  try {
+    const phone = phoneDigits(req.query.telefone || req.query.phone || '');
+    if (phone.length < 8) throw new Error('Informe pelo menos 8 numeros do WhatsApp');
+    const items = rows(`
+      SELECT w.id, w.aula_id, w.nome, w.telefone, w.status, w.observacao, w.data_cadastro,
+        a.data AS aula_data, a.horario AS aula_horario, a.turma AS aula_turma,
+        (SELECT COUNT(*) FROM lista_espera ahead
+         WHERE ahead.aula_id=w.aula_id AND ahead.status IN ('Novo', 'Contatado', 'Experimental marcado') AND ahead.id<=w.id) AS posicao
+      FROM lista_espera w
+      LEFT JOIN aulas a ON a.id=w.aula_id
+      WHERE w.status IN ('Novo', 'Contatado', 'Experimental marcado') AND ${phoneSql()} LIKE ?
+      ORDER BY w.id DESC
+    `, [`%${phone.slice(-8)}`]);
+    res.json({ ok: true, items });
   } catch (err) {
     jsonError(res, err);
   }

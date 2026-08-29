@@ -182,6 +182,9 @@ async function main() {
       body: JSON.stringify({ nome: 'Espera Publica', telefone: '(15) 99999-5555', aula_id: fullClass.item.id })
     });
     assert(Number(publicWait.item.aula_id) === Number(fullClass.item.id), 'Espera publica nao ficou vinculada a aula');
+    assert(Number(publicWait.position) === 1, 'Espera publica nao retornou a posicao correta');
+    const publicWaitStatus = await request('/api/public/student-waitlist?telefone=999995555', { public: true });
+    assert(publicWaitStatus.items.length === 1 && Number(publicWaitStatus.items[0].posicao) === 1, 'Aluno nao conseguiu consultar sua posicao na espera');
     await expectFailure('/api/public/waitlist', {
       public: true,
       method: 'POST',

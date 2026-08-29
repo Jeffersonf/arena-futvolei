@@ -217,6 +217,7 @@ let apiMode = false;
 let state = loadLocalState();
 let activeAttendanceClassId = '';
 let publicStudentLookup = { telefone: '', student: null, items: [] };
+let publicStudentWaitlist = [];
 let publicStudentPendingBookings = new Set();
 let actionRefreshTimer = null;
 let renderFrame = 0;
@@ -1747,6 +1748,8 @@ function renderWaitlist() {
     const priority = waitPriority(item);
     const age = priority.age;
     const needsReply = priority.rank === 0;
+    const queue = item.aula_id ? state.waitlist.filter((entry) => String(entry.aula_id) === String(item.aula_id) && ['Novo', 'Contatado', 'Experimental marcado'].includes(entry.status || 'Novo')).sort((a, b) => String(a.data_cadastro || '').localeCompare(String(b.data_cadastro || '')) || String(a.id).localeCompare(String(b.id))) : [];
+    const position = item.aula_id ? queue.findIndex((entry) => String(entry.id) === String(item.id)) + 1 : 0;
     return `
     <article class="row-card wait-row wait-${cssToken(item.status || 'Novo')} ${needsReply ? 'wait-needs-reply' : ''}">
       <div>
@@ -1756,6 +1759,7 @@ function renderWaitlist() {
           <span class="pill ${priority.className}">${escapeHTML(priority.label)}</span>
           <span class="pill ${item.status === 'Convertido' ? 'ok' : item.status === 'Contatado' || item.status === 'Experimental marcado' ? 'warn' : item.status === 'Perdido' ? 'bad' : ''}">${escapeHTML(item.status || 'Novo')}</span>
           ${item.data_cadastro ? `<span class="pill">${formatDate(item.data_cadastro)}</span>` : ''}
+          ${position ? `<span class="pill warn">posicao ${position}</span>` : ''}
           <span class="pill ${needsReply ? 'bad' : age ? 'warn' : ''}">${age || 0} dia(s)</span>
           ${needsReply ? '<span class="pill bad">responder hoje</span>' : ''}
         </div>
@@ -2735,7 +2739,11 @@ async function loadPublicClasses() {
     .filter((item) => item.status !== 'Cancelada' && item.data >= todayISO())
     .sort(sortClass)
     .slice(0, 20)
-    .map((item) => ({ ...item, inscritos: classStudentIds(item).length }));
+    .map((item) => ({
+      ...item,
+      inscritos: classStudentIds(item).length,
+      espera: state.waitlist.filter((wait) => String(wait.aula_id || '') === String(item.id) && ['Novo', 'Contatado', 'Experimental marcado'].includes(wait.status || 'Novo')).length
+    }));
 }
 
 async function renderPublicBooking() {
@@ -2756,18 +2764,20 @@ async function renderPublicBooking() {
   select.innerHTML = classes.length
     ? classes.map((item) => {
       const available = Number(item.inscritos ?? classStudentIds(item).length) < Number(item.capacidade || 8);
-      return `<option value="${escapeHTML(item.id)}" data-full="${available ? '0' : '1'}">${escapeHTML(publicClassLabel(item))}${available ? '' : ' - lotada; entrar na espera'}</option>`;
+      const waiting = Number(item.espera || 0);
+      return `<option value="${escapeHTML(item.id)}" data-full="${available ? '0' : '1'}">${escapeHTML(publicClassLabel(item))}${available ? '' : ` - lotada; ${waiting} na espera`}</option>`;
     }).join('')
     : '<option value="">Sem horário disponível</option>';
   list.innerHTML = classes.length ? classes.map((item) => {
     const used = Number(item.inscritos ?? classStudentIds(item).length);
     const capacity = Number(item.capacidade || 8);
     const available = Math.max(0, capacity - used);
+    const waiting = Number(item.espera || 0);
     return `
       <button class="booking-class-card ${available ? '' : 'is-full'}" type="button" aria-label="${escapeHTML(publicClassLabel(item))}" data-booking-class="${escapeHTML(item.id)}">
         <strong>${formatDate(item.data)} ${escapeHTML(item.horario)}</strong>
         <span>${escapeHTML(item.turma || 'Turma')} - ${escapeHTML(item.tipo || 'Regular')}</span>
-        <small>${available ? `${available} vaga(s) livres` : 'lotada - toque para entrar na espera'}</small>
+        <small>${available ? `${available} vaga(s) livres` : `lotada - ${waiting} na espera; toque para entrar`}</small>
       </button>
     `;
   }).join('') : empty('Nenhuma aula disponível agora.');
@@ -2810,7 +2820,8 @@ async function submitPublicWaitlist(payload) {
   const digits = phoneDigits(payload.telefone).slice(-8);
   const duplicate = state.waitlist.find((item) => String(item.aula_id || '') === String(payload.aula_id) && ['Novo', 'Contatado', 'Experimental marcado'].includes(item.status || 'Novo') && phoneDigits(item.telefone).endsWith(digits));
   if (duplicate) throw new Error('Voce ja esta na espera dessa aula');
-  const next = { ...payload, id: uid(), status: 'Novo', data_cadastro: todayISO(), preferencia: `${classItem.data} ${classItem.horario} - ${classItem.turma || 'Turma'}` };
+  const position = state.waitlist.filter((item) => String(item.aula_id || '') === String(payload.aula_id) && ['Novo', 'Contatado', 'Experimental marcado'].includes(item.status || 'Novo')).length + 1;
+  const next = { ...payload, id: uid(), status: 'Novo', data_cadastro: todayISO(), posicao: position, preferencia: `${classItem.data} ${classItem.horario} - ${classItem.turma || 'Turma'}` };
   state.waitlist.unshift(next);
   recordAction('Aluno', 'Entrada na espera', `${next.nome} entrou na espera da aula ${classItem.horario} - ${classItem.turma || 'Turma'}.`);
   saveAndRender();
@@ -2828,8 +2839,8 @@ async function submitBooking(event) {
   const selected = selectedPublicBookingClass();
   if (!selected?.value) throw new Error('Escolha uma aula');
   if (selected.dataset.full === '1') {
-    await submitPublicWaitlist(payload);
-    document.getElementById('bookingStatus').textContent = 'Voce entrou na lista de espera. A escola avisa se abrir uma vaga.';
+    const waitItem = await submitPublicWaitlist(payload);
+    document.getElementById('bookingStatus').textContent = `Voce entrou na lista de espera${waitItem?.posicao ? ` na posicao ${waitItem.posicao}` : ''}. A escola avisa se abrir uma vaga.`;
   } else {
     await sendPublicBooking(payload);
     document.getElementById('bookingStatus').textContent = apiMode ? 'Pedido enviado. Aguarde a confirmacao pelo WhatsApp.' : 'Pedido salvo na demo. Entre no painel para aprovar.';
@@ -2908,10 +2919,37 @@ function localStudentClassesByPhone(telefone = '') {
   return { student, items };
 }
 
+async function loadStudentWaitlistStatus(telefone = '') {
+  publicStudentWaitlist = [];
+  if (phoneDigits(telefone).length < 8) return;
+  if (location.protocol !== 'file:') {
+    try {
+      const res = await fetch(`/api/public/student-waitlist?telefone=${encodeURIComponent(telefone)}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.ok === false) throw new Error(data.error || 'Nao foi possivel buscar a espera');
+      publicStudentWaitlist = data.items || [];
+      return;
+    } catch (err) {
+      if (await detectServer()) throw err;
+    }
+  }
+  const digits = phoneDigits(telefone).slice(-8);
+  const activeWaitlist = state.waitlist.filter((item) => String(item.aula_id || '') && ['Novo', 'Contatado', 'Experimental marcado'].includes(item.status || 'Novo'));
+  publicStudentWaitlist = activeWaitlist
+    .filter((item) => phoneDigits(item.telefone).endsWith(digits))
+    .map((item) => {
+      const queue = activeWaitlist
+        .filter((ahead) => String(ahead.aula_id) === String(item.aula_id))
+        .sort((a, b) => String(a.data_cadastro || '').localeCompare(String(b.data_cadastro || '')) || String(a.id).localeCompare(String(b.id)));
+      return { ...item, posicao: queue.findIndex((ahead) => String(ahead.id) === String(item.id)) + 1 };
+    });
+}
+
 async function loadStudentConfirmations(telefone) {
   const status = document.getElementById('studentConfirmStatus');
   if (phoneDigits(publicStudentLookup.telefone) !== phoneDigits(telefone)) publicStudentPendingBookings = new Set();
   publicStudentLookup = { telefone, student: null, items: [] };
+  publicStudentWaitlist = [];
   if (status) status.textContent = 'Buscando suas aulas...';
   if (location.protocol !== 'file:') {
     try {
@@ -2919,6 +2957,7 @@ async function loadStudentConfirmations(telefone) {
       const data = await res.json().catch(() => ({}));
       if (!res.ok || data.ok === false) throw new Error(data.error || 'Nao foi possivel buscar');
       publicStudentLookup = { telefone, student: data.student, items: data.items || [] };
+      await loadStudentWaitlistStatus(telefone);
       if (status) status.textContent = data.items?.length ? 'Escolha em quais aulas voce vai.' : 'Nenhuma aula futura encontrada.';
       renderStudentConfirmList();
       await renderStudentBookingOptions();
@@ -2929,6 +2968,7 @@ async function loadStudentConfirmations(telefone) {
   }
   const local = localStudentClassesByPhone(telefone);
   publicStudentLookup = { telefone, student: local.student, items: local.items };
+  await loadStudentWaitlistStatus(telefone);
   if (status) status.textContent = local.student ? 'Modo demo local.' : 'Aluno nao encontrado na demo.';
   renderStudentConfirmList();
   await renderStudentBookingOptions();
@@ -2945,14 +2985,17 @@ async function renderStudentBookingOptions() {
   }
   const classes = await loadPublicClasses();
   const currentIds = new Set((publicStudentLookup.items || []).map((item) => String(item.id)));
+  const waitingByClass = new Map((publicStudentWaitlist || []).map((item) => [String(item.aula_id), item]));
   const options = classes.filter((item) => !currentIds.has(String(item.id)) && !publicStudentPendingBookings.has(String(item.id)));
   target.innerHTML = options.length ? options.map((item) => {
     const remaining = Math.max(0, Number(item.capacidade || 8) - Number(item.inscritos ?? classStudentIds(item).length));
     const isFull = remaining === 0;
+    const waiting = waitingByClass.get(String(item.id));
+    const isWaiting = Boolean(waiting);
     return `
       <article class="booking-class-card student-booking-option ${isFull ? 'is-full' : ''}">
-        <div><strong>${formatDate(item.data)} ${escapeHTML(item.horario)}</strong><span>${escapeHTML(item.turma || 'Turma')} - ${escapeHTML(item.tipo || 'Regular')}</span><small>${isFull ? 'lotada - entre na espera' : `${remaining} vaga(s) livres`}</small></div>
-        <button class="mini-btn" type="button" data-${isFull ? 'student-waitlist' : 'student-booking'}="${escapeHTML(item.id)}">${isFull ? 'Entrar na espera' : 'Agendar'}</button>
+        <div><strong>${formatDate(item.data)} ${escapeHTML(item.horario)}</strong><span>${escapeHTML(item.turma || 'Turma')} - ${escapeHTML(item.tipo || 'Regular')}</span><small>${isWaiting ? `na espera - posicao ${waiting.posicao || '?'}` : isFull ? `lotada - ${Number(item.espera || 0)} na espera` : `${remaining} vaga(s) livres`}</small></div>
+        <button class="mini-btn" type="button" ${isWaiting ? 'disabled' : ''} data-${isWaiting ? 'student-waiting' : isFull ? 'student-waitlist' : 'student-booking'}="${escapeHTML(item.id)}">${isWaiting ? `Na espera #${waiting.posicao || '?'}` : isFull ? 'Entrar na espera' : 'Agendar'}</button>
       </article>
     `;
   }).join('') : empty('Nenhum horario livre para agendar agora.');
@@ -2963,9 +3006,10 @@ async function submitStudentWaitlist(classId) {
   const student = publicStudentLookup.student;
   const telefone = publicStudentLookup.telefone || document.getElementById('studentLookupPhone')?.value.trim();
   if (!student || !telefone) throw new Error('Busque seu WhatsApp antes de entrar na espera');
-  await submitPublicWaitlist({ nome: student.nome, telefone, aula_id: classId, observacao: 'Entrou na espera pelo fluxo do aluno.' });
+  const waitItem = await submitPublicWaitlist({ nome: student.nome, telefone, aula_id: classId, observacao: 'Entrou na espera pelo fluxo do aluno.' });
   const status = document.getElementById('studentConfirmStatus');
-  if (status) status.textContent = 'Voce entrou na espera. A escola avisa se abrir uma vaga.';
+  if (status) status.textContent = `Voce entrou na espera${waitItem?.posicao ? ` na posicao ${waitItem.posicao}` : ''}. A escola avisa se abrir uma vaga.`;
+  await loadStudentWaitlistStatus(telefone);
   await renderStudentBookingOptions();
 }
 
@@ -3874,7 +3918,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260829-release13', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260829-release14', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

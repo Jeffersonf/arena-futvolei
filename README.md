@@ -161,6 +161,7 @@ Endpoints uteis no servidor:
 - `GET /api/public/classes`: aulas futuras disponiveis para pedido de vaga.
 - `POST /api/public/bookings`: cria pedido publico de aula.
 - `POST /api/public/waitlist`: entra na espera quando a aula esta lotada.
+- `GET /api/public/student-waitlist`: consulta esperas ativas e posicao do aluno.
 - `GET /api/public/student-classes`: aluno busca proximas aulas pelo WhatsApp.
 - `POST /api/public/student-confirm`: aluno confirma se vai ou nao vai.
 - `GET /api/bookings`: lista pedidos para o professor.
