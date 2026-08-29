@@ -1751,7 +1751,7 @@ function renderWaitlist() {
     <article class="row-card wait-row wait-${cssToken(item.status || 'Novo')} ${needsReply ? 'wait-needs-reply' : ''}">
       <div>
         <h3>${escapeHTML(item.nome)}</h3>
-        <p class="meta">${escapeHTML(item.telefone || 'sem telefone')} - ${escapeHTML(item.preferencia || 'sem preferencia')}</p>
+        <p class="meta">${escapeHTML(item.telefone || 'sem telefone')} - ${item.aula_data ? `aula ${formatDate(item.aula_data)} as ${escapeHTML(item.aula_horario || '')} - ${escapeHTML(item.aula_turma || 'Turma')}` : escapeHTML(item.preferencia || 'sem preferencia')}</p>
         <div class="pill-row">
           <span class="pill ${priority.className}">${escapeHTML(priority.label)}</span>
           <span class="pill ${item.status === 'Convertido' ? 'ok' : item.status === 'Contatado' || item.status === 'Experimental marcado' ? 'warn' : item.status === 'Perdido' ? 'bad' : ''}">${escapeHTML(item.status || 'Novo')}</span>
@@ -2752,12 +2752,11 @@ async function renderPublicBooking() {
   if (!hasServer && bookingStatus && !bookingStatus.textContent) bookingStatus.textContent = 'Modo demo: pedido fica salvo apenas neste navegador.';
   if (!hasServer && studentStatus && !studentStatus.textContent) studentStatus.textContent = 'Modo demo: confirmação real precisa do servidor online.';
   const classes = await loadPublicClasses();
-  const availableClasses = classes.filter((item) => Number(item.inscritos ?? classStudentIds(item).length) < Number(item.capacidade || 8));
-  select.disabled = !availableClasses.length;
+  select.disabled = !classes.length;
   select.innerHTML = classes.length
     ? classes.map((item) => {
       const available = Number(item.inscritos ?? classStudentIds(item).length) < Number(item.capacidade || 8);
-      return `<option value="${escapeHTML(item.id)}" ${available ? '' : 'disabled'}>${escapeHTML(publicClassLabel(item))}${available ? '' : ' - lotada'}</option>`;
+      return `<option value="${escapeHTML(item.id)}" data-full="${available ? '0' : '1'}">${escapeHTML(publicClassLabel(item))}${available ? '' : ' - lotada; entrar na espera'}</option>`;
     }).join('')
     : '<option value="">Sem horário disponível</option>';
   list.innerHTML = classes.length ? classes.map((item) => {
@@ -2765,14 +2764,57 @@ async function renderPublicBooking() {
     const capacity = Number(item.capacidade || 8);
     const available = Math.max(0, capacity - used);
     return `
-      <button class="booking-class-card ${available ? '' : 'is-full'}" type="button" ${available ? '' : 'disabled'} aria-label="${escapeHTML(publicClassLabel(item))}" data-booking-class="${escapeHTML(item.id)}">
+      <button class="booking-class-card ${available ? '' : 'is-full'}" type="button" aria-label="${escapeHTML(publicClassLabel(item))}" data-booking-class="${escapeHTML(item.id)}">
         <strong>${formatDate(item.data)} ${escapeHTML(item.horario)}</strong>
         <span>${escapeHTML(item.turma || 'Turma')} - ${escapeHTML(item.tipo || 'Regular')}</span>
-        <small>${available ? `${available} vaga(s) livres` : 'lotada'}</small>
+        <small>${available ? `${available} vaga(s) livres` : 'lotada - toque para entrar na espera'}</small>
       </button>
     `;
   }).join('') : empty('Nenhuma aula disponível agora.');
   list.setAttribute('aria-busy', 'false');
+  updateBookingClassAction();
+}
+
+function selectedPublicBookingClass() {
+  return document.getElementById('bookingClass')?.selectedOptions?.[0] || null;
+}
+
+function updateBookingClassAction() {
+  const button = document.getElementById('bookingSubmitButton');
+  const option = selectedPublicBookingClass();
+  if (!button) return;
+  const isFull = option?.dataset.full === '1';
+  button.textContent = isFull ? 'Entrar na espera' : 'Pedir vaga';
+  button.classList.toggle('waitlist-submit', isFull);
+}
+
+async function submitPublicWaitlist(payload) {
+  if (location.protocol !== 'file:') {
+    try {
+      const res = await fetch('/api/public/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.ok === false) throw new Error(data.error || 'Nao foi possivel entrar na espera');
+      return data.item;
+    } catch (err) {
+      if (await detectServer()) throw err;
+    }
+  }
+  const classItem = classById(payload.aula_id);
+  if (!classItem) throw new Error('Aula nao encontrada');
+  if (classItem.status === 'Cancelada') throw new Error('Aula cancelada');
+  if (classStudentIds(classItem).length < Number(classItem.capacidade || 8)) throw new Error('Ainda existe vaga nessa aula');
+  const digits = phoneDigits(payload.telefone).slice(-8);
+  const duplicate = state.waitlist.find((item) => String(item.aula_id || '') === String(payload.aula_id) && ['Novo', 'Contatado', 'Experimental marcado'].includes(item.status || 'Novo') && phoneDigits(item.telefone).endsWith(digits));
+  if (duplicate) throw new Error('Voce ja esta na espera dessa aula');
+  const next = { ...payload, id: uid(), status: 'Novo', data_cadastro: todayISO(), preferencia: `${classItem.data} ${classItem.horario} - ${classItem.turma || 'Turma'}` };
+  state.waitlist.unshift(next);
+  recordAction('Aluno', 'Entrada na espera', `${next.nome} entrou na espera da aula ${classItem.horario} - ${classItem.turma || 'Turma'}.`);
+  saveAndRender();
+  return next;
 }
 
 async function submitBooking(event) {
@@ -2783,11 +2825,15 @@ async function submitBooking(event) {
     aula_id: document.getElementById('bookingClass').value,
     observacao: document.getElementById('bookingNote').value.trim()
   };
-  if (document.getElementById('bookingClass')?.selectedOptions[0]?.disabled) {
-    throw new Error('Escolha uma aula com vaga');
+  const selected = selectedPublicBookingClass();
+  if (!selected?.value) throw new Error('Escolha uma aula');
+  if (selected.dataset.full === '1') {
+    await submitPublicWaitlist(payload);
+    document.getElementById('bookingStatus').textContent = 'Voce entrou na lista de espera. A escola avisa se abrir uma vaga.';
+  } else {
+    await sendPublicBooking(payload);
+    document.getElementById('bookingStatus').textContent = apiMode ? 'Pedido enviado. Aguarde a confirmacao pelo WhatsApp.' : 'Pedido salvo na demo. Entre no painel para aprovar.';
   }
-  await sendPublicBooking(payload);
-  document.getElementById('bookingStatus').textContent = apiMode ? 'Pedido enviado. Aguarde a confirmacao pelo WhatsApp.' : 'Pedido salvo na demo. Entre no painel para aprovar.';
   event.target.reset();
   await renderPublicBooking();
 }
@@ -2899,20 +2945,28 @@ async function renderStudentBookingOptions() {
   }
   const classes = await loadPublicClasses();
   const currentIds = new Set((publicStudentLookup.items || []).map((item) => String(item.id)));
-  const available = classes.filter((item) => {
-    const used = Number(item.inscritos ?? classStudentIds(item).length);
-    return !currentIds.has(String(item.id)) && !publicStudentPendingBookings.has(String(item.id)) && used < Number(item.capacidade || 8);
-  });
-  target.innerHTML = available.length ? available.map((item) => {
-    const remaining = Number(item.capacidade || 8) - Number(item.inscritos ?? classStudentIds(item).length);
+  const options = classes.filter((item) => !currentIds.has(String(item.id)) && !publicStudentPendingBookings.has(String(item.id)));
+  target.innerHTML = options.length ? options.map((item) => {
+    const remaining = Math.max(0, Number(item.capacidade || 8) - Number(item.inscritos ?? classStudentIds(item).length));
+    const isFull = remaining === 0;
     return `
-      <article class="booking-class-card student-booking-option">
-        <div><strong>${formatDate(item.data)} ${escapeHTML(item.horario)}</strong><span>${escapeHTML(item.turma || 'Turma')} - ${escapeHTML(item.tipo || 'Regular')}</span><small>${remaining} vaga(s) livres</small></div>
-        <button class="mini-btn" type="button" data-student-booking="${escapeHTML(item.id)}">Agendar</button>
+      <article class="booking-class-card student-booking-option ${isFull ? 'is-full' : ''}">
+        <div><strong>${formatDate(item.data)} ${escapeHTML(item.horario)}</strong><span>${escapeHTML(item.turma || 'Turma')} - ${escapeHTML(item.tipo || 'Regular')}</span><small>${isFull ? 'lotada - entre na espera' : `${remaining} vaga(s) livres`}</small></div>
+        <button class="mini-btn" type="button" data-${isFull ? 'student-waitlist' : 'student-booking'}="${escapeHTML(item.id)}">${isFull ? 'Entrar na espera' : 'Agendar'}</button>
       </article>
     `;
   }).join('') : empty('Nenhum horario livre para agendar agora.');
   target.setAttribute('aria-busy', 'false');
+}
+
+async function submitStudentWaitlist(classId) {
+  const student = publicStudentLookup.student;
+  const telefone = publicStudentLookup.telefone || document.getElementById('studentLookupPhone')?.value.trim();
+  if (!student || !telefone) throw new Error('Busque seu WhatsApp antes de entrar na espera');
+  await submitPublicWaitlist({ nome: student.nome, telefone, aula_id: classId, observacao: 'Entrou na espera pelo fluxo do aluno.' });
+  const status = document.getElementById('studentConfirmStatus');
+  if (status) status.textContent = 'Voce entrou na espera. A escola avisa se abrir uma vaga.';
+  await renderStudentBookingOptions();
 }
 
 async function submitStudentBooking(classId) {
@@ -3574,6 +3628,7 @@ function bindEvents() {
   const renderClassChecklistLater = () => scheduleUiWork('class-checklist', renderClassStudentChecklist, 80);
 
   document.getElementById('bookingForm')?.addEventListener('submit', (event) => submitBooking(event).catch((err) => toast(err.message)));
+  document.getElementById('bookingClass')?.addEventListener('change', updateBookingClassAction);
   document.querySelectorAll('[data-public-tab]').forEach((button) => button.addEventListener('click', () => setPublicTab(button.dataset.publicTab)));
   document.getElementById('studentLookupForm')?.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -3596,6 +3651,13 @@ function bindEvents() {
       document.getElementById('studentConfirmStatus').textContent = err.message;
     });
   });
+  document.getElementById('studentBookingList')?.addEventListener('click', (event) => {
+    const target = event.target.closest('[data-student-waitlist]');
+    if (!target) return;
+    submitStudentWaitlist(target.dataset.studentWaitlist).catch((err) => {
+      document.getElementById('studentConfirmStatus').textContent = err.message;
+    });
+  });
   document.getElementById('adminAccessBtn')?.addEventListener('click', () => {
     showBooking(false);
     showLogin(true);
@@ -3604,6 +3666,7 @@ function bindEvents() {
     const target = event.target.closest('[data-booking-class]');
     if (!target) return;
     document.getElementById('bookingClass').value = target.dataset.bookingClass;
+    updateBookingClassAction();
     document.getElementById('bookingName').focus();
   });
   document.getElementById('loginForm').addEventListener('submit', (event) => {
@@ -3811,7 +3874,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260828-release12', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260829-release13', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

@@ -10,11 +10,11 @@
     <title data-config-text="brandName">Team Lucão Futevôlei</title>
     <link rel="icon" type="image/png" href="assets/team-lucao-logo.png" />
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260828-release12" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260829-release13" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20260828-patterns4" />
+    <link rel="stylesheet" href="styles.css?v=20260829-patterns5" />
   </head>
   <body>
     <a class="skip-link" href="#mainContent">Pular para o conteúdo principal</a>
@@ -41,7 +41,7 @@
               <label>WhatsApp<input id="bookingPhone" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" required /></label>
               <label>Aula<select id="bookingClass" required></select></label>
               <label>Observação<input id="bookingNote" placeholder="Nível, reposição, experimental..." /></label>
-              <button class="primary-btn" type="submit">Pedir vaga</button>
+              <button class="primary-btn" id="bookingSubmitButton" type="submit">Pedir vaga</button>
               <p class="booking-status" id="bookingStatus" role="status" aria-live="polite"></p>
             </form>
             <div class="booking-board">
@@ -863,6 +863,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-    <script src="app.js?v=20260828-release12"></script>
+    <script src="app.js?v=20260829-release13"></script>
   </body>
 </html>

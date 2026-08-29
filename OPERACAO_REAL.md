@@ -32,14 +32,15 @@ BACKUP_RETENTION=30
 
 1. Abrir o link publico.
 2. Pedir uma vaga como visitante.
-3. Entrar como professor pelo botao `Acesso professor`.
-4. Aprovar ou recusar o pedido em `Pedidos`.
-5. Abrir `Alunos` e confirmar que a lista esta legivel.
-6. Editar um aluno e conferir `Agenda fixa` no topo do modal.
-7. Abrir `Aulas`, entrar em `Presencas` e marcar alunos.
-8. Adicionar uma pessoa fora da lista.
-9. Abrir `Cobrar` e copiar uma cobranca.
-10. Fazer backup manual pelo relatorio operacional.
+3. Testar uma aula cheia e entrar na `lista de espera`.
+4. Entrar como professor pelo botao `Acesso professor`.
+5. Aprovar ou recusar o pedido em `Pedidos`.
+6. Abrir `Alunos` e confirmar que a lista esta legivel.
+7. Editar um aluno e conferir `Agenda fixa` no topo do modal.
+8. Abrir `Aulas`, entrar em `Presencas` e marcar alunos.
+9. Adicionar uma pessoa fora da lista.
+10. Abrir `Cobrar` e copiar uma cobranca.
+11. Fazer backup manual pelo relatorio operacional.
 
 ## Rotina diaria sugerida
 
@@ -61,6 +62,7 @@ Depois da aula:
 - Conferir `Cobrar`.
 - Copiar cobrancas pendentes.
 - Ver novos pedidos e lista de espera.
+- Verificar esperas vinculadas as aulas lotadas e avisar a proxima pessoa quando liberar vaga.
 
 ## Backup
 

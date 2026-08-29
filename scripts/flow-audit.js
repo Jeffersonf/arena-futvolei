@@ -161,8 +161,32 @@ async function main() {
     assert(normalizedClass.item.data === todayIso(), 'Data invalida nao foi normalizada para o dia operacional');
     assert(normalizedClass.item.horario === '18:30', 'Horario invalido nao recebeu o padrao seguro');
     assert(Number(normalizedClass.item.capacidade) === 30, 'Capacidade nao foi limitada ao teto operacional');
+    const fullClass = await request('/api/classes', {
+      method: 'POST',
+      body: JSON.stringify({
+        data: auditDate,
+        horario: '09:00',
+        turma: 'Audit Lotada',
+        professor: 'Lucao',
+        tipo: 'Regular',
+        capacidade: 1,
+        status: 'Marcada',
+        aluno_ids: [student.item.id]
+      })
+    });
     const publicClasses = await request('/api/public/classes', { public: true });
     assert(!publicClasses.items.some((item) => Number(item.id) === Number(expiredClass.item.id)), 'Aula vencida apareceu no acesso publico');
+    const publicWait = await request('/api/public/waitlist', {
+      public: true,
+      method: 'POST',
+      body: JSON.stringify({ nome: 'Espera Publica', telefone: '(15) 99999-5555', aula_id: fullClass.item.id })
+    });
+    assert(Number(publicWait.item.aula_id) === Number(fullClass.item.id), 'Espera publica nao ficou vinculada a aula');
+    await expectFailure('/api/public/waitlist', {
+      public: true,
+      method: 'POST',
+      body: JSON.stringify({ nome: 'Espera Duplicada', telefone: '(15) 99999-5555', aula_id: fullClass.item.id })
+    }, 'ja esta na espera');
     await expectFailure('/api/public/bookings', {
       public: true,
       method: 'POST',
@@ -253,6 +277,7 @@ async function main() {
       'Pagamento',
       'Pedido de aula',
       'Pedido aprovado',
+      'Entrada na espera',
       'Interessado cadastrado',
       'Espera atualizada'
     ].forEach((action) => assert(joined.includes(action), `Log ausente: ${action}`));

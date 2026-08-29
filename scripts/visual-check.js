@@ -3,8 +3,8 @@ const fs = require('fs');
 
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
-const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260828-release12';
-const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260828-patterns4';
+const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260829-release13';
+const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260829-patterns5';
 const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined;
 
 const cases = [

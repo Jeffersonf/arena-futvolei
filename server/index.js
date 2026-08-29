@@ -313,6 +313,43 @@ app.post('/api/public/bookings', (req, res) => {
     jsonError(res, err);
   }
 });
+app.post('/api/public/waitlist', (req, res) => {
+  try {
+    const classId = Number(req.body.aula_id || req.body.class_id || 0);
+    const classItem = row('SELECT * FROM aulas WHERE id=?', [classId]);
+    if (!classItem) throw new Error('Aula nao encontrada');
+    if (classItem.status === 'Cancelada') throw new Error('Aula cancelada');
+    if (String(classItem.data || '') < today()) throw new Error('Essa aula ja passou');
+    const phone = phoneDigits(req.body.telefone || '');
+    if (phone.length < 8) throw new Error('Informe pelo menos 8 numeros do WhatsApp');
+    const nome = String(req.body.nome || '').trim();
+    if (!nome) throw new Error('Informe seu nome');
+    const activeStatuses = ['Novo', 'Contatado', 'Experimental marcado'];
+    const duplicate = row(`
+      SELECT id FROM lista_espera
+      WHERE aula_id=? AND status IN (${activeStatuses.map(() => '?').join(',')})
+        AND ${phoneSql()} LIKE ?
+      LIMIT 1
+    `, [classItem.id, ...activeStatuses, `%${phone.slice(-8)}`]);
+    if (duplicate) throw new Error('Voce ja esta na espera dessa aula');
+    const enrolled = scalar('SELECT COUNT(*) AS total FROM aula_alunos WHERE aula_id=?', [classItem.id]);
+    if (enrolled < Number(classItem.capacidade || 8)) throw new Error('Ainda existe vaga nessa aula');
+    const payload = {
+      nome,
+      telefone: String(req.body.telefone || '').trim(),
+      aula_id: classItem.id,
+      preferencia: `${classItem.data} ${classItem.horario} - ${classItem.turma || 'Turma'}`,
+      status: 'Novo',
+      observacao: String(req.body.observacao || '').trim(),
+      data_cadastro: today()
+    };
+    const result = insertRow('lista_espera', payload);
+    logAction('Entrada na espera', `${payload.nome} entrou na espera da aula ${classItem.horario} - ${classItem.turma || 'Turma'} em ${classItem.data}.`, 'Aluno');
+    res.json({ ok: true, item: row('SELECT * FROM lista_espera WHERE id=?', [result.id]) });
+  } catch (err) {
+    jsonError(res, err);
+  }
+});
 app.get('/api/public/student-classes', (req, res) => {
   try {
     const student = findStudentByPhone(req.query.telefone || req.query.phone || '');
@@ -642,7 +679,12 @@ app.post('/api/bookings/:id/respond', (req, res) => {
 });
 
 app.get('/api/waitlist', (_req, res) => {
-  res.json({ ok: true, items: rows('SELECT * FROM lista_espera ORDER BY id DESC') });
+  res.json({ ok: true, items: rows(`
+    SELECT w.*, a.data AS aula_data, a.horario AS aula_horario, a.turma AS aula_turma, a.status AS aula_status
+    FROM lista_espera w
+    LEFT JOIN aulas a ON a.id=w.aula_id
+    ORDER BY w.id DESC
+  `) });
 });
 
 app.post('/api/waitlist', (req, res) => {
@@ -650,6 +692,7 @@ app.post('/api/waitlist', (req, res) => {
     const payload = {
       nome: String(req.body.nome || req.body.name || '').trim(),
       telefone: String(req.body.telefone || req.body.phone || '').trim(),
+      aula_id: req.body.aula_id ? Number(req.body.aula_id) : null,
       preferencia: String(req.body.preferencia || '').trim(),
       status: String(req.body.status || 'Novo').trim(),
       observacao: String(req.body.observacao || '').trim(),
@@ -674,6 +717,7 @@ app.put('/api/waitlist/:id', (req, res) => {
       status: String(req.body.status || 'Novo').trim(),
       observacao: String(req.body.observacao || '').trim()
     };
+    if (Object.prototype.hasOwnProperty.call(req.body, 'aula_id')) payload.aula_id = req.body.aula_id ? Number(req.body.aula_id) : null;
     if (!payload.nome) throw new Error('Informe o nome');
     updateRow('lista_espera', req.params.id, payload);
     const item = row('SELECT * FROM lista_espera WHERE id=?', [req.params.id]);

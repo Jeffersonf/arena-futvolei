@@ -189,10 +189,12 @@ function ensureSchema() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       nome TEXT NOT NULL,
       telefone TEXT,
+      aula_id INTEGER,
       preferencia TEXT,
       status TEXT DEFAULT 'Novo',
       observacao TEXT,
-      data_cadastro TEXT DEFAULT (date('now'))
+      data_cadastro TEXT DEFAULT (date('now')),
+      FOREIGN KEY(aula_id) REFERENCES aulas(id) ON DELETE SET NULL
     );
 
     CREATE TABLE IF NOT EXISTS logs (
@@ -224,6 +226,18 @@ function ensureSchema() {
   if (!waitlistColumns.includes('status')) {
     run("ALTER TABLE lista_espera ADD COLUMN status TEXT DEFAULT 'Novo'");
   }
+  if (!waitlistColumns.includes('aula_id')) {
+    run('ALTER TABLE lista_espera ADD COLUMN aula_id INTEGER');
+  }
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_aulas_data_horario ON aulas(data, horario);
+    CREATE INDEX IF NOT EXISTS idx_aula_alunos_aula ON aula_alunos(aula_id);
+    CREATE INDEX IF NOT EXISTS idx_aula_alunos_aluno ON aula_alunos(aluno_id);
+    CREATE INDEX IF NOT EXISTS idx_agendamentos_aula_status ON agendamentos(aula_id, status);
+    CREATE INDEX IF NOT EXISTS idx_alunos_telefone ON alunos(telefone);
+    CREATE INDEX IF NOT EXISTS idx_lista_espera_aula_status ON lista_espera(aula_id, status);
+  `);
 
   const studentColumns = tableColumns('alunos');
   if (!studentColumns.includes('dia_vencimento')) {

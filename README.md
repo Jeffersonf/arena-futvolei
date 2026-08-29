@@ -41,6 +41,8 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Area publica do aluno com resumo de confirmacoes futuras
 - Fila de pedidos para professor aprovar ou recusar
 - Limite de capacidade considerado antes de aceitar pedidos
+- Aula lotada com entrada publica na lista de espera vinculada ao horario
+- Bloqueio de entrada duplicada na espera por aula e WhatsApp
 - Grade padrao: segunda a sexta as 18:30, 19:30 e 20:30; sabado as 09:00, 10:00, 14:00 e 15:00
 - Criacao de aulas em lote com recorrencia por ate 12 semanas
 - Cancelamento com motivo, reativacao e aviso para o grupo
@@ -158,6 +160,7 @@ Endpoints uteis no servidor:
 - `GET /health`: status publico.
 - `GET /api/public/classes`: aulas futuras disponiveis para pedido de vaga.
 - `POST /api/public/bookings`: cria pedido publico de aula.
+- `POST /api/public/waitlist`: entra na espera quando a aula esta lotada.
 - `GET /api/public/student-classes`: aluno busca proximas aulas pelo WhatsApp.
 - `POST /api/public/student-confirm`: aluno confirma se vai ou nao vai.
 - `GET /api/bookings`: lista pedidos para o professor.
