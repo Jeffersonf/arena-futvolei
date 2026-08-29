@@ -3,7 +3,7 @@ const fs = require('fs');
 
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
-const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260828-release11';
+const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260828-release12';
 const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260828-patterns4';
 const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined;
 
@@ -104,7 +104,10 @@ async function runCaseAction(page, action) {
     if (initial.columns.split(' ').length !== expectedColumns) throw new Error(`Blocos publicos nao se organizaram corretamente (${JSON.stringify(initial)})`);
     await page.locator('#studentLookupPhone').fill('(15) 99110028');
     await page.locator('#studentLookupForm').evaluate((form) => form.requestSubmit());
-    await page.waitForTimeout(450);
+    await page.waitForFunction(() => {
+      const status = document.getElementById('studentConfirmStatus')?.textContent || '';
+      return status && status !== 'Buscando suas aulas...';
+    }, null, { timeout: 5000 });
     const result = await page.evaluate(() => ({
       status: document.getElementById('studentConfirmStatus')?.textContent || '',
       hasScheduleAction: Boolean(document.querySelector('#studentBookingList [data-student-booking]'))

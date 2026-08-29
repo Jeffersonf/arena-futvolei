@@ -7,7 +7,12 @@ const PORT = Number(process.env.FLOW_AUDIT_PORT || 4322);
 const DB_PATH = path.join(ROOT, 'tmp-flow-audit.db');
 const PIN = process.env.ADMIN_PIN || '1234';
 const BASE = `http://127.0.0.1:${PORT}`;
-const todayIso = () => new Date().toISOString().slice(0, 10);
+const todayIso = () => new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/Sao_Paulo',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit'
+}).format(new Date());
 const addDaysIso = (dateIso, days) => {
   const date = new Date(`${dateIso}T12:00:00`);
   date.setDate(date.getDate() + days);
@@ -143,6 +148,19 @@ async function main() {
         status: 'Marcada'
       })
     });
+    const normalizedClass = await request('/api/classes', {
+      method: 'POST',
+      body: JSON.stringify({
+        data: '2026-02-30',
+        horario: '99:99',
+        turma: 'Audit Validacao',
+        capacidade: 999,
+        status: 'Marcada'
+      })
+    });
+    assert(normalizedClass.item.data === todayIso(), 'Data invalida nao foi normalizada para o dia operacional');
+    assert(normalizedClass.item.horario === '18:30', 'Horario invalido nao recebeu o padrao seguro');
+    assert(Number(normalizedClass.item.capacidade) === 30, 'Capacidade nao foi limitada ao teto operacional');
     const publicClasses = await request('/api/public/classes', { public: true });
     assert(!publicClasses.items.some((item) => Number(item.id) === Number(expiredClass.item.id)), 'Aula vencida apareceu no acesso publico');
     await expectFailure('/api/public/bookings', {

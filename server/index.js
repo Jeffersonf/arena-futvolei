@@ -39,11 +39,41 @@ function jsonError(res, err, fallback = 400) {
 
 function moneyNumber(value) {
   const parsed = Number(value || 0);
-  return Number.isFinite(parsed) ? parsed : 0;
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+}
+
+function positiveInt(value, fallback, min = 1, max = 30) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, Math.round(parsed)));
+}
+
+function normalizeIsoDate(value, fallback = today()) {
+  const raw = String(value || '').slice(0, 10);
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+  if (!match) return fallback;
+  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  return date.getUTCFullYear() === Number(match[1])
+    && date.getUTCMonth() === Number(match[2]) - 1
+    && date.getUTCDate() === Number(match[3]) ? raw : fallback;
+}
+
+function normalizeTime(value, fallback = '18:30') {
+  const raw = String(value || '').slice(0, 5);
+  const match = /^(\d{2}):(\d{2})$/.exec(raw);
+  if (!match) return fallback;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  return hour <= 23 && minute <= 59 ? raw : fallback;
 }
 
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(new Date());
 }
 
 function addMonthsIso(dateIso, months = 1) {
@@ -178,14 +208,14 @@ function normalizeClassPayload(body = {}) {
   const plan = body.plano_id ? row('SELECT * FROM planos WHERE id=?', [body.plano_id]) : null;
   const extras = body.extra_presentes ?? body.extras ?? [];
   return {
-    data: String(body.data || body.date || today()).slice(0, 10),
-    horario: String(body.horario || body.time || '18:30').slice(0, 5),
+    data: normalizeIsoDate(body.data || body.date || today()),
+    horario: normalizeTime(body.horario || body.time || '18:30'),
     turma: String(body.turma || body.group || '').trim(),
     tipo: String(body.tipo || body.tipo_aula || body.type || 'Regular'),
     professor: String(body.professor || body.coach || '').trim(),
     plano_id: plan?.id || body.plano_id || null,
     plano_nome: plan?.nome || body.plano_nome || '',
-    capacidade: Number(body.capacidade || body.capacity || 8),
+    capacidade: positiveInt(body.capacidade || body.capacity, 8, 1, 30),
     status: String(body.status || 'Marcada'),
     valor_avulso: moneyNumber(body.valor_avulso),
     extras: typeof extras === 'string' ? extras : JSON.stringify(extras),

@@ -82,7 +82,12 @@ let appConfig = loadAppConfig();
 const LIST_PAGE_SIZE = 24;
 let lastModalTrigger = null;
 const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-const todayISO = () => new Date().toISOString().slice(0, 10);
+const todayISO = () => new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/Sao_Paulo',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit'
+}).format(new Date());
 const currentMonth = () => todayISO().slice(0, 7);
 const selectedPaymentMonth = () => document.getElementById('paymentMonth')?.value || currentMonth();
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -3806,7 +3811,7 @@ window.addEventListener('storage', (event) => {
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260828-release11', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260828-release12', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);
