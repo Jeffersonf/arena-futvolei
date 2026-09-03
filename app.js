@@ -3000,21 +3000,27 @@ async function renderStudentBookingOptions(classes = null) {
   const target = document.getElementById('studentBookingList');
   if (!target) return;
   const board = target.closest('.student-booking-board');
+  const filters = document.getElementById('studentSlotFilters');
+  const dateFilter = document.getElementById('studentSlotDate');
+  const timeFilter = document.getElementById('studentSlotTime');
   target.setAttribute('aria-busy', 'true');
   if (!publicStudentLookup.student) {
     if (board) board.hidden = true;
+    if (filters) filters.hidden = true;
     target.innerHTML = empty('Busque seu WhatsApp acima para liberar o agendamento.');
     target.setAttribute('aria-busy', 'false');
     return;
   }
   if ((publicStudentLookup.items || []).length) {
     if (board) board.hidden = true;
+    if (filters) filters.hidden = true;
     target.innerHTML = '';
     target.setAttribute('aria-busy', 'false');
     return;
   }
   if (board) board.hidden = false;
-  classes = classes || await loadPublicClasses();
+  if (!classes) classes = publicStudentLookup.available.length ? publicStudentLookup.available : await loadPublicClasses();
+  if (!publicStudentLookup.available.length && classes.length) publicStudentLookup.available = classes;
   const currentIds = new Set((publicStudentLookup.items || []).map((item) => String(item.id)));
   const today = todayISO();
   const weekEnd = addDaysIso(today, 6);
@@ -3027,7 +3033,21 @@ async function renderStudentBookingOptions(classes = null) {
       && !currentIds.has(String(item.id))
       && !publicStudentPendingBookings.has(String(item.id));
   });
-  target.innerHTML = options.length ? options.map((item) => {
+  const dates = [...new Set(options.map((item) => item.data))];
+  const times = [...new Set(options.map((item) => item.horario))].sort();
+  if (filters && dateFilter && timeFilter) {
+    const previousDate = dateFilter.value;
+    const previousTime = timeFilter.value;
+    dateFilter.innerHTML = '<option value="">Todas as datas</option>' + dates.map((date) => '<option value="' + escapeHTML(date) + '">' + formatDate(date) + '</option>').join('');
+    timeFilter.innerHTML = '<option value="">Todos os horarios</option>' + times.map((time) => '<option value="' + escapeHTML(time) + '">' + escapeHTML(time) + '</option>').join('');
+    dateFilter.value = dates.includes(previousDate) ? previousDate : '';
+    timeFilter.value = times.includes(previousTime) ? previousTime : '';
+    filters.hidden = !options.length;
+  }
+  const selectedDate = dateFilter?.value || '';
+  const selectedTime = timeFilter?.value || '';
+  const filteredOptions = options.filter((item) => (!selectedDate || item.data === selectedDate) && (!selectedTime || item.horario === selectedTime));
+  target.innerHTML = filteredOptions.length ? filteredOptions.map((item) => {
     const remaining = Math.max(0, Number(item.capacidade || 8) - Number(item.inscritos ?? classStudentIds(item).length));
     return `
       <article class="booking-class-card student-booking-option">
@@ -3035,7 +3055,7 @@ async function renderStudentBookingOptions(classes = null) {
         <button class="mini-btn" type="button" data-student-booking="${escapeHTML(item.id)}">Escolher horario</button>
       </article>
     `;
-  }).join('') : empty('Nenhum horario regular com vaga nesta semana.');
+  }).join('') : empty(options.length ? 'Nenhum horario corresponde aos filtros.' : 'Nenhum horario regular com vaga nesta semana.');
   target.setAttribute('aria-busy', 'false');
 }
 
@@ -3757,6 +3777,8 @@ function bindEvents() {
       document.getElementById('studentConfirmStatus').textContent = err.message;
     });
   });
+  document.getElementById('studentSlotDate')?.addEventListener('change', () => renderStudentBookingOptions(publicStudentLookup.available));
+  document.getElementById('studentSlotTime')?.addEventListener('change', () => renderStudentBookingOptions(publicStudentLookup.available));
   document.getElementById('studentBookingList')?.addEventListener('click', (event) => {
     const target = event.target.closest('[data-student-waitlist]');
     if (!target) return;

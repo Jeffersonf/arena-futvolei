@@ -20,6 +20,10 @@
       #status { min-height: 21px; font-size: 13px; } .list { display: grid; gap: 10px; margin-top: 14px; }
       article { display: grid; gap: 10px; padding: 14px; border: 1px solid #e3e8f0; border-radius: 13px; } article strong { font-size: 15px; } article small { color: #667085; }
       article button { width: 100%; } .done { color: #067647; font-weight: 700; font-size: 13px; }
+      .filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
+      .filters label { display: grid; gap: 5px; color: #667085; font-size: 12px; font-weight: 700; }
+      .filters select { min-height: 40px; border: 1px solid #cfd7e3; border-radius: 10px; padding: 0 9px; background: #fff; color: #172033; font: inherit; }
+      @media (max-width: 420px) { .filters { grid-template-columns: 1fr; } }
       @media (max-width: 420px) { body { padding: 12px 10px; } header, section { padding: 16px; border-radius: 15px; } }
     </style>
   </head>
@@ -29,6 +33,10 @@
       <section>
         <form id="studentFastForm"><label>Seu WhatsApp<input id="studentFastPhone" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" required /></label><button type="submit">Ver minhas aulas</button></form>
         <p id="studentFastStatus" role="status" aria-live="polite"></p>
+        <div class="filters" id="studentFastFilters" hidden>
+          <label>Data<select id="studentFastDate"><option value="">Todas as datas</option></select></label>
+          <label>Hora<select id="studentFastTime"><option value="">Todos os horarios</option></select></label>
+        </div>
         <div class="list" id="studentFastList"></div>
       </section>
     </main>

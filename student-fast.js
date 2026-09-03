@@ -5,6 +5,32 @@ const form = document.getElementById('studentFastForm');
 const phoneInput = document.getElementById('studentFastPhone');
 const status = document.getElementById('studentFastStatus');
 const list = document.getElementById('studentFastList');
+const filters = document.getElementById('studentFastFilters');
+const dateFilter = document.getElementById('studentFastDate');
+const timeFilter = document.getElementById('studentFastTime');
+let availableItems = [];
+
+function dateLabel(value) {
+  return new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })
+    .format(new Date(String(value) + 'T12:00:00'));
+}
+
+function setupFilters(items) {
+  availableItems = items;
+  if (!items.length) { filters.hidden = true; return; }
+  const dates = [...new Set(items.map((item) => item.data))];
+  const times = [...new Set(items.map((item) => item.horario))].sort();
+  dateFilter.innerHTML = '<option value="">Todas as datas</option>' + dates.map((date) => '<option value="' + escapeHTML(date) + '">' + escapeHTML(dateLabel(date)) + '</option>').join('');
+  timeFilter.innerHTML = '<option value="">Todos os horarios</option>' + times.map((time) => '<option value="' + escapeHTML(time) + '">' + escapeHTML(time) + '</option>').join('');
+  filters.hidden = false;
+}
+
+function applyFilters() {
+  renderAvailable(availableItems.filter((item) =>
+    (!dateFilter.value || item.data === dateFilter.value)
+    && (!timeFilter.value || item.horario === timeFilter.value)
+  ));
+}
 
 function render(items) {
   list.innerHTML = items.length ? items.map((item) => {
@@ -38,8 +64,12 @@ async function findClasses(event) {
     phoneInput.dataset.phone = telefone;
     const booked = data.items || [];
     phoneInput.dataset.studentName = data.student?.nome || 'Aluno';
+    filters.hidden = true;
     render(booked.length ? booked : []);
-    if (!booked.length) renderAvailable(data.available || []);
+    if (!booked.length) {
+      setupFilters(data.available || []);
+      renderAvailable(data.available || []);
+    }
     status.textContent = data.items?.length ? 'Toque em “Vou” para indicar presença.' : 'Escolha um horário regular com vaga nesta semana.';
   } catch (error) { status.textContent = error.message; }
 }
@@ -70,6 +100,8 @@ async function indicate(classId, button) {
 }
 
 form.addEventListener('submit', findClasses);
+dateFilter.addEventListener('change', applyFilters);
+timeFilter.addEventListener('change', applyFilters);
 list.addEventListener('click', (event) => {
   const confirmButton = event.target.closest('[data-class-id]');
   if (confirmButton) return indicate(confirmButton.dataset.classId, confirmButton);
