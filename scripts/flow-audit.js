@@ -178,6 +178,15 @@ async function main() {
         aluno_ids: [student.item.id]
       })
     });
+    const unbookedStudent = await request('/api/students', {
+      method: 'POST',
+      body: JSON.stringify({
+        nome: 'Aluno Sem Aula',
+        telefone: '(15) 99999-7777',
+        plano_nome: '2x semana',
+        status: 'Ativo'
+      })
+    });
     const publicClasses = await request('/api/public/classes', { public: true });
     assert(!publicClasses.items.some((item) => Number(item.id) === Number(expiredClass.item.id)), 'Aula vencida apareceu no acesso publico');
     const publicWait = await request('/api/public/waitlist', {
@@ -204,6 +213,17 @@ async function main() {
       method: 'POST',
       body: JSON.stringify({ nome: 'Pedido vencido', telefone: '(15) 99999-4444', aula_id: expiredClass.item.id })
     }, 'ja passou');
+    const unbookedLookup = await request('/api/public/student-classes?telefone=999997777', { public: true });
+    assert(unbookedLookup.items.length === 0, 'Aluno sem aula apareceu com aula agendada');
+    assert(unbookedLookup.available.length > 0, 'Aluno sem aula nao recebeu horarios regulares da semana');
+    assert(unbookedLookup.available.every((item) => !/experimental/i.test(String(item.tipo || ''))), 'Horarios experimentais vazaram para o aluno');
+    const requestedClass = unbookedLookup.available[0];
+    const regularRequest = await request('/api/public/bookings', {
+      public: true,
+      method: 'POST',
+      body: JSON.stringify({ nome: unbookedStudent.item.nome, telefone: unbookedStudent.item.telefone, aula_id: requestedClass.id, observacao: 'Solicitacao de horario regular pelo aluno.' })
+    });
+    assert(regularRequest.item.status === 'Pendente', 'Escolha de horario nao foi salva como solicitacao pendente');
 
     await request(`/api/classes/${classItem.item.id}/attendance`, {
       method: 'PUT',
@@ -232,6 +252,10 @@ async function main() {
     const studentClasses = await request('/api/public/student-classes?telefone=999991111', { public: true });
     assert(studentClasses.items[0].confirmado === 'sim', 'Indicacao do aluno nao persistiu');
     assert(studentClasses.items[0].confirmado_professor === 'sim', 'Confirmacao do professor nao persistiu');
+
+    assert(Array.isArray(studentClasses.available), 'Busca do aluno nao retornou horarios disponiveis');
+    assert(!studentClasses.available.some((item) => /experimental/i.test(String(item.tipo || ''))), 'Horario experimental apareceu no fluxo do aluno');
+    assert(!studentClasses.available.some((item) => Number(item.inscritos) >= Number(item.capacidade)), 'Horario lotado apareceu como disponivel');
 
     await request(`/api/students/${student.item.id}/pay`, {
       method: 'POST',

@@ -216,7 +216,7 @@ function demoState() {
 let apiMode = false;
 let state = loadLocalState();
 let activeAttendanceClassId = '';
-let publicStudentLookup = { telefone: '', student: null, items: [] };
+let publicStudentLookup = { telefone: '', student: null, items: [], available: [] };
 let publicStudentWaitlist = [];
 let publicStudentPendingBookings = new Set();
 let publicApiAvailable = false;
@@ -2888,7 +2888,13 @@ function renderStudentConfirmList() {
   const student = publicStudentLookup.student;
   const items = publicStudentLookup.items || [];
   if (!items.length) {
-    list.innerHTML = empty('Nenhuma aula futura encontrada para esse WhatsApp.');
+    list.innerHTML = `
+      <div class="student-confirm-head">
+        <span class="pill ok">${escapeHTML(student?.nome || 'Aluno')}</span>
+        <small>${escapeHTML(student?.plano_nome || 'Plano nao informado')}</small>
+      </div>
+      ${empty('Voce nao tem aula agendada. Veja abaixo os horarios regulares com vaga nesta semana.')}
+    `;
     return;
   }
   const indicated = items.filter((item) => item.confirmado === 'sim').length;
@@ -2964,7 +2970,7 @@ async function loadStudentWaitlistStatus(telefone = '') {
 async function loadStudentConfirmations(telefone) {
   const status = document.getElementById('studentConfirmStatus');
   if (phoneDigits(publicStudentLookup.telefone) !== phoneDigits(telefone)) publicStudentPendingBookings = new Set();
-  publicStudentLookup = { telefone, student: null, items: [] };
+  publicStudentLookup = { telefone, student: null, items: [], available: [] };
   publicStudentWaitlist = [];
   if (status) status.textContent = 'Buscando suas aulas...';
   if (location.protocol !== 'file:') {
@@ -2972,18 +2978,18 @@ async function loadStudentConfirmations(telefone) {
       const res = await fetch(`/api/public/student-classes?telefone=${encodeURIComponent(telefone)}`);
       const data = await res.json().catch(() => ({}));
       if (!res.ok || data.ok === false) throw new Error(data.error || 'Nao foi possivel buscar');
-      publicStudentLookup = { telefone, student: data.student, items: data.items || [] };
-      const [, classes] = await Promise.all([loadStudentWaitlistStatus(telefone), loadPublicClasses()]);
-      if (status) status.textContent = data.items?.length ? 'Indique em quais aulas voce vai.' : 'Nenhuma aula futura encontrada.';
+      publicStudentLookup = { telefone, student: data.student, items: data.items || [], available: data.available || [] };
+      await loadStudentWaitlistStatus(telefone);
+      if (status) status.textContent = data.items?.length ? 'Indique em quais aulas voce vai.' : 'Escolha um horario regular com vaga nesta semana.';
       renderStudentConfirmList();
-      await renderStudentBookingOptions(classes);
+      await renderStudentBookingOptions(data.available || []);
       return;
     } catch (err) {
       if (await detectServer()) throw err;
     }
   }
   const local = localStudentClassesByPhone(telefone);
-  publicStudentLookup = { telefone, student: local.student, items: local.items };
+  publicStudentLookup = { telefone, student: local.student, items: local.items, available: [] };
   await loadStudentWaitlistStatus(telefone);
   if (status) status.textContent = local.student ? 'Modo demo local.' : 'Aluno nao encontrado na demo.';
   renderStudentConfirmList();
@@ -2993,28 +2999,43 @@ async function loadStudentConfirmations(telefone) {
 async function renderStudentBookingOptions(classes = null) {
   const target = document.getElementById('studentBookingList');
   if (!target) return;
+  const board = target.closest('.student-booking-board');
   target.setAttribute('aria-busy', 'true');
   if (!publicStudentLookup.student) {
+    if (board) board.hidden = true;
     target.innerHTML = empty('Busque seu WhatsApp acima para liberar o agendamento.');
     target.setAttribute('aria-busy', 'false');
     return;
   }
+  if ((publicStudentLookup.items || []).length) {
+    if (board) board.hidden = true;
+    target.innerHTML = '';
+    target.setAttribute('aria-busy', 'false');
+    return;
+  }
+  if (board) board.hidden = false;
   classes = classes || await loadPublicClasses();
   const currentIds = new Set((publicStudentLookup.items || []).map((item) => String(item.id)));
-  const waitingByClass = new Map((publicStudentWaitlist || []).map((item) => [String(item.aula_id), item]));
-  const options = classes.filter((item) => !currentIds.has(String(item.id)) && !publicStudentPendingBookings.has(String(item.id)));
+  const today = todayISO();
+  const weekEnd = addDaysIso(today, 6);
+  const options = classes.filter((item) => {
+    const remaining = Number(item.capacidade || 8) - Number(item.inscritos ?? classStudentIds(item).length);
+    return item.data >= today
+      && item.data <= weekEnd
+      && !/experimental/i.test(String(item.tipo || ''))
+      && remaining > 0
+      && !currentIds.has(String(item.id))
+      && !publicStudentPendingBookings.has(String(item.id));
+  });
   target.innerHTML = options.length ? options.map((item) => {
     const remaining = Math.max(0, Number(item.capacidade || 8) - Number(item.inscritos ?? classStudentIds(item).length));
-    const isFull = remaining === 0;
-    const waiting = waitingByClass.get(String(item.id));
-    const isWaiting = Boolean(waiting);
     return `
-      <article class="booking-class-card student-booking-option ${isFull ? 'is-full' : ''}">
-        <div><strong>${formatDate(item.data)} ${escapeHTML(item.horario)}</strong><span>${escapeHTML(item.turma || 'Turma')} - ${escapeHTML(item.tipo || 'Regular')}</span><small>${isWaiting ? `na espera - posicao ${waiting.posicao || '?'}` : isFull ? `lotada - ${Number(item.espera || 0)} na espera` : `${remaining} vaga(s) livres`}</small></div>
-        <button class="mini-btn" type="button" ${isWaiting ? 'disabled' : ''} data-${isWaiting ? 'student-waiting' : isFull ? 'student-waitlist' : 'student-booking'}="${escapeHTML(item.id)}">${isWaiting ? `Na espera #${waiting.posicao || '?'}` : isFull ? 'Entrar na espera' : 'Agendar'}</button>
+      <article class="booking-class-card student-booking-option">
+        <div><strong>${formatDate(item.data)} ${escapeHTML(item.horario)}</strong><span>${escapeHTML(item.turma || 'Turma')}</span><small>${remaining} vaga(s) livres</small></div>
+        <button class="mini-btn" type="button" data-student-booking="${escapeHTML(item.id)}">Escolher horario</button>
       </article>
     `;
-  }).join('') : empty('Nenhum horario livre para agendar agora.');
+  }).join('') : empty('Nenhum horario regular com vaga nesta semana.');
   target.setAttribute('aria-busy', 'false');
 }
 
@@ -3036,7 +3057,7 @@ async function submitStudentBooking(classId) {
   if (publicStudentPendingBookings.has(String(classId))) return;
   publicStudentPendingBookings.add(String(classId));
   try {
-    await sendPublicBooking({ nome: student.nome, telefone, aula_id: classId, observacao: 'Agendamento feito pelo fluxo experimental do aluno.' });
+    await sendPublicBooking({ nome: student.nome, telefone, aula_id: classId, observacao: 'Agendamento feito pelo fluxo regular do aluno.' });
   } catch (error) {
     publicStudentPendingBookings.delete(String(classId));
     throw error;
@@ -3073,7 +3094,7 @@ async function submitStudentConfirmation(classId, confirmado) {
   recordAction('Aluno', 'Confirmacao aluno', `${local.student.nome} respondeu ${confirmado === 'sim' ? 'vou' : 'nao vou'} na aula ${classItem.horario} - ${classItem.turma || 'Turma'}.`);
   touchState();
   saveLocalState();
-  publicStudentLookup = { telefone, student: local.student, items: localStudentClassesByPhone(telefone).items };
+  publicStudentLookup = { telefone, student: local.student, items: localStudentClassesByPhone(telefone).items, available: [] };
   renderStudentConfirmList();
 }
 

@@ -76,6 +76,12 @@ function today() {
   }).format(new Date());
 }
 
+function addDaysIso(dateIso, days = 0) {
+  const date = new Date(`${dateIso}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + Number(days || 0));
+  return date.toISOString().slice(0, 10);
+}
+
 function addMonthsIso(dateIso, months = 1) {
   const date = dateIso ? new Date(`${dateIso}T12:00:00`) : new Date();
   date.setMonth(date.getMonth() + months);
@@ -396,10 +402,27 @@ app.get('/api/public/student-classes', (req, res) => {
       ORDER BY a.data, a.horario
       LIMIT 30
     `, [student.id, today()]);
+    const available = rows(`
+      SELECT a.id, a.data, a.horario, a.turma, a.tipo, a.professor, a.capacidade, a.status,
+        (SELECT COUNT(*) FROM aula_alunos WHERE aula_id=a.id) AS inscritos,
+        (SELECT COUNT(*) FROM lista_espera w WHERE w.aula_id=a.id AND w.status IN ('Novo', 'Contatado', 'Experimental marcado')) AS espera
+      FROM aulas a
+      WHERE a.status != 'Cancelada'
+        AND LOWER(COALESCE(a.tipo, '')) NOT LIKE '%experimental%'
+        AND a.data BETWEEN ? AND ?
+        AND (SELECT COUNT(*) FROM aula_alunos WHERE aula_id=a.id) < COALESCE(a.capacidade, 8)
+        AND NOT EXISTS (
+          SELECT 1 FROM aula_alunos linked
+          WHERE linked.aula_id=a.id AND linked.aluno_id=?
+        )
+      ORDER BY a.data, a.horario, a.turma
+      LIMIT 30
+    `, [today(), addDaysIso(today(), 6), student.id]);
     res.json({
       ok: true,
       student: { id: student.id, nome: student.nome, plano_nome: student.plano_nome },
-      items
+      items,
+      available
     });
   } catch (err) {
     jsonError(res, err);
