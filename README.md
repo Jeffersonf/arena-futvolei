@@ -158,12 +158,16 @@ Backups JSON ficam em `backups/`. O servidor cria um backup ao iniciar por padra
 Endpoints uteis no servidor:
 
 - `GET /health`: status publico.
+- `/aluno`: pagina leve para o aluno indicar que vai.
+- `/autorizar`: pagina leve para o professor autorizar indicacoes com PIN.
+- `GET /api/bootstrap`: carga unica para acelerar o primeiro login do painel.
 - `GET /api/public/classes`: aulas futuras disponiveis para pedido de vaga.
 - `POST /api/public/bookings`: cria pedido publico de aula.
 - `POST /api/public/waitlist`: entra na espera quando a aula esta lotada.
 - `GET /api/public/student-waitlist`: consulta esperas ativas e posicao do aluno.
 - `GET /api/public/student-classes`: aluno busca proximas aulas pelo WhatsApp.
-- `POST /api/public/student-confirm`: aluno confirma se vai ou nao vai.
+- `POST /api/public/student-confirm`: aluno indica que vai à aula.
+- `POST /api/classes/:id/student-confirmation`: professor confirma a indicacao do aluno.
 - `GET /api/bookings`: lista pedidos para o professor.
 - `POST /api/bookings/:id/respond`: aprova ou recusa um pedido.
 - `GET /api/backups`: lista backups.
@@ -190,6 +194,7 @@ GitHub Pages serve para demonstrar a interface e validar o fluxo visual. Para op
 
 - pedidos publicos de vaga compartilhados;
 - confirmacao do aluno pelo link;
+- confirmacao do professor separada da indicacao do aluno;
 - presenca e mensalidade salvas entre dispositivos;
 - backup automatico;
 - acesso confiavel pelo iPhone do professor.

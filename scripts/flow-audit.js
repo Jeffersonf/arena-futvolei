@@ -104,6 +104,10 @@ async function main() {
   try {
     await waitForServer(server);
 
+    const [studentPage, authorizePage] = await Promise.all([fetch(`${BASE}/aluno`), fetch(`${BASE}/autorizar`)]);
+    assert(studentPage.ok && (await studentPage.text()).includes('student-fast.js'), 'Pagina rapida do aluno nao esta disponivel');
+    assert(authorizePage.ok && (await authorizePage.text()).includes('authorize-fast.js'), 'Pagina rapida do professor nao esta disponivel');
+
     await expectFailure('/api/students', { headers: { 'X-Admin-Pin': '' } }, 'PIN');
 
     const student = await request('/api/students', {
@@ -206,6 +210,11 @@ async function main() {
       body: JSON.stringify({ attendance: { [student.item.id]: true } })
     });
 
+    await expectFailure(`/api/classes/${classItem.item.id}/student-confirmation`, {
+      method: 'POST',
+      body: JSON.stringify({ student_id: student.item.id, action: 'approve' })
+    }, 'ainda nao indicou');
+
     await request('/api/public/student-confirm', {
       public: true,
       method: 'POST',
@@ -215,6 +224,14 @@ async function main() {
         confirmado: 'sim'
       })
     });
+
+    await request(`/api/classes/${classItem.item.id}/student-confirmation`, {
+      method: 'POST',
+      body: JSON.stringify({ student_id: student.item.id, action: 'approve' })
+    });
+    const studentClasses = await request('/api/public/student-classes?telefone=999991111', { public: true });
+    assert(studentClasses.items[0].confirmado === 'sim', 'Indicacao do aluno nao persistiu');
+    assert(studentClasses.items[0].confirmado_professor === 'sim', 'Confirmacao do professor nao persistiu');
 
     await request(`/api/students/${student.item.id}/pay`, {
       method: 'POST',
@@ -277,6 +294,7 @@ async function main() {
       'Aula criada',
       'Presenca',
       'Confirmacao aluno',
+      'Confirmacao professor',
       'Pagamento',
       'Pedido de aula',
       'Pedido aprovado',
@@ -288,6 +306,8 @@ async function main() {
     assert(actions.some((entry) => entry.startsWith('Aluno|Confirmacao aluno|')), 'Confirmacao do aluno nao ficou atribuida ao aluno');
 
     const classes = await request('/api/classes');
+    const bootstrap = await request('/api/bootstrap');
+    assert(bootstrap.items.students && bootstrap.items.classes, 'Carga inicial enxuta nao retornou os dados do painel');
     const auditedClass = classes.items.find((item) => Number(item.id) === Number(classItem.item.id));
     assert(auditedClass.alunos.some((item) => Number(item.id) === Number(student.item.id) && Number(item.presente) === 1), 'Presenca nao persistiu na aula');
 

@@ -27,11 +27,11 @@
           <div>
             <p class="eyebrow" data-config-text="publicEyebrow">agenda da escola</p>
             <h1 data-config-text="publicTitle">Team Lucao Futevolei</h1>
-            <p data-config-text="publicDescription">Peça uma vaga ou confirme as aulas em que você já está marcado.</p>
+            <p data-config-text="publicDescription">Indique se vai às aulas marcadas. O professor confirma sua presença.</p>
           </div>
         </div>
         <div class="booking-tabs" role="tablist" aria-label="Agenda publica">
-          <button id="studentTab" class="active" type="button" role="tab" aria-selected="true" aria-controls="studentPane" data-public-tab="student">Sou aluno - experimental</button>
+          <button id="studentTab" class="active" type="button" role="tab" aria-selected="true" aria-controls="studentPane" data-public-tab="student">Sou aluno</button>
           <button id="guestTab" type="button" role="tab" aria-selected="false" aria-controls="guestPane" data-public-tab="guest">Quero agendar</button>
         </div>
         <div class="booking-layout">
@@ -57,14 +57,14 @@
           <div id="studentPane" class="booking-pane student-pane active" role="tabpanel" aria-labelledby="studentTab" aria-hidden="false" data-public-pane="student">
             <form class="booking-form student-confirm-form" id="studentLookupForm">
               <label>Seu WhatsApp<input id="studentLookupPhone" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" required /></label>
-              <button class="primary-btn" type="submit">Buscar minhas aulas</button>
+              <button class="primary-btn" type="submit">Ver minhas aulas</button>
               <p class="booking-status" id="studentConfirmStatus" role="status" aria-live="polite"></p>
             </form>
             <div class="booking-board">
               <div class="panel-head compact-head">
                 <div>
-                  <span>confirmação rápida</span>
-                  <h2>Minhas aulas agendadas</h2>
+                  <span>confirmação de presença</span>
+                  <h2>Minhas aulas</h2>
                 </div>
               </div>
               <div class="student-confirm-list" id="studentClassList"></div>

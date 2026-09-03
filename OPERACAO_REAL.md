@@ -34,7 +34,7 @@ BACKUP_RETENTION=30
 2. Pedir uma vaga como visitante.
 3. Testar uma aula cheia e entrar na `lista de espera`.
 4. Entrar como professor pelo botao `Acesso professor`.
-5. Aprovar ou recusar o pedido em `Pedidos`.
+5. No fluxo da aula, o aluno toca em `Vou` e o professor confirma a indicação em `Presenças`.
 6. Abrir `Alunos` e confirmar que a lista esta legivel.
 7. Editar um aluno e conferir `Agenda fixa` no topo do modal.
 8. Abrir `Aulas`, entrar em `Presencas` e marcar alunos.

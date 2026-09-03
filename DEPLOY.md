@@ -57,6 +57,12 @@ No painel do provedor, configure manualmente `ADMIN_PIN`.
 - Testar acesso pelo iPhone.
 - Salvar o link na tela inicial do iPhone.
 
+## Links de uso rapido
+
+- Aluno: `/aluno`
+- Professor: `/autorizar`
+- Painel completo: `/`
+
 ## Teste de aceite no iPhone
 
 1. Abrir o link do servidor, nao o GitHub Pages.

@@ -268,6 +268,12 @@ function ensureSchema() {
   if (!classStudentColumns.includes('confirmado_em')) {
     run("ALTER TABLE aula_alunos ADD COLUMN confirmado_em TEXT DEFAULT ''");
   }
+  if (!classStudentColumns.includes('confirmado_professor')) {
+    run("ALTER TABLE aula_alunos ADD COLUMN confirmado_professor TEXT DEFAULT ''");
+  }
+  if (!classStudentColumns.includes('confirmado_professor_em')) {
+    run("ALTER TABLE aula_alunos ADD COLUMN confirmado_professor_em TEXT DEFAULT ''");
+  }
 
   const plans = scalar('SELECT COUNT(*) AS total FROM planos');
   if (!plans) {

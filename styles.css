@@ -776,6 +776,12 @@ textarea::placeholder {
 .pill.bad,
 .bad { background: var(--bad-bg); color: var(--bad); }
 
+.confirm-teacher-button {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
 .pill.ok::before,
 .pill.warn::before,
 .pill.bad::before {

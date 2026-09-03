@@ -46,7 +46,7 @@ const DEFAULT_APP_CONFIG = Object.freeze({
   localModeLabel: 'Modo local',
   publicEyebrow: 'agenda da escola',
   publicTitle: 'Team Lucao Futevolei',
-  publicDescription: 'Peça uma vaga ou confirme as aulas em que você já está marcado.',
+  publicDescription: 'Indique se vai às aulas marcadas. O professor confirma sua presença.',
   loginEyebrow: 'acesso restrito',
   loginDescription: 'Painel rápido para organizar alunos, aulas e cobranças.',
   onlineNoticeTitle: 'Operação real',
@@ -219,6 +219,8 @@ let activeAttendanceClassId = '';
 let publicStudentLookup = { telefone: '', student: null, items: [] };
 let publicStudentWaitlist = [];
 let publicStudentPendingBookings = new Set();
+let publicApiAvailable = false;
+let publicClassesCache = { items: [], expiresAt: 0, promise: null };
 let actionRefreshTimer = null;
 let renderFrame = 0;
 let stateVersion = 0;
@@ -440,7 +442,7 @@ async function unlockApp(pin) {
   localStorage.setItem(PIN_KEY, cleanPin);
   showLogin(false);
   showBooking(false);
-  await loadData();
+  await loadData({ serverKnown: hasServer });
 }
 
 async function detectServer() {
@@ -470,8 +472,8 @@ function updateSystemNotice() {
   notice.innerHTML = `<strong>${escapeHTML(appConfig.localNoticeTitle)}</strong><span>${escapeHTML(appConfig.localNoticeText)}</span>`;
 }
 
-async function loadData() {
-  apiMode = await detectServer();
+async function loadData({ serverKnown = false } = {}) {
+  apiMode = serverKnown || await detectServer();
   if (!apiMode) {
     const modeStatus = document.getElementById('modeStatus');
     if (modeStatus) modeStatus.textContent = appConfig.localModeLabel;
@@ -482,23 +484,16 @@ async function loadData() {
   const modeStatus = document.getElementById('modeStatus');
   if (modeStatus) modeStatus.textContent = appConfig.onlineModeLabel;
   updateSystemNotice();
-  const [students, classes, plans, waitlist, payments, bookings, logs] = await Promise.all([
-    api('/api/students'),
-    api('/api/classes'),
-    api('/api/plans'),
-    api('/api/waitlist'),
-    api('/api/payments'),
-    api('/api/bookings'),
-    api('/api/tables/logs?limit=80')
-  ]);
+  const bootstrap = await api('/api/bootstrap');
+  const data = bootstrap.items || {};
   state = {
-    students: students.items || [],
-    classes: classes.items || [],
-    plans: plans.items || [],
-    waitlist: waitlist.items || [],
-    payments: payments.items || [],
-    bookings: bookings.items || [],
-    logs: logs.rows || []
+    students: data.students || [],
+    classes: data.classes || [],
+    plans: data.plans || [],
+    waitlist: data.waitlist || [],
+    payments: data.payments || [],
+    bookings: data.bookings || [],
+    logs: data.logs || []
   };
   touchState();
   restorePage();
@@ -683,7 +678,8 @@ function classConfirmationStats(item = {}) {
   const students = classStudents(item);
   const yes = students.filter((student) => student.confirmado === 'sim' || student.confirmacao === 'sim').length;
   const no = students.filter((student) => student.confirmado === 'nao' || student.confirmacao === 'nao').length;
-  return { yes, no, open: Math.max(0, students.length - yes - no) };
+  const confirmedByTeacher = students.filter((student) => (student.confirmado === 'sim' || student.confirmacao === 'sim') && student.confirmado_professor === 'sim').length;
+  return { yes, no, open: Math.max(0, students.length - yes - no), confirmedByTeacher, pendingTeacher: Math.max(0, yes - confirmedByTeacher) };
 }
 
 function classOperationStatus(item = {}) {
@@ -696,6 +692,7 @@ function classOperationStatus(item = {}) {
   if (enrolled.length >= capacity) return ['bad', 'Lotada'];
   if (confirmation.open) return ['warn', `${confirmation.open} sem resposta`];
   if (confirmation.no) return ['bad', `${confirmation.no} nao vai`];
+  if (confirmation.pendingTeacher) return ['warn', `${confirmation.pendingTeacher} aguardando professor`];
   return ['ok', 'Pronta'];
 }
 
@@ -1930,6 +1927,7 @@ function classRow(item) {
           <span class="pill ${operationTone}">${escapeHTML(operationLabel)}</span>
           <span class="pill">${present}/${enrolled.length} presenças</span>
           <span class="pill ok">${confirmation.yes} vão</span>
+          ${confirmation.pendingTeacher ? `<span class="pill warn">${confirmation.pendingTeacher} aguardando professor</span>` : ''}
           ${confirmation.no ? `<span class="pill bad">${confirmation.no} não vão</span>` : ''}
           ${confirmation.open ? `<span class="pill warn">${confirmation.open} sem resposta</span>` : ''}
           ${extras.length ? `<span class="pill warn">${extras.length} fora da lista</span>` : ''}
@@ -2708,6 +2706,8 @@ async function sendPublicBooking(payload) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || data.ok === false) throw new Error(data.error || 'Nao foi possivel enviar');
+      publicApiAvailable = true;
+      publicClassesCache.expiresAt = 0;
       return data.item;
     } catch (err) {
       if (await detectServer()) throw err;
@@ -2725,17 +2725,29 @@ async function sendPublicBooking(payload) {
   return state.bookings[0];
 }
 
-async function loadPublicClasses() {
+async function loadPublicClasses({ force = false } = {}) {
+  const now = Date.now();
+  if (!force && publicClassesCache.items.length && publicClassesCache.expiresAt > now) return publicClassesCache.items;
   if (location.protocol !== 'file:') {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 900);
     try {
-      const res = await fetch('/api/public/classes');
+      const res = await fetch('/api/public/classes', { signal: controller.signal });
       const data = await res.json();
-      if (res.ok && data.ok) return data.items || [];
+      if (res.ok && data.ok) {
+        publicApiAvailable = true;
+        publicClassesCache.items = data.items || [];
+        publicClassesCache.expiresAt = Date.now() + 15000;
+        return publicClassesCache.items;
+      }
     } catch {
       // local demo fallback
+    } finally {
+      clearTimeout(timeout);
     }
   }
-  return [...state.classes]
+  publicApiAvailable = false;
+  const items = [...state.classes]
     .filter((item) => item.status !== 'Cancelada' && item.data >= todayISO())
     .sort(sortClass)
     .slice(0, 20)
@@ -2744,6 +2756,9 @@ async function loadPublicClasses() {
       inscritos: classStudentIds(item).length,
       espera: state.waitlist.filter((wait) => String(wait.aula_id || '') === String(item.id) && ['Novo', 'Contatado', 'Experimental marcado'].includes(wait.status || 'Novo')).length
     }));
+  publicClassesCache.items = items;
+  publicClassesCache.expiresAt = Date.now() + 5000;
+  return items;
 }
 
 async function renderPublicBooking() {
@@ -2754,12 +2769,12 @@ async function renderPublicBooking() {
   select.innerHTML = '<option value="">Carregando horários...</option>';
   list.setAttribute('aria-busy', 'true');
   list.innerHTML = empty('Carregando horários...');
-  const hasServer = await detectServer();
+  const classes = await loadPublicClasses({ force: true });
   const bookingStatus = document.getElementById('bookingStatus');
   const studentStatus = document.getElementById('studentConfirmStatus');
-  if (!hasServer && bookingStatus && !bookingStatus.textContent) bookingStatus.textContent = 'Modo demo: pedido fica salvo apenas neste navegador.';
+  const hasServer = publicApiAvailable;
+  if (!publicApiAvailable && bookingStatus && !bookingStatus.textContent) bookingStatus.textContent = 'Modo demo: pedido fica salvo apenas neste navegador.';
   if (!hasServer && studentStatus && !studentStatus.textContent) studentStatus.textContent = 'Modo demo: confirmação real precisa do servidor online.';
-  const classes = await loadPublicClasses();
   select.disabled = !classes.length;
   select.innerHTML = classes.length
     ? classes.map((item) => {
@@ -2808,6 +2823,8 @@ async function submitPublicWaitlist(payload) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || data.ok === false) throw new Error(data.error || 'Nao foi possivel entrar na espera');
+      publicApiAvailable = true;
+      publicClassesCache.expiresAt = 0;
       return data.item;
     } catch (err) {
       if (await detectServer()) throw err;
@@ -2874,32 +2891,31 @@ function renderStudentConfirmList() {
     list.innerHTML = empty('Nenhuma aula futura encontrada para esse WhatsApp.');
     return;
   }
-  const confirmedYes = items.filter((item) => item.confirmado === 'sim').length;
-  const confirmedNo = items.filter((item) => item.confirmado === 'nao').length;
-  const open = Math.max(0, items.length - confirmedYes - confirmedNo);
+  const indicated = items.filter((item) => item.confirmado === 'sim').length;
+  const confirmed = items.filter((item) => item.confirmado === 'sim' && item.confirmado_professor === 'sim').length;
+  const open = Math.max(0, items.length - indicated);
   list.innerHTML = `
     <div class="student-confirm-head">
       <span class="pill ok">${escapeHTML(student?.nome || 'Aluno')}</span>
       <small>${escapeHTML(student?.plano_nome || 'Plano nao informado')}</small>
     </div>
     <div class="student-confirm-summary">
-      <span class="pill ok">${confirmedYes} vou</span>
-      <span class="pill bad">${confirmedNo} nao vou</span>
-      <span class="pill ${open ? 'warn' : 'ok'}">${open} sem resposta</span>
+      <span class="pill ok">${indicated} indicaram que vao</span>
+      <span class="pill ${confirmed < indicated ? 'warn' : 'ok'}">${confirmed} confirmadas pelo professor</span>
+      <span class="pill ${open ? 'warn' : 'ok'}">${open} sem indicacao</span>
     </div>
     ${items.map((item) => {
       const yes = item.confirmado === 'sim';
-      const no = item.confirmado === 'nao';
+      const approved = item.confirmado_professor === 'sim';
       return `
-        <article class="student-confirm-card ${yes ? 'confirm-yes' : no ? 'confirm-no' : ''}">
+        <article class="student-confirm-card ${yes ? 'confirm-yes' : ''}">
           <div>
             <strong>${formatDate(item.data)} as ${escapeHTML(item.horario)}</strong>
             <span>${escapeHTML(item.turma || 'Turma')} - ${escapeHTML(item.tipo || 'Regular')}</span>
-            <small>${item.confirmado ? `Resposta: ${yes ? 'vou' : 'nao vou'}` : 'Ainda sem resposta'}</small>
+            <small>${approved ? 'Confirmado pelo professor' : yes ? 'Indicacao enviada; aguardando o professor' : 'Ainda sem indicacao'}</small>
           </div>
           <div class="confirm-choice">
-            <button class="mini-btn ${yes ? 'active' : ''}" type="button" data-student-confirm="${item.id}:sim">Vou</button>
-            <button class="mini-btn ${no ? 'active danger' : ''}" type="button" data-student-confirm="${item.id}:nao">Nao vou</button>
+            <button class="mini-btn ${yes ? 'active' : ''}" type="button" ${approved ? 'disabled' : ''} data-student-confirm="${item.id}:sim">${approved ? 'Confirmado' : yes ? 'Indicado' : 'Vou'}</button>
           </div>
         </article>
       `;
@@ -2915,7 +2931,7 @@ function localStudentClassesByPhone(telefone = '') {
     .filter((item) => item.status !== 'Cancelada' && item.data >= todayISO() && classStudentIds(item).some((id) => String(id) === String(student.id)))
     .sort(sortClass)
     .slice(0, 30)
-    .map((item) => ({ ...item, confirmado: item.confirmacoes?.[student.id] || '' }));
+    .map((item) => ({ ...item, confirmado: item.confirmacoes?.[student.id] || '', confirmado_professor: item.confirmacoesProfessor?.[student.id] || '' }));
   return { student, items };
 }
 
@@ -2957,10 +2973,10 @@ async function loadStudentConfirmations(telefone) {
       const data = await res.json().catch(() => ({}));
       if (!res.ok || data.ok === false) throw new Error(data.error || 'Nao foi possivel buscar');
       publicStudentLookup = { telefone, student: data.student, items: data.items || [] };
-      await loadStudentWaitlistStatus(telefone);
-      if (status) status.textContent = data.items?.length ? 'Escolha em quais aulas voce vai.' : 'Nenhuma aula futura encontrada.';
+      const [, classes] = await Promise.all([loadStudentWaitlistStatus(telefone), loadPublicClasses()]);
+      if (status) status.textContent = data.items?.length ? 'Indique em quais aulas voce vai.' : 'Nenhuma aula futura encontrada.';
       renderStudentConfirmList();
-      await renderStudentBookingOptions();
+      await renderStudentBookingOptions(classes);
       return;
     } catch (err) {
       if (await detectServer()) throw err;
@@ -2974,7 +2990,7 @@ async function loadStudentConfirmations(telefone) {
   await renderStudentBookingOptions();
 }
 
-async function renderStudentBookingOptions() {
+async function renderStudentBookingOptions(classes = null) {
   const target = document.getElementById('studentBookingList');
   if (!target) return;
   target.setAttribute('aria-busy', 'true');
@@ -2983,7 +2999,7 @@ async function renderStudentBookingOptions() {
     target.setAttribute('aria-busy', 'false');
     return;
   }
-  const classes = await loadPublicClasses();
+  classes = classes || await loadPublicClasses();
   const currentIds = new Set((publicStudentLookup.items || []).map((item) => String(item.id)));
   const waitingByClass = new Map((publicStudentWaitlist || []).map((item) => [String(item.aula_id), item]));
   const options = classes.filter((item) => !currentIds.has(String(item.id)) && !publicStudentPendingBookings.has(String(item.id)));
@@ -3026,7 +3042,7 @@ async function submitStudentBooking(classId) {
     throw error;
   }
   const status = document.getElementById('studentConfirmStatus');
-  if (status) status.textContent = 'Pedido de agendamento enviado. Aguarde a confirmacao.';
+  if (status) status.textContent = 'Indicacao enviada. Aguarde a confirmacao do professor.';
   await loadStudentConfirmations(telefone);
 }
 
@@ -3043,7 +3059,7 @@ async function submitStudentConfirmation(classId, confirmado) {
       const data = await res.json().catch(() => ({}));
       if (!res.ok || data.ok === false) throw new Error(data.error || 'Nao foi possivel confirmar');
       await loadStudentConfirmations(telefone);
-      document.getElementById('studentConfirmStatus').textContent = confirmado === 'sim' ? 'Confirmado: voce vai.' : 'Confirmado: voce nao vai.';
+      document.getElementById('studentConfirmStatus').textContent = confirmado === 'sim' ? 'Indicacao enviada. Aguarde a confirmacao do professor.' : 'Resposta registrada.';
       return;
     } catch (err) {
       if (await detectServer()) throw err;
@@ -3367,6 +3383,7 @@ function openAttendance(classId) {
   const presentCount = ids.filter((id) => item.presencas?.[id] || item.presencas?.[String(id)]).length;
   const confirmation = classConfirmationStats(item);
   const absentLikely = enrolled.filter((student) => (student.confirmado || student.confirmacao) === 'nao').length;
+  const pendingTeacher = confirmation.pendingTeacher;
   document.getElementById('attendanceTitle').innerHTML = `
     <span>${formatDate(item.data)} as ${escapeHTML(item.horario)} - ${escapeHTML(item.turma || 'Turma')}</span>
     <strong>${presentCount}/${ids.length} presentes</strong>
@@ -3374,6 +3391,7 @@ function openAttendance(classId) {
     <div class="attendance-title-pills">
       <span class="pill ok">${confirmation.yes} vão</span>
       ${absentLikely ? `<span class="pill bad">${absentLikely} não vão</span>` : ''}
+      ${pendingTeacher ? `<span class="pill warn">${pendingTeacher} aguardando professor</span>` : ''}
       <span class="pill warn">${confirmation.open} sem resposta</span>
       ${extras.length ? `<span class="pill warn">${extras.length} fora da lista</span>` : ''}
     </div>
@@ -3383,6 +3401,7 @@ function openAttendance(classId) {
     const fullStudent = studentById(id) || student;
     const present = Boolean(item.presencas?.[id] || item.presencas?.[String(id)] || student.presente);
     const [confirmClass, confirmText] = confirmationLabel(student.confirmado || student.confirmacao || '');
+    const teacherConfirmed = student.confirmado_professor === 'sim';
     const phone = fullStudent.telefone || student.telefone || '';
     return `
     <div class="check-item ${present ? 'checked-in' : ''} ${confirmClass === 'bad' ? 'likely-absent' : ''}">
@@ -3391,6 +3410,7 @@ function openAttendance(classId) {
         <p class="meta">${escapeHTML(fullStudent.plano_nome || student.plano_nome || 'sem plano')} - ${weeklyAttendanceCount(id, item.data)}/${planWeeklyTarget(fullStudent) || '-'} na semana</p>
         <div class="pill-row">
           <span class="pill ${confirmClass}">${confirmText}</span>
+          ${teacherConfirmed ? '<span class="pill ok">professor confirmou</span>' : student.confirmado === 'sim' ? `<button class="pill confirm-teacher-button" type="button" data-confirm-student="${item.id}:${id}">Confirmar indicacao</button>` : ''}
           ${phone ? `<a class="pill" href="${whatsappUrl(phone, `Oi ${student.nome}, tudo bem? Aqui é do Team Lucao Futevolei. Você confirma a aula de hoje às ${item.horario}?`)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
         </div>
       </div>
@@ -3508,6 +3528,27 @@ async function toggleAttendance(classId, studentId) {
     saveAndRender();
   }
   openAttendance(classId);
+}
+
+async function confirmStudentAttendance(classId, studentId, action = 'approve') {
+  const item = classById(classId);
+  if (!item) return;
+  const student = studentById(studentId) || classStudents(item).find((entry) => String(entry.aluno_id || entry.id) === String(studentId));
+  if (!student) return;
+  if (apiMode) {
+    await api(`/api/classes/${classId}/student-confirmation`, {
+      method: 'POST',
+      body: JSON.stringify({ student_id: studentId, action })
+    });
+    await loadData();
+  } else {
+    item.confirmacoesProfessor = item.confirmacoesProfessor || {};
+    item.confirmacoesProfessor[studentId] = action === 'approve' ? 'sim' : '';
+    recordAction('Professor', action === 'approve' ? 'Confirmacao professor' : 'Confirmacao professor removida', `${student.nome} ${action === 'approve' ? 'foi confirmado(a)' : 'deixou de estar confirmado(a)'} na aula ${item.horario} - ${item.turma || 'Turma'}.`);
+    saveAndRender();
+  }
+  openAttendance(classId);
+  toast(action === 'approve' ? 'Indicacao confirmada' : 'Confirmacao removida');
 }
 
 function openPayment(studentId) {
@@ -3853,7 +3894,7 @@ function bindEvents() {
     toggleClassStudent(target.value, target.checked);
   });
   document.body.addEventListener('click', (event) => {
-    const target = event.target.closest('[data-action],[data-report-student],[data-edit-student],[data-sync-student],[data-edit-class],[data-duplicate-class],[data-class-status],[data-cancel-class],[data-copy-class],[data-open-group-message],[data-copy-report],[data-edit-plan],[data-attendance],[data-toggle-attendance],[data-pay],[data-copy-charge],[data-edit-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day],[data-more-page],[data-more-action],[data-booking-action]');
+    const target = event.target.closest('[data-action],[data-report-student],[data-edit-student],[data-sync-student],[data-edit-class],[data-duplicate-class],[data-class-status],[data-cancel-class],[data-copy-class],[data-open-group-message],[data-copy-report],[data-edit-plan],[data-attendance],[data-toggle-attendance],[data-confirm-student],[data-pay],[data-copy-charge],[data-edit-wait],[data-wait-status],[data-convert-wait],[data-remove-extra],[data-class-day],[data-more-page],[data-more-action],[data-booking-action]');
     if (!target) return;
     if (target.dataset.action && !target.closest('#quickActions')) handleQuickAction(target.dataset.action);
     if (target.dataset.morePage) setPage(target.dataset.morePage);
@@ -3877,6 +3918,10 @@ function bindEvents() {
     if (target.dataset.toggleAttendance) {
       const [classId, studentId] = target.dataset.toggleAttendance.split(':');
       toggleAttendance(classId, studentId).catch((err) => toast(err.message));
+    }
+    if (target.dataset.confirmStudent) {
+      const [classId, studentId] = target.dataset.confirmStudent.split(':');
+      confirmStudentAttendance(classId, studentId).catch((err) => toast(err.message));
     }
     if (target.dataset.removeExtra) {
       const [classId, index] = target.dataset.removeExtra.split(':');

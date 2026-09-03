@@ -270,6 +270,8 @@ function waitlistPosition(classId, waitlistId) {
 }
 
 app.get('/', (_req, res) => res.sendFile(path.join(ROOT_DIR, 'index.html')));
+app.get('/aluno', (_req, res) => res.sendFile(path.join(ROOT_DIR, 'aluno.html')));
+app.get('/autorizar', (_req, res) => res.sendFile(path.join(ROOT_DIR, 'autorizar.html')));
 app.get('/health', (_req, res) => res.json(publicState(stateSnapshot({ includeLogs: false }))));
 app.get('/api/public/classes', (_req, res) => {
   const items = rows(`
@@ -386,7 +388,7 @@ app.get('/api/public/student-classes', (req, res) => {
     if (!student) throw new Error('Aluno nao encontrado para esse WhatsApp');
     const items = rows(`
       SELECT a.id, a.data, a.horario, a.turma, a.tipo, a.professor, a.capacidade, a.status,
-        aa.confirmado, aa.confirmado_em, aa.presente,
+        aa.confirmado, aa.confirmado_em, aa.confirmado_professor, aa.confirmado_professor_em, aa.presente,
         (SELECT COUNT(*) FROM aula_alunos WHERE aula_id=a.id) AS inscritos
       FROM aula_alunos aa
       JOIN aulas a ON a.id=aa.aula_id
@@ -415,9 +417,11 @@ app.post('/api/public/student-confirm', (req, res) => {
     const classItem = row('SELECT * FROM aulas WHERE id=?', [classId]);
     if (!classItem || classItem.status === 'Cancelada' || String(classItem.data || '') < today()) throw new Error('Essa aula nao esta mais disponivel para confirmacao');
     const now = new Date().toISOString();
-    run('UPDATE aula_alunos SET confirmado=?, confirmado_em=? WHERE aula_id=? AND aluno_id=?', [
+    run('UPDATE aula_alunos SET confirmado=?, confirmado_em=?, confirmado_professor=?, confirmado_professor_em=? WHERE aula_id=? AND aluno_id=?', [
       confirmValue,
       now,
+      confirmValue === 'sim' ? (link.confirmado_professor || '') : '',
+      confirmValue === 'sim' ? (link.confirmado_professor_em || '') : '',
       classId,
       student.id
     ]);
@@ -435,6 +439,32 @@ app.post('/api/login', (req, res) => {
 app.use(requirePin);
 
 app.get('/api/state', (_req, res) => res.json({ ok: true, state: stateSnapshot({ includeLogs: true }) }));
+app.get('/api/bootstrap', (_req, res) => {
+  const month = currentMonth();
+  res.json({
+    ok: true,
+    items: {
+      students: rows('SELECT * FROM alunos ORDER BY nome'),
+      classes: rows('SELECT * FROM aulas ORDER BY data, horario, turma').map(classWithStudents),
+      plans: rows('SELECT * FROM planos ORDER BY ativo DESC, preco, nome'),
+      waitlist: rows(`
+        SELECT w.*, a.data AS aula_data, a.horario AS aula_horario, a.turma AS aula_turma, a.status AS aula_status
+        FROM lista_espera w
+        LEFT JOIN aulas a ON a.id=w.aula_id
+        ORDER BY w.id DESC
+      `),
+      payments: rows('SELECT p.*, a.nome AS aluno_nome FROM pagamentos p LEFT JOIN alunos a ON a.id=p.aluno_id WHERE referencia=? OR pago_em LIKE ? ORDER BY id DESC', [month, `${month}%`]),
+      bookings: rows(`
+        SELECT ag.*, a.data, a.horario, a.turma, a.tipo, a.capacidade,
+          (SELECT COUNT(*) FROM aula_alunos aa WHERE aa.aula_id=ag.aula_id) AS inscritos
+        FROM agendamentos ag
+        LEFT JOIN aulas a ON a.id=ag.aula_id
+        ORDER BY ag.status='Pendente' DESC, ag.id DESC
+      `),
+      logs: rows('SELECT * FROM logs ORDER BY id DESC LIMIT 80')
+    }
+  });
+});
 app.post('/api/sync', (_req, res) => res.json({ ok: true, state: stateSnapshot({ includeLogs: true }) }));
 app.get('/api/backup.json', (_req, res) => res.json(stateSnapshot({ includeLogs: true })));
 
@@ -651,6 +681,50 @@ app.put('/api/classes/:id/attendance', (req, res) => {
   } catch (err) {
     jsonError(res, err);
   }
+});
+
+app.post('/api/classes/:id/student-confirmation', (req, res) => {
+  try {
+    const classItem = row('SELECT * FROM aulas WHERE id=?', [req.params.id]);
+    if (!classItem) throw new Error('Aula nao encontrada');
+    const studentId = Number(req.body.student_id || req.body.aluno_id || 0);
+    if (!studentId) throw new Error('Aluno invalido');
+    const link = row('SELECT * FROM aula_alunos WHERE aula_id=? AND aluno_id=?', [classItem.id, studentId]);
+    if (!link) throw new Error('Aluno nao esta vinculado a esta aula');
+    if (link.confirmado !== 'sim') throw new Error('O aluno ainda nao indicou que vai');
+    const student = row('SELECT * FROM alunos WHERE id=?', [studentId]);
+    if (!student) throw new Error('Aluno nao encontrado');
+    const action = String(req.body.action || 'approve').toLowerCase();
+    if (!['approve', 'clear'].includes(action)) throw new Error('Acao invalida');
+    const now = new Date().toISOString();
+    run('UPDATE aula_alunos SET confirmado_professor=?, confirmado_professor_em=? WHERE aula_id=? AND aluno_id=?', [
+      action === 'approve' ? 'sim' : '',
+      action === 'approve' ? now : '',
+      classItem.id,
+      studentId
+    ]);
+    logAction(action === 'approve' ? 'Confirmacao professor' : 'Confirmacao professor removida', `${student.nome} ${action === 'approve' ? 'foi confirmado(a)' : 'deixou de estar confirmado(a)'} na aula ${classItem.horario} - ${classItem.turma || 'Turma'} em ${classItem.data}.`, 'Professor');
+    res.json({ ok: true, item: classWithStudents(row('SELECT * FROM aulas WHERE id=?', [classItem.id])) });
+  } catch (err) {
+    jsonError(res, err);
+  }
+});
+
+app.get('/api/quick/confirmations', (_req, res) => {
+  const items = rows(`
+    SELECT aa.aula_id, aa.aluno_id, aa.confirmado_em,
+      a.data, a.horario, a.turma, a.tipo,
+      s.nome AS aluno_nome
+    FROM aula_alunos aa
+    JOIN aulas a ON a.id=aa.aula_id
+    JOIN alunos s ON s.id=aa.aluno_id
+    WHERE aa.confirmado='sim'
+      AND COALESCE(aa.confirmado_professor, '') != 'sim'
+      AND a.status != 'Cancelada'
+      AND a.data >= ?
+    ORDER BY a.data, a.horario, s.nome
+  `, [today()]);
+  res.json({ ok: true, items });
 });
 
 app.get('/api/plans', (_req, res) => {
