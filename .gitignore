@@ -1,5 +1,7 @@
 node_modules/
 dist/
+.cloudflare-public/
+.wrangler/
 .env
 arena.db
 arena.db-shm

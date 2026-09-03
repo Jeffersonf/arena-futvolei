@@ -48,6 +48,38 @@ O arquivo `render.yaml` ja define:
 
 No painel do provedor, configure manualmente `ADMIN_PIN`.
 
+## Deploy gratuito com Cloudflare Workers + D1
+
+O deploy gratuito recomendado para uso online usa o Worker em `worker/index.js` e o banco D1. O Node/SQLite continua disponível para desenvolvimento local.
+
+1. No Cloudflare, crie um banco D1 chamado `team-lucao-futevolei`.
+2. Copie o `database_id` exibido pelo Cloudflare para `wrangler.toml`.
+3. Aplique a primeira migração:
+
+```bash
+npx wrangler login
+npx wrangler d1 migrations apply team-lucao-futevolei --remote
+```
+
+4. Cadastre o PIN sem colocá-lo no Git:
+
+```bash
+npx wrangler secret put ADMIN_PIN
+```
+
+Para o deploy automático pelo GitHub, crie um API Token no Cloudflare com permissão de editar Workers e D1. Salve o token em `CLOUDFLARE_API_TOKEN` e o ID da conta em `CLOUDFLARE_ACCOUNT_ID` nos secrets do repositório.
+
+5. Gere os arquivos públicos e publique:
+
+```bash
+npm run build:cloudflare
+npx wrangler deploy
+```
+
+Para publicar automaticamente a cada push na `main`, configure no GitHub os segredos `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID`. O workflow também aplica as migrações D1.
+
+O Worker usa os mesmos caminhos `/aluno`, `/autorizar` e `/` e mantém os mesmos endpoints da interface. Para levar os dados atuais do SQLite, baixe o backup JSON pelo painel e envie-o ao endpoint `/api/import` com o PIN administrativo.
+
 ## Checklist antes de entregar para uso real
 
 - Trocar `ADMIN_PIN`.

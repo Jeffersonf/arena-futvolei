@@ -1,0 +1,16 @@
+name = "team-lucao-futevolei"
+main = "worker/index.js"
+compatibility_date = "2026-09-03"
+
+[assets]
+directory = ".cloudflare-public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "team-lucao-futevolei"
+database_id = "COLOQUE_O_ID_DO_D1_AQUI"
+migrations_dir = "migrations"
+
+[vars]
+# Configure ADMIN_PIN as a secret with: npx wrangler secret put ADMIN_PIN
