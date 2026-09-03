@@ -35,9 +35,9 @@ MVP leve para escola de futevolei, feito em HTML, CSS e JavaScript puro.
 - Lista de espera ordenada por prioridade: responder, marcar experimental e converter
 - Backup JSON pelo painel operacional
 - Login simples por PIN no servidor
-- Primeira tela publica para o aluno pedir vaga em uma aula
-- Fluxo experimental publico iniciado pelo aluno para buscar aulas pelo WhatsApp
-- Agendamento de outra aula pelo proprio fluxo do aluno
+- Acesso publico separado para confirmar aulas pelo WhatsApp
+- Agendamento experimental publico com horario, nome e WhatsApp
+- Horarios regulares da semana apresentados ao aluno sem misturar com experimental
 - Area publica do aluno com resumo de confirmacoes futuras
 - Fila de pedidos para professor aprovar ou recusar
 - Limite de capacidade considerado antes de aceitar pedidos

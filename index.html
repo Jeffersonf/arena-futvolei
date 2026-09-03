@@ -27,30 +27,31 @@
           <div>
             <p class="eyebrow" data-config-text="publicEyebrow">agenda da escola</p>
             <h1 data-config-text="publicTitle">Team Lucao Futevolei</h1>
-            <p data-config-text="publicDescription">Indique se vai às aulas marcadas. O professor confirma sua presença.</p>
+            <p data-config-text="publicDescription">Aluno? Informe seu WhatsApp para confirmar presença. Ainda não é aluno? Solicite uma aula experimental.</p>
           </div>
         </div>
         <div class="booking-tabs" role="tablist" aria-label="Agenda publica">
           <button id="studentTab" class="active" type="button" role="tab" aria-selected="true" aria-controls="studentPane" data-public-tab="student">Sou aluno</button>
-          <button id="guestTab" type="button" role="tab" aria-selected="false" aria-controls="guestPane" data-public-tab="guest">Quero agendar</button>
+          <button id="guestTab" type="button" role="tab" aria-selected="false" aria-controls="guestPane" data-public-tab="guest">Agendar experimental</button>
         </div>
         <div class="booking-layout">
           <div id="guestPane" class="booking-pane" role="tabpanel" aria-labelledby="guestTab" aria-hidden="true" data-public-pane="guest">
             <form class="booking-form" id="bookingForm">
               <label>Nome<input id="bookingName" autocomplete="name" placeholder="Seu nome" required /></label>
               <label>WhatsApp<input id="bookingPhone" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" required /></label>
-              <label>Aula<select id="bookingClass" required></select></label>
-              <label>Observação<input id="bookingNote" placeholder="Nível, reposição, experimental..." /></label>
-              <button class="primary-btn" id="bookingSubmitButton" type="submit">Pedir vaga</button>
+              <label>Horário da aula experimental<select id="bookingClass" required></select></label>
+              <label>Observação (opcional)<input id="bookingNote" placeholder="Nível, objetivo ou dúvida" /></label>
+              <button class="primary-btn" id="bookingSubmitButton" type="submit">Solicitar aula experimental</button>
               <p class="booking-status" id="bookingStatus" role="status" aria-live="polite"></p>
             </form>
             <div class="booking-board">
               <div class="panel-head compact-head">
                 <div>
-                  <span>próximos horários</span>
-                  <h2>Aulas disponíveis</h2>
+                  <span>primeira aula</span>
+                  <h2>Horários para experimental</h2>
                 </div>
               </div>
+              <p class="meta">Escolha um horário para conhecer a Arena. A equipe confirma seu pedido pelo WhatsApp.</p>
               <div class="booking-class-list" id="bookingClassList" aria-live="polite" aria-busy="true"></div>
             </div>
           </div>

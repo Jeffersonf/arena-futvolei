@@ -46,7 +46,7 @@ const DEFAULT_APP_CONFIG = Object.freeze({
   localModeLabel: 'Modo local',
   publicEyebrow: 'agenda da escola',
   publicTitle: 'Team Lucao Futevolei',
-  publicDescription: 'Indique se vai às aulas marcadas. O professor confirma sua presença.',
+  publicDescription: 'Aluno? Informe seu WhatsApp para confirmar presença. Ainda não é aluno? Solicite uma aula experimental.',
   loginEyebrow: 'acesso restrito',
   loginDescription: 'Painel rápido para organizar alunos, aulas e cobranças.',
   onlineNoticeTitle: 'Operação real',
@@ -2809,7 +2809,7 @@ function updateBookingClassAction() {
   const option = selectedPublicBookingClass();
   if (!button) return;
   const isFull = option?.dataset.full === '1';
-  button.textContent = isFull ? 'Entrar na espera' : 'Pedir vaga';
+  button.textContent = isFull ? 'Entrar na espera' : 'Solicitar experimental';
   button.classList.toggle('waitlist-submit', isFull);
 }
 
@@ -2851,7 +2851,7 @@ async function submitBooking(event) {
     nome: document.getElementById('bookingName').value.trim(),
     telefone: document.getElementById('bookingPhone').value.trim(),
     aula_id: document.getElementById('bookingClass').value,
-    observacao: document.getElementById('bookingNote').value.trim()
+    observacao: ['Aula experimental solicitada.', document.getElementById('bookingNote').value.trim()].filter(Boolean).join(' ')
   };
   const selected = selectedPublicBookingClass();
   if (!selected?.value) throw new Error('Escolha uma aula');
@@ -2860,7 +2860,7 @@ async function submitBooking(event) {
     document.getElementById('bookingStatus').textContent = `Voce entrou na lista de espera${waitItem?.posicao ? ` na posicao ${waitItem.posicao}` : ''}. A escola avisa se abrir uma vaga.`;
   } else {
     await sendPublicBooking(payload);
-    document.getElementById('bookingStatus').textContent = apiMode ? 'Pedido enviado. Aguarde a confirmacao pelo WhatsApp.' : 'Pedido salvo na demo. Entre no painel para aprovar.';
+    document.getElementById('bookingStatus').textContent = apiMode ? 'Solicitação de aula experimental enviada. Aguarde a confirmação pelo WhatsApp.' : 'Solicitação experimental salva na demo. Entre no painel para aprovar.';
   }
   event.target.reset();
   await renderPublicBooking();
