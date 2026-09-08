@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .cloudflare-public/
+.cloudflare-worker-public/
 .wrangler/
 .env
 arena.db

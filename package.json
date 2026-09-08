@@ -9,7 +9,7 @@
     "live": "serve . -l 4280",
     "static": "npx serve .",
     "build:cloudflare": "node scripts/build-cloudflare.mjs",
-    "check": "node --check app.js && node --check server/db.js && node --check server/index.js",
+    "check": "node --check app.js && node --check student-fast.js && node --check authorize-fast.js && node --check public-theme.js && node --check service-worker.js && node --check server/db.js && node --check server/index.js && node --input-type=module --check < worker/index.js",
     "visual:check": "node scripts/visual-check.js",
     "flow:audit": "node scripts/flow-audit.js",
     "accessibility:audit": "node scripts/accessibility-audit.js",

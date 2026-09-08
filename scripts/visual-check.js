@@ -3,12 +3,14 @@ const fs = require('fs');
 
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
-const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260829-release14';
-const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260829-patterns5';
+const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260908-ui1';
+const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260908-ui1';
 const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined;
 
 const cases = [
   { name: 'mobile-booking', viewport: { width: 390, height: 844 }, page: null },
+  { name: 'mobile-student-page', viewport: { width: 390, height: 844 }, path: 'aluno' },
+  { name: 'mobile-authorize-page', viewport: { width: 390, height: 844 }, path: 'autorizar' },
   { name: 'mobile-public-student-flow', viewport: { width: 390, height: 844 }, page: null, action: 'public-student-flow' },
   { name: 'mobile-student-confirm-public', viewport: { width: 390, height: 844 }, page: null, action: 'public-student-tab' },
   { name: 'desktop-booking', viewport: { width: 1440, height: 950 }, page: null },
@@ -31,22 +33,10 @@ const cases = [
   { name: 'mobile-class-modal', viewport: { width: 390, height: 844 }, page: 'classes', action: 'class-modal' },
   { name: 'mobile-more', viewport: { width: 390, height: 844 }, page: 'more' },
   { name: 'mobile-settings', viewport: { width: 390, height: 844 }, page: 'settings' },
-  { name: 'mobile-pattern-modern-light', viewport: { width: 390, height: 844 }, page: 'dashboard', theme: 'modern-light' },
-  { name: 'mobile-pattern-modern-dark', viewport: { width: 390, height: 844 }, page: 'dashboard', theme: 'modern-dark' },
-  { name: 'mobile-pattern-classic-light', viewport: { width: 390, height: 844 }, page: 'dashboard', theme: 'classic-light' },
-  { name: 'mobile-pattern-classic-dark', viewport: { width: 390, height: 844 }, page: 'dashboard', theme: 'classic-dark' },
-  { name: 'mobile-pattern-web-light', viewport: { width: 390, height: 844 }, page: 'dashboard', theme: 'web-light' },
-  { name: 'mobile-pattern-web-dark', viewport: { width: 390, height: 844 }, page: 'dashboard', theme: 'web-dark' },
   { name: 'tablet-dashboard', viewport: { width: 768, height: 1024 }, page: 'dashboard' },
   { name: 'desktop-compact-dashboard', viewport: { width: 1024, height: 768 }, page: 'dashboard' },
   { name: 'desktop-settings', viewport: { width: 1440, height: 950 }, page: 'settings', action: 'settings-theme-cycle' },
   { name: 'desktop-class-operations', viewport: { width: 1440, height: 950 }, page: 'classes', action: 'class-operations' },
-  { name: 'desktop-pattern-modern-light', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'modern-light' },
-  { name: 'desktop-pattern-modern-dark', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'modern-dark' },
-  { name: 'desktop-pattern-classic-light', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'classic-light' },
-  { name: 'desktop-pattern-classic-dark', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'classic-dark' },
-  { name: 'desktop-pattern-web-light', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'web-light' },
-  { name: 'desktop-pattern-web-dark', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'web-dark' },
   { name: 'desktop-dashboard', viewport: { width: 1440, height: 950 }, page: 'dashboard' },
   { name: 'desktop-dashboard-dark', viewport: { width: 1440, height: 950 }, page: 'dashboard', theme: 'dark' },
   { name: 'desktop-actions', viewport: { width: 1440, height: 950 }, page: 'actions' },
@@ -184,10 +174,10 @@ async function runCaseAction(page, action) {
     await assertModalFocus(page, '#studentModal', '#page-students.active .student-row [data-edit-student]');
   }
   if (action === 'settings-theme-cycle') {
-    const themes = ['modern-light', 'modern-dark', 'classic-light', 'classic-dark', 'web-light', 'web-dark'];
+    const themes = ['light', 'dark'];
     const signatures = new Set();
     const choiceCount = await page.locator('[data-theme-choice]').count();
-    if (choiceCount !== 8) throw new Error(`Configuração deveria exibir 8 opções (${choiceCount})`);
+    if (choiceCount !== 2) throw new Error(`Configuração deveria exibir 2 opções (${choiceCount})`);
     for (const theme of themes) {
       await page.locator(`[data-theme-choice="${theme}"]`).click();
       const actual = await page.evaluate(() => {
@@ -196,9 +186,9 @@ async function runCaseAction(page, action) {
       });
       const actualTheme = actual.split('|')[0];
       signatures.add(actual);
-      if (actualTheme !== theme) throw new Error(`Tema experimental não aplicado: ${theme} / ${actualTheme}`);
+      if (actualTheme !== theme) throw new Error(`Modo de exibição não aplicado: ${theme} / ${actualTheme}`);
     }
-    if (signatures.size !== themes.length) throw new Error(`Temas completos não alteraram tokens (${signatures.size}/${themes.length})`);
+    if (signatures.size !== themes.length) throw new Error(`Modos não alteraram os tokens visuais (${signatures.size}/${themes.length})`);
     await page.locator('#settingsBrandName').fill('Arena Lucao Futevolei');
     await page.locator('#settingsStudentsTitle').fill('Alunos teste');
     await page.locator('#settingsForm button[type="submit"]').click();
@@ -218,7 +208,7 @@ async function runCaseAction(page, action) {
       brand: document.querySelector('[data-config-text="brandName"]')?.textContent,
       title: document.querySelector('[data-config-page-title="studentsTitle"]')?.textContent
     }));
-    if (persisted.theme !== 'web-dark' || persisted.brand !== 'Arena Lucao Futevolei' || persisted.title !== 'Alunos teste') {
+    if (persisted.theme !== 'dark' || persisted.brand !== 'Arena Lucao Futevolei' || persisted.title !== 'Alunos teste') {
       throw new Error(`Configuração não sobreviveu ao reload (${JSON.stringify(persisted)})`);
     }
   }
@@ -250,16 +240,19 @@ async function runCaseAction(page, action) {
       if (message.type() === 'error') runtimeErrors.push(`console: ${message.text()} (${message.location().url || 'sem origem'})`);
     });
     page.setDefaultTimeout(5000);
-    await page.goto(`${baseUrl}?visual=${item.name}`, { waitUntil: 'domcontentloaded', timeout: 10000 });
+    const targetUrl = `${baseUrl}${item.path || ''}?visual=${item.name}`;
+    await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 10000 });
     await page.waitForTimeout(300);
     console.log(`  loaded ${item.name}`);
-    const assetVersion = await page.locator('script[src*="app.js"]').getAttribute('src');
-    if (baseUrl.includes('127.0.0.1') && !assetVersion.includes(expectedAssetVersion)) {
-      throw new Error(`${item.name}: asset version inesperada (${assetVersion})`);
-    }
-    const styleVersion = await page.locator('link[href*="styles.css"]').getAttribute('href');
-    if (baseUrl.includes('127.0.0.1') && !styleVersion.includes(expectedStyleVersion)) {
-      throw new Error(`${item.name}: styles inesperado (${styleVersion})`);
+    if (!item.path) {
+      const assetVersion = await page.locator('script[src*="app.js"]').getAttribute('src');
+      if (baseUrl.includes('127.0.0.1') && !assetVersion.includes(expectedAssetVersion)) {
+        throw new Error(`${item.name}: asset version inesperada (${assetVersion})`);
+      }
+      const styleVersion = await page.locator('link[href*="styles.css"]').getAttribute('href');
+      if (baseUrl.includes('127.0.0.1') && !styleVersion.includes(expectedStyleVersion)) {
+        throw new Error(`${item.name}: styles inesperado (${styleVersion})`);
+      }
     }
     if (item.page) {
       await login(page);

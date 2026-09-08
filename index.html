@@ -3,18 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="theme-color" content="#f4f7fb" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="TLF Gestão" />
     <title data-config-text="brandName">Team Lucão Futevôlei</title>
     <link rel="icon" type="image/png" href="assets/team-lucao-logo.png" />
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
-    <link rel="manifest" href="manifest.webmanifest?v=20260829-release14" />
+    <script>try{document.documentElement.dataset.theme=String(localStorage.getItem('fv_theme')||'').toLowerCase().endsWith('dark')?'dark':'light'}catch{}</script>
+    <link rel="manifest" href="manifest.webmanifest?v=20260908-ui1" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20260829-patterns5" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css?v=20260908-ui1" />
   </head>
   <body>
     <a class="skip-link" href="#mainContent">Pular para o conteúdo principal</a>
@@ -101,7 +102,6 @@
         </div>
         <label>PIN de acesso<input id="loginPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="1234" /></label>
         <button class="primary-btn" type="submit">Entrar</button>
-        <p class="login-pin">PIN da demo: <strong>1234</strong></p>
       </form>
     </div>
 
@@ -439,7 +439,7 @@
             <button class="more-card" type="button" data-more-page="settings">
               <span>administração</span>
               <strong>Configuração</strong>
-              <small>Temas, textos e identidade visual.</small>
+              <small>Aparência, textos e identidade visual.</small>
             </button>
             <button class="more-card danger-more" type="button" data-more-action="logout">
               <span>sessao</span>
@@ -454,13 +454,13 @@
         <div class="settings-layout">
           <section class="panel settings-intro">
             <div>
-              <span class="eyebrow">laboratório administrativo</span>
-              <h2>Configuração da marca</h2>
-              <p>Área temporária para testar linguagem, composição e proporções antes de fechar a versão final.</p>
+              <span class="eyebrow">preferências do painel</span>
+              <h2>Configuração e aparência</h2>
+              <p>Escolha o modo de leitura e ajuste os textos exibidos para alunos e professores.</p>
             </div>
             <div class="settings-notice">
-              <strong>Modo de teste</strong>
-              <span>As alterações ficam salvas neste navegador e não mexem nos dados das aulas.</span>
+              <strong>Salvo neste dispositivo</strong>
+              <span>Essas preferências visuais não alteram alunos, aulas ou pagamentos.</span>
             </div>
           </section>
 
@@ -468,12 +468,12 @@
             <div class="panel-head">
               <div>
                 <span>aparência</span>
-                <h2>Padroes visuais Finanza</h2>
+                <h2>Modo de exibição</h2>
               </div>
-              <button class="soft-btn" type="button" data-settings-default-theme>Usar padrão</button>
+              <button class="soft-btn" type="button" data-settings-default-theme>Usar modo claro</button>
             </div>
-            <p class="meta settings-helper">Seis experiencias completas inspiradas no Finanza Android Kotlin: Moderno, Classico e Finanza Web em claro e escuro.</p>
-            <div class="theme-picker" id="themePicker" role="listbox" aria-label="Escolher tema visual"></div>
+            <p class="meta settings-helper">O painel agora possui somente dois modos consistentes: claro e escuro.</p>
+            <div class="theme-picker" id="themePicker" role="listbox" aria-label="Escolher modo de exibição"></div>
           </section>
 
           <section class="panel">
@@ -551,7 +551,7 @@
             <div class="panel-head">
               <div>
                 <span>prévia ao vivo</span>
-                <h2>Leitura do tema</h2>
+                <h2>Prévia da identidade</h2>
               </div>
               <span class="pill ok">sem dados reais</span>
             </div>
@@ -579,11 +579,11 @@
 
           <section class="panel settings-danger-zone">
             <div>
-              <span>encerramento do teste</span>
-              <h2>Limpar personalizações</h2>
-              <p>Restaura o tema claro padrão e todos os textos iniciais. Esta área pode ser removida ao fechar os testes.</p>
+              <span>restauração</span>
+              <h2>Voltar ao padrão</h2>
+              <p>Restaura o modo claro e todos os textos originais do painel.</p>
             </div>
-            <button class="soft-btn danger-mini" type="button" data-settings-clear>Limpar testes</button>
+            <button class="soft-btn danger-mini" type="button" data-settings-clear>Restaurar configurações</button>
           </section>
         </div>
       </section>
@@ -868,6 +868,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-    <script src="app.js?v=20260829-release14"></script>
+    <script src="app.js?v=20260908-ui1"></script>
   </body>
 </html>

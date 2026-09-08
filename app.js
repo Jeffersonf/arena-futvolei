@@ -4,7 +4,6 @@ const STORE_KEY = 'fv_school_state_v2';
 const PIN_KEY = 'tlf_admin_pin';
 const PAGE_KEY = 'tlf_last_page';
 const CONFIG_KEY = 'tlf_admin_config_v1';
-const VISUAL_THEME_VERSION = 'web-redo-20260703';
 const ACTION_REFRESH_MS = 15000;
 const STANDARD_CLASS_SLOTS = Object.freeze([
   { day: 1, label: 'Segunda', times: ['18:30', '19:30', '20:30'] },
@@ -54,18 +53,9 @@ const DEFAULT_APP_CONFIG = Object.freeze({
   onlineNoticeText: 'Servidor ativo, dados compartilhados e backups disponíveis.',
   localNoticeText: 'Dados neste navegador. Para uso diário no iPhone, publique o servidor.'
 });
-const FINEXT_PATTERNS = Object.freeze([
-  { id: 'modern-light', label: 'Moderno claro', family: 'Moderno', mode: 'claro', description: 'Composicao fluida, cards amplos e hierarquia forte para leitura rapida.', swatches: ['#f3f3f5', '#ffffff', '#191919'] },
-  { id: 'modern-dark', label: 'Moderno escuro', family: 'Moderno', mode: 'escuro', description: 'A experiencia escura do Finanza com foco, contraste e superficies profundas.', swatches: ['#101319', '#191919', '#f4f5f7'] },
-  { id: 'classic-light', label: 'Classico claro', family: 'Classico', mode: 'claro', description: 'Interface essencial, densa e orientada por bordas para operacao diaria.', swatches: ['#f7f7f4', '#ffffff', '#242424'] },
-  { id: 'classic-dark', label: 'Classico escuro', family: 'Classico', mode: 'escuro', description: 'Controle compacto com contraste alto e leitura de dados em primeiro plano.', swatches: ['#121212', '#1d1d1d', '#f1f1ed'] },
-  { id: 'web-light', label: 'Finanza Web claro', family: 'Finanza Web', mode: 'claro', description: 'Estrutura web equilibrada, modular e preparada para telas largas.', swatches: ['#eef1ed', '#ffffff', '#20231f'] },
-  { id: 'web-dark', label: 'Finanza Web escuro', family: 'Finanza Web', mode: 'escuro', description: 'Painel web noturno com camadas claras e navegacao bem marcada.', swatches: ['#111512', '#1c211d', '#f2f5ef'] }
-]);
 const THEME_OPTIONS = Object.freeze([
-  { id: 'light', label: 'Padrão claro', description: 'Visual atual do Arena, recomendado.', group: 'base', swatches: ['#2563eb', '#ffffff', '#171717'] },
-  { id: 'dark', label: 'Padrão escuro', description: 'Visual atual em modo noturno.', group: 'base', swatches: ['#60a5fa', '#171717', '#f5f5f5'] },
-  ...FINEXT_PATTERNS.map((item) => ({ ...item, group: 'finext' }))
+  { id: 'light', label: 'Modo claro', description: 'Fundo leve e leitura nítida durante o dia.', swatches: ['#2563eb', '#ffffff', '#eaf0f8'] },
+  { id: 'dark', label: 'Modo escuro', description: 'Menos brilho e contraste confortável à noite.', swatches: ['#60a5fa', '#111827', '#273449'] }
 ]);
 
 function loadAppConfig() {
@@ -959,33 +949,33 @@ function applyAppConfig() {
   updateTopbar(currentPage());
 }
 
-function setTheme(theme, { persist = true } = {}) {
-  const valid = THEME_OPTIONS.some((item) => item.id === theme);
-  const next = valid ? theme : 'light';
-  document.documentElement.dataset.theme = next;
-  if (persist) localStorage.setItem('fv_theme', next);
-  updateThemeButton();
-  if (document.getElementById('themePicker')) renderSettings();
+function normalizeTheme(theme) {
+  return String(theme || '').toLowerCase().endsWith('dark') ? 'dark' : 'light';
 }
 
-function renderSettings() {
+function setTheme(theme, { persist = true } = {}) {
+  const next = normalizeTheme(theme);
+  document.documentElement.dataset.theme = next;
+  if (persist) localStorage.setItem('fv_theme', next);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', next === 'dark' ? '#0b1220' : '#f4f7fb');
+  updateThemeButton();
+  if (document.getElementById('themePicker')) renderSettings({ syncForm: false });
+}
+
+function renderSettings({ syncForm = true } = {}) {
   const picker = document.getElementById('themePicker');
   if (!picker) return;
   const current = document.documentElement.dataset.theme || 'light';
   const renderTheme = (item) => `
-    <button class="theme-choice theme-choice-${item.family ? item.family.toLowerCase().replace(/\s+/g, '-') : 'base'} ${item.id === current ? 'is-active' : ''}" type="button" role="option" aria-selected="${item.id === current}" data-theme-choice="${item.id}">
-      <span class="theme-choice-preview pattern-${item.family ? item.family.toLowerCase().replace(/\s+/g, '-') : 'base'}" aria-hidden="true">
+    <button class="theme-choice ${item.id === current ? 'is-active' : ''}" type="button" role="option" aria-selected="${item.id === current}" data-theme-choice="${item.id}">
+      <span class="theme-choice-preview" aria-hidden="true">
         <i style="--theme-swatch:${item.swatches[0]}"></i><i style="--theme-swatch:${item.swatches[1]}"></i><i style="--theme-swatch:${item.swatches[2]}"></i>
       </span>
-      <span class="theme-choice-copy"><strong>${item.label}</strong><small>${item.family ? `${item.family} · ${item.mode}` : 'base atual'}<br>${item.description}</small></span>
+      <span class="theme-choice-copy"><strong>${item.label}</strong><small>${item.description}</small></span>
       <span class="theme-choice-check" aria-hidden="true">${item.id === current ? '✓' : ''}</span>
     </button>`;
-  const base = THEME_OPTIONS.filter((item) => item.group === 'base');
-  const finext = THEME_OPTIONS.filter((item) => item.group === 'finext');
-  picker.innerHTML = `
-    <div class="theme-group"><span class="section-label">base atual</span><div class="theme-choice-grid">${base.map(renderTheme).join('')}</div></div>
-    <div class="theme-group"><span class="section-label">6 padroes visuais Finanza</span><div class="theme-choice-grid">${finext.map(renderTheme).join('')}</div></div>`;
-  syncSettingsForm();
+  picker.innerHTML = `<div class="theme-choice-grid">${THEME_OPTIONS.map(renderTheme).join('')}</div>`;
+  if (syncForm) syncSettingsForm();
   updateSettingsPreview();
 }
 
@@ -1039,7 +1029,7 @@ function clearSettings() {
   applyAppConfig();
   updateSystemNotice();
   renderSettings();
-  toast('Personalizações limpas');
+  toast('Configurações restauradas');
 }
 
 function currentPage() {
@@ -3822,7 +3812,7 @@ function bindEvents() {
   document.getElementById('settingsForm')?.addEventListener('input', updateSettingsPreview);
   document.querySelectorAll('[data-settings-default-theme]').forEach((button) => button.addEventListener('click', () => {
     setTheme('light');
-    toast('Tema padrão restaurado');
+    toast('Modo claro ativado');
   }));
   document.querySelectorAll('[data-settings-reset]').forEach((button) => button.addEventListener('click', resetSettingsForm));
   document.querySelectorAll('[data-settings-clear]').forEach((button) => button.addEventListener('click', clearSettings));
@@ -3989,12 +3979,8 @@ function bindEvents() {
   });
 }
 
-if (localStorage.getItem('fv_visual_theme_version') !== VISUAL_THEME_VERSION) {
-  localStorage.setItem('fv_theme', 'light');
-  localStorage.setItem('fv_visual_theme_version', VISUAL_THEME_VERSION);
-}
 applyAppConfig();
-setTheme(localStorage.getItem('fv_theme') || 'light', { persist: false });
+setTheme(localStorage.getItem('fv_theme') || 'light');
 updatePerformanceMode();
 bindEvents();
 window.addEventListener('resize', updatePerformanceMode);
@@ -4003,10 +3989,11 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('storage', (event) => {
   if (event.key === STORE_KEY) syncLocalStateFromStorage();
+  if (event.key === 'fv_theme') setTheme(event.newValue || 'light', { persist: false });
 });
 startActionRefresh();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./service-worker.js?v=20260829-release14', { scope: './' }).catch(() => {});
+  navigator.serviceWorker.register('./service-worker.js?v=20260908-ui1', { scope: './' }).catch(() => {});
 }
 if (localStorage.getItem(PIN_KEY)) {
   showBooking(false);

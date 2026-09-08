@@ -1,45 +1,33 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#111827" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f4f7fb" />
     <title>Agenda do aluno</title>
-    <style>
-      :root { color-scheme: light; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #172033; background: #f5f7fb; }
-      * { box-sizing: border-box; }
-      body { margin: 0; min-height: 100vh; display: grid; place-items: start center; padding: 20px 14px; }
-      main { width: min(100%, 520px); display: grid; gap: 14px; }
-      header, section { background: #fff; border: 1px solid #e3e8f0; border-radius: 18px; padding: 20px; box-shadow: 0 8px 28px #1720330d; }
-      header { display: flex; align-items: center; gap: 12px; }
-      header img { width: 48px; height: 48px; object-fit: contain; border-radius: 12px; }
-      h1, h2, p { margin: 0; } h1 { font-size: 22px; } h2 { font-size: 17px; } p { color: #667085; line-height: 1.45; }
-      form { display: grid; gap: 10px; } label { display: grid; gap: 6px; color: #344054; font-size: 13px; font-weight: 650; }
-      input, button { min-height: 46px; border-radius: 11px; font: inherit; } input { border: 1px solid #cfd7e3; padding: 0 12px; font-size: 16px; }
-      button { border: 0; padding: 0 16px; color: #fff; background: #2563eb; font-weight: 700; cursor: pointer; } button:disabled { opacity: .6; cursor: default; }
-      #status { min-height: 21px; font-size: 13px; } .list { display: grid; gap: 10px; margin-top: 14px; }
-      article { display: grid; gap: 10px; padding: 14px; border: 1px solid #e3e8f0; border-radius: 13px; } article strong { font-size: 15px; } article small { color: #667085; }
-      article button { width: 100%; } .done { color: #067647; font-weight: 700; font-size: 13px; }
-      .filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
-      .filters label { display: grid; gap: 5px; color: #667085; font-size: 12px; font-weight: 700; }
-      .filters select { min-height: 40px; border: 1px solid #cfd7e3; border-radius: 10px; padding: 0 9px; background: #fff; color: #172033; font: inherit; }
-      @media (max-width: 420px) { .filters { grid-template-columns: 1fr; } }
-      @media (max-width: 420px) { body { padding: 12px 10px; } header, section { padding: 16px; border-radius: 15px; } }
-    </style>
+    <script>try{document.documentElement.dataset.theme=String(localStorage.getItem('fv_theme')||'').toLowerCase().endsWith('dark')?'dark':'light'}catch{}</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="public.css?v=20260908-ui1" />
   </head>
   <body>
-    <main>
-      <header><img src="assets/team-lucao-logo.png" alt="" /><div><h1>Agenda do aluno</h1><p>Veja suas aulas ou escolha um horário regular nesta semana.</p></div></header>
-      <section>
-        <form id="studentFastForm"><label>Seu WhatsApp<input id="studentFastPhone" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" required /></label><button type="submit">Ver minhas aulas</button></form>
+    <main class="fast-shell">
+      <nav class="fast-nav" aria-label="Navegação"><a class="back-link" href="/">← Página inicial</a><button class="theme-switch" type="button" data-theme-toggle aria-label="Usar modo escuro"></button></nav>
+      <header class="fast-hero"><span class="fast-logo"><img src="assets/team-lucao-logo.png" alt="" /></span><div><p class="eyebrow">acesso do aluno</p><h1>Minha agenda</h1><p>Consulte aulas e confirme sua presença em poucos segundos.</p></div></header>
+      <section class="fast-panel">
+        <div class="section-heading"><p class="eyebrow">consulta rápida</p><h2>Encontre suas aulas</h2><p>Digite o mesmo WhatsApp usado no seu cadastro.</p></div>
+        <form id="studentFastForm"><label>Seu WhatsApp<input id="studentFastPhone" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" maxlength="15" required /></label><button class="primary-button" type="submit">Ver minhas aulas</button><small class="privacy-note">Usamos o número somente para localizar sua agenda.</small></form>
         <p id="studentFastStatus" role="status" aria-live="polite"></p>
         <div class="filters" id="studentFastFilters" hidden>
           <label>Data<select id="studentFastDate"><option value="">Todas as datas</option></select></label>
-          <label>Hora<select id="studentFastTime"><option value="">Todos os horarios</option></select></label>
+          <label>Hora<select id="studentFastTime"><option value="">Todos os horários</option></select></label>
         </div>
-        <div class="list" id="studentFastList"></div>
+        <div class="list" id="studentFastList" aria-live="polite"></div>
       </section>
+      <footer class="fast-footer">Team Lucão Futevôlei · Agenda online</footer>
     </main>
-    <script src="student-fast.js"></script>
+    <script src="public-theme.js?v=20260908-ui1"></script>
+    <script src="student-fast.js?v=20260908-ui1"></script>
   </body>
 </html>
