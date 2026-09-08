@@ -122,9 +122,16 @@ async function main() {
         nivel: 'Intermediario',
         dia_fixo: '6',
         horario_fixo: '08:00',
-        turma_fixa: 'Audit Sabado'
+        turma_fixa: 'Audit Sabado',
+        agendas_fixas: [
+          { dia: '6', horario: '08:00', turma: 'Audit Sabado' },
+          { dia: '2', horario: '19:00', turma: 'Audit Terca' }
+        ]
       })
     });
+    const fixedSchedules = JSON.parse(student.item.agendas_fixas || '[]');
+    assert(fixedSchedules.length === 2, 'Aluno nao salvou os dois horarios fixos');
+    assert(student.item.dia_fixo === '6' && student.item.horario_fixo === '08:00', 'Agenda fixa principal perdeu compatibilidade');
 
     const classItem = await request('/api/classes', {
       method: 'POST',

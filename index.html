@@ -11,11 +11,11 @@
     <link rel="icon" type="image/png" href="assets/team-lucao-logo.png" />
     <link rel="apple-touch-icon" href="assets/team-lucao-logo.png" />
     <script>try{document.documentElement.dataset.theme=String(localStorage.getItem('fv_theme')||'').toLowerCase().endsWith('dark')?'dark':'light'}catch{}</script>
-    <link rel="manifest" href="manifest.webmanifest?v=20260908-ui1" />
+    <link rel="manifest" href="manifest.webmanifest?v=20260908-ui2" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20260908-ui1" />
+    <link rel="stylesheet" href="styles.css?v=20260908-ui2" />
   </head>
   <body>
     <a class="skip-link" href="#mainContent">Pular para o conteúdo principal</a>
@@ -604,22 +604,11 @@
         </fieldset>
         <fieldset class="form-group schedule-group">
           <legend>Agenda fixa</legend>
-          <div class="form-row">
-            <label>Dia fixo
-              <select id="studentFixedDay">
-                <option value="">Sem dia fixo</option>
-                <option value="1">Segunda</option>
-                <option value="2">Terca</option>
-                <option value="3">Quarta</option>
-                <option value="4">Quinta</option>
-                <option value="5">Sexta</option>
-                <option value="6">Sabado</option>
-                <option value="0">Domingo</option>
-              </select>
-            </label>
-            <label>Horario fixo<input id="studentFixedTime" type="time" list="classTimeOptions" /></label>
+          <div class="schedule-group-head">
+            <p>Informe todos os dias em que o aluno treina. Exemplo: terça e quinta em horários diferentes.</p>
+            <button class="soft-btn schedule-add-btn" type="button" id="addStudentFixedSchedule">+ Adicionar outro dia</button>
           </div>
-          <label>Turma fixa<input id="studentFixedGroup" placeholder="Ex: Iniciantes 18h" /></label>
+          <div class="fixed-schedule-list" id="studentFixedSchedules"></div>
           <div class="schedule-preview" id="studentSchedulePreview"></div>
         </fieldset>
         <fieldset class="form-group student-form-section">
@@ -868,6 +857,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-    <script src="app.js?v=20260908-ui1"></script>
+    <script src="app.js?v=20260908-ui2"></script>
   </body>
 </html>

@@ -190,8 +190,32 @@ function requirePin(req, res, next) {
   return next();
 }
 
+function normalizeFixedSchedules(body = {}) {
+  let values = body.agendas_fixas ?? body.fixedSchedules ?? [];
+  if (typeof values === 'string') {
+    try { values = JSON.parse(values); } catch { values = []; }
+  }
+  if (!Array.isArray(values)) values = [];
+  if (!values.length && body.dia_fixo !== '' && body.dia_fixo !== null && body.dia_fixo !== undefined && body.horario_fixo) {
+    values = [{ dia: body.dia_fixo, horario: body.horario_fixo, turma: body.turma_fixa }];
+  }
+  const seen = new Set();
+  return values.map((item) => ({
+    dia: String(item?.dia ?? item?.dia_fixo ?? ''),
+    horario: String(item?.horario || item?.horario_fixo || '').slice(0, 5),
+    turma: String(item?.turma || item?.turma_fixa || '').trim()
+  })).filter((item) => {
+    const key = `${item.dia}|${item.horario}`;
+    const valid = /^[0-6]$/.test(item.dia) && /^([01]\d|2[0-3]):[0-5]\d$/.test(item.horario) && !seen.has(key);
+    if (valid) seen.add(key);
+    return valid;
+  }).slice(0, 7);
+}
+
 function normalizeStudentPayload(body = {}) {
   const plan = body.plano_id ? row('SELECT * FROM planos WHERE id=?', [body.plano_id]) : null;
+  const schedules = normalizeFixedSchedules(body);
+  const primarySchedule = schedules[0] || {};
   return {
     nome: String(body.nome || body.name || '').trim(),
     telefone: String(body.telefone || body.phone || '').trim(),
@@ -202,9 +226,10 @@ function normalizeStudentPayload(body = {}) {
     dia_vencimento: Math.min(31, Math.max(1, Number(body.dia_vencimento || body.vencimento_dia || body.dueDay || 10) || 10)),
     status: String(body.status || 'Ativo'),
     nivel: String(body.nivel || body.level || 'Iniciante'),
-    dia_fixo: String(body.dia_fixo ?? body.fixedDay ?? ''),
-    horario_fixo: String(body.horario_fixo || body.fixedTime || '').slice(0, 5),
-    turma_fixa: String(body.turma_fixa || body.fixedGroup || '').trim(),
+    dia_fixo: primarySchedule.dia || '',
+    horario_fixo: primarySchedule.horario || '',
+    turma_fixa: primarySchedule.turma || '',
+    agendas_fixas: JSON.stringify(schedules),
     observacao: String(body.observacao || body.note || ''),
     pago_ate: String(body.pago_ate || body.paidUntil || '')
   };

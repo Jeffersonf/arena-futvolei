@@ -3,8 +3,8 @@ const fs = require('fs');
 
 const baseUrl = process.env.VISUAL_CHECK_URL || 'http://127.0.0.1:4280/';
 const outDir = 'tmp-visual-check';
-const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260908-ui1';
-const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260908-ui1';
+const expectedAssetVersion = process.env.VISUAL_CHECK_VERSION || '20260908-ui2';
+const expectedStyleVersion = process.env.VISUAL_STYLE_VERSION || '20260908-ui2';
 const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined;
 
 const cases = [
@@ -171,6 +171,9 @@ async function runCaseAction(page, action) {
   if (action === 'student-modal') {
     await page.locator('#page-students.active .student-row [data-edit-student]').first().click();
     await page.waitForSelector('#studentModal.open', { timeout: 5000 });
+    if (await page.locator('[data-fixed-schedule-row]').count() !== 1) throw new Error('Agenda fixa inicial nao foi exibida');
+    await page.locator('#addStudentFixedSchedule').click();
+    if (await page.locator('[data-fixed-schedule-row]').count() !== 2) throw new Error('Segundo dia fixo nao foi adicionado');
     await assertModalFocus(page, '#studentModal', '#page-students.active .student-row [data-edit-student]');
   }
   if (action === 'settings-theme-cycle') {

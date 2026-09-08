@@ -1182,6 +1182,46 @@ label {
   text-transform: uppercase;
 }
 
+.schedule-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.schedule-group-head p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.schedule-add-btn { flex: 0 0 auto; }
+
+.fixed-schedule-list {
+  display: grid;
+  gap: 9px;
+}
+
+.fixed-schedule-row {
+  display: grid;
+  grid-template-columns: minmax(125px, .8fr) minmax(110px, .65fr) minmax(170px, 1.25fr) 38px;
+  align-items: end;
+  gap: 9px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  background: var(--surface);
+}
+
+.fixed-schedule-remove {
+  width: 38px;
+  height: 42px;
+  align-self: end;
+  color: var(--danger);
+  font-size: 20px;
+}
+
 .schedule-preview {
   display: grid;
   gap: 4px;
@@ -1192,6 +1232,16 @@ label {
 
 .schedule-preview span { color: var(--muted); font-size: 11px; font-weight: 600; }
 .schedule-preview strong { font-size: 13px; }
+
+.schedule-preview-list {
+  display: grid;
+  gap: 8px;
+}
+
+.schedule-preview-item + .schedule-preview-item {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
 
 .schedule-preview-dates {
   display: flex;
@@ -1946,6 +1996,26 @@ label {
   .form-row,
   .action-focus {
     grid-template-columns: 1fr;
+  }
+
+  .schedule-group-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .schedule-add-btn { width: 100%; }
+
+  .fixed-schedule-row {
+    grid-template-columns: minmax(0, 1fr) minmax(115px, .75fr) 40px;
+  }
+
+  .fixed-schedule-group-field { grid-column: 1 / 3; }
+
+  .fixed-schedule-remove {
+    grid-column: 3;
+    grid-row: 1 / 3;
+    align-self: stretch;
+    height: auto;
   }
 
   .kpi-grid,

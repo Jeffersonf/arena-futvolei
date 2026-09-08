@@ -109,6 +109,7 @@ function ensureSchema() {
       dia_fixo TEXT DEFAULT '',
       horario_fixo TEXT DEFAULT '',
       turma_fixa TEXT DEFAULT '',
+      agendas_fixas TEXT DEFAULT '[]',
       observacao TEXT DEFAULT '',
       pago_ate TEXT DEFAULT '',
       data_cadastro TEXT DEFAULT (date('now')),
@@ -251,6 +252,9 @@ function ensureSchema() {
   }
   if (!studentColumns.includes('turma_fixa')) {
     run("ALTER TABLE alunos ADD COLUMN turma_fixa TEXT DEFAULT ''");
+  }
+  if (!studentColumns.includes('agendas_fixas')) {
+    run("ALTER TABLE alunos ADD COLUMN agendas_fixas TEXT DEFAULT '[]'");
   }
 
   const classColumns = tableColumns('aulas');
