@@ -118,6 +118,12 @@ function dueDateForMonth(student = {}, month = currentMonth()) {
   return `${year}-${String(monthNumber).padStart(2, '0')}-${String(Math.min(dueDay, lastDay)).padStart(2, '0')}`;
 }
 
+function studentPeriodEnd(student = {}, start = today()) {
+  const currentDueDate = dueDateForMonth(student, start.slice(0, 7));
+  if (currentDueDate >= start) return currentDueDate;
+  return dueDateForMonth(student, addMonthsIso(`${start.slice(0, 7)}-01`, 1).slice(0, 7));
+}
+
 function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
@@ -415,18 +421,21 @@ app.get('/api/public/student-waitlist', (req, res) => {
 });
 app.get('/api/public/student-classes', (req, res) => {
   try {
-    const student = findStudentByPhone(req.query.telefone || req.query.phone || '');
+    const informedPhone = req.query.telefone || req.query.phone || '';
+    const student = findStudentByPhone(informedPhone);
     if (!student) throw new Error('Aluno nao encontrado para esse WhatsApp');
+    const start = today();
+    const periodEnd = studentPeriodEnd(student, start);
     const items = rows(`
       SELECT a.id, a.data, a.horario, a.turma, a.tipo, a.professor, a.capacidade, a.status,
         aa.confirmado, aa.confirmado_em, aa.confirmado_professor, aa.confirmado_professor_em, aa.presente,
         (SELECT COUNT(*) FROM aula_alunos WHERE aula_id=a.id) AS inscritos
       FROM aula_alunos aa
       JOIN aulas a ON a.id=aa.aula_id
-      WHERE aa.aluno_id=? AND a.status != 'Cancelada' AND a.data >= ?
+      WHERE aa.aluno_id=? AND a.status != 'Cancelada' AND a.data BETWEEN ? AND ?
       ORDER BY a.data, a.horario
-      LIMIT 30
-    `, [student.id, today()]);
+      LIMIT 60
+    `, [student.id, start, periodEnd]);
     const available = rows(`
       SELECT a.id, a.data, a.horario, a.turma, a.tipo, a.professor, a.capacidade, a.status,
         (SELECT COUNT(*) FROM aula_alunos WHERE aula_id=a.id) AS inscritos,
@@ -441,13 +450,31 @@ app.get('/api/public/student-classes', (req, res) => {
           WHERE linked.aula_id=a.id AND linked.aluno_id=?
         )
       ORDER BY a.data, a.horario, a.turma
-      LIMIT 30
-    `, [today(), addDaysIso(today(), 6), student.id]);
+      LIMIT 60
+    `, [start, periodEnd, student.id]);
+    const phone = phoneDigits(informedPhone);
+    const requests = phone.length >= 8 ? rows(`
+      SELECT ag.id, ag.aula_id, ag.status, ag.criado_em, a.data, a.horario, a.turma, a.tipo
+      FROM agendamentos ag JOIN aulas a ON a.id=ag.aula_id
+      WHERE ag.status IN ('Pendente', 'Aprovado')
+        AND REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(COALESCE(ag.telefone, ''), '(', ''), ')', ''), '-', ''), ' ', ''), '+', '') LIKE ?
+        AND a.data BETWEEN ? AND ?
+      ORDER BY a.data, a.horario
+    `, [`%${phone.slice(-8)}`, start, periodEnd]) : [];
     res.json({
       ok: true,
-      student: { id: student.id, nome: student.nome, plano_nome: student.plano_nome },
+      student: {
+        id: student.id,
+        nome: student.nome,
+        plano_nome: student.plano_nome,
+        dia_vencimento: student.dia_vencimento,
+        pago_ate: student.pago_ate
+      },
+      period_start: start,
+      period_end: periodEnd,
       items,
-      available
+      available,
+      requests
     });
   } catch (err) {
     jsonError(res, err);
@@ -458,8 +485,10 @@ app.post('/api/public/student-confirm', (req, res) => {
     const student = findStudentByPhone(req.body.telefone || req.body.phone || '');
     if (!student) throw new Error('Aluno nao encontrado para esse WhatsApp');
     const classId = Number(req.body.aula_id || req.body.class_id || 0);
-    const confirmValue = String(req.body.confirmado || req.body.confirmation || '').toLowerCase();
-    if (!['sim', 'nao'].includes(confirmValue)) throw new Error('Resposta invalida');
+    const responseValue = String(req.body.confirmado ?? req.body.confirmation ?? '').toLowerCase();
+    const removeResponse = ['remover', 'remove', 'limpar'].includes(responseValue);
+    const confirmValue = removeResponse ? '' : responseValue;
+    if (!removeResponse && !['sim', 'nao'].includes(confirmValue)) throw new Error('Resposta invalida');
     const link = row('SELECT * FROM aula_alunos WHERE aula_id=? AND aluno_id=?', [classId, student.id]);
     if (!link) throw new Error('Essa aula nao esta vinculada a este aluno');
     const classItem = row('SELECT * FROM aulas WHERE id=?', [classId]);
@@ -467,13 +496,15 @@ app.post('/api/public/student-confirm', (req, res) => {
     const now = new Date().toISOString();
     run('UPDATE aula_alunos SET confirmado=?, confirmado_em=?, confirmado_professor=?, confirmado_professor_em=? WHERE aula_id=? AND aluno_id=?', [
       confirmValue,
-      now,
+      confirmValue ? now : '',
       confirmValue === 'sim' ? (link.confirmado_professor || '') : '',
       confirmValue === 'sim' ? (link.confirmado_professor_em || '') : '',
       classId,
       student.id
     ]);
-    logAction('Confirmacao aluno', `${student.nome} respondeu ${confirmValue} na aula ${classItem?.horario || classId} - ${classItem?.turma || 'Turma'} em ${classItem?.data || ''}.`, 'Aluno');
+    logAction(removeResponse ? 'Resposta do aluno removida' : 'Confirmacao aluno', removeResponse
+      ? `${student.nome} removeu a resposta da aula ${classItem?.horario || classId} - ${classItem?.turma || 'Turma'} em ${classItem?.data || ''}.`
+      : `${student.nome} respondeu ${confirmValue} na aula ${classItem?.horario || classId} - ${classItem?.turma || 'Turma'} em ${classItem?.data || ''}.`, 'Aluno');
     res.json({ ok: true, item: row('SELECT * FROM aula_alunos WHERE aula_id=? AND aluno_id=?', [classId, student.id]) });
   } catch (err) {
     jsonError(res, err);

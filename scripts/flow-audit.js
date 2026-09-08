@@ -231,6 +231,8 @@ async function main() {
       body: JSON.stringify({ nome: unbookedStudent.item.nome, telefone: unbookedStudent.item.telefone, aula_id: requestedClass.id, observacao: 'Solicitacao de horario regular pelo aluno.' })
     });
     assert(regularRequest.item.status === 'Pendente', 'Escolha de horario nao foi salva como solicitacao pendente');
+    const requestedLookup = await request('/api/public/student-classes?telefone=999997777', { public: true });
+    assert(requestedLookup.requests.some((item) => Number(item.aula_id) === Number(requestedClass.id)), 'Solicitacao pendente nao apareceu na agenda do aluno');
 
     await request(`/api/classes/${classItem.item.id}/attendance`, {
       method: 'PUT',
@@ -259,10 +261,27 @@ async function main() {
     const studentClasses = await request('/api/public/student-classes?telefone=999991111', { public: true });
     assert(studentClasses.items[0].confirmado === 'sim', 'Indicacao do aluno nao persistiu');
     assert(studentClasses.items[0].confirmado_professor === 'sim', 'Confirmacao do professor nao persistiu');
+    assert(studentClasses.period_start === todayIso() && studentClasses.period_end >= auditDate, 'Periodo ate o vencimento nao foi retornado corretamente');
 
     assert(Array.isArray(studentClasses.available), 'Busca do aluno nao retornou horarios disponiveis');
     assert(!studentClasses.available.some((item) => /experimental/i.test(String(item.tipo || ''))), 'Horario experimental apareceu no fluxo do aluno');
     assert(!studentClasses.available.some((item) => Number(item.inscritos) >= Number(item.capacidade)), 'Horario lotado apareceu como disponivel');
+
+    await request('/api/public/student-confirm', {
+      public: true,
+      method: 'POST',
+      body: JSON.stringify({ telefone: '999991111', aula_id: classItem.item.id, confirmado: 'nao' })
+    });
+    const declinedClasses = await request('/api/public/student-classes?telefone=999991111', { public: true });
+    assert(declinedClasses.items[0].confirmado === 'nao', 'Indicacao de ausencia do aluno nao persistiu');
+    assert(!declinedClasses.items[0].confirmado_professor, 'Confirmacao do professor nao foi removida apos ausencia');
+    await request('/api/public/student-confirm', {
+      public: true,
+      method: 'POST',
+      body: JSON.stringify({ telefone: '999991111', aula_id: classItem.item.id, confirmado: 'remover' })
+    });
+    const clearedClasses = await request('/api/public/student-classes?telefone=999991111', { public: true });
+    assert(!clearedClasses.items[0].confirmado && !clearedClasses.items[0].confirmado_em, 'Aluno nao conseguiu remover sua resposta');
 
     await request(`/api/students/${student.item.id}/pay`, {
       method: 'POST',

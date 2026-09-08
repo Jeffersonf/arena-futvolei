@@ -12,6 +12,8 @@
   --accent: #2563eb;
   --accent-strong: #1d4ed8;
   --accent-soft: #eaf2ff;
+  --button-bg: #2563eb;
+  --button-hover: #1d4ed8;
   --ok: #137a3f;
   --ok-bg: #e8f8ee;
   --bad: #c4324b;
@@ -32,6 +34,8 @@
   --accent: #60a5fa;
   --accent-strong: #3b82f6;
   --accent-soft: rgba(59, 130, 246, .16);
+  --button-bg: #2563eb;
+  --button-hover: #1d4ed8;
   --ok: #65d792;
   --ok-bg: rgba(34, 197, 94, .14);
   --bad: #fb7185;
@@ -42,6 +46,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 html { min-height: 100%; background: var(--bg); -webkit-text-size-adjust: 100%; }
 
@@ -64,7 +69,8 @@ body {
 button, input, select, a { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 button { cursor: pointer; touch-action: manipulation; }
-button:disabled { cursor: wait; opacity: .58; }
+button:disabled { cursor: not-allowed; opacity: .58; }
+button[aria-busy="true"] { cursor: progress; }
 a { color: inherit; text-decoration: none; }
 h1, h2, p { margin: 0; }
 
@@ -83,12 +89,16 @@ select:focus-visible {
   margin-inline: auto;
 }
 
+.student-shell { width: min(100%, 1120px); }
+
 .fast-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
+
+.fast-nav-actions { display: flex; align-items: center; gap: 8px; }
 
 .back-link,
 .theme-switch,
@@ -190,10 +200,10 @@ select:focus {
 article button,
 #refreshButton {
   min-height: 46px;
-  border: 1px solid var(--accent);
+  border: 1px solid var(--button-bg);
   border-radius: 12px;
   padding: 0 16px;
-  background: var(--accent);
+  background: var(--button-bg);
   color: #fff;
   font-weight: 750;
   box-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 22%, transparent);
@@ -201,15 +211,17 @@ article button,
 
 .primary-button:hover,
 article button:hover,
-#refreshButton:hover { border-color: var(--accent-strong); background: var(--accent-strong); }
+#refreshButton:hover { border-color: var(--button-hover); background: var(--button-hover); }
 
 .privacy-note { color: var(--muted); font-size: 11px; line-height: 1.4; }
 
 #studentFastStatus,
-#status { min-height: 0; font-size: 13px; }
+#status,
+#guestStatus { min-height: 0; font-size: 13px; }
 
 #studentFastStatus:not(:empty),
-#status:not(:empty) {
+#status:not(:empty),
+#guestStatus:not(:empty) {
   border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line));
   border-radius: 12px;
   padding: 10px 12px;
@@ -218,9 +230,11 @@ article button:hover,
 }
 
 #studentFastStatus[data-state="success"],
-#status[data-state="success"] { border-color: color-mix(in srgb, var(--ok) 32%, var(--line)); background: var(--ok-bg); color: var(--ok); }
+#status[data-state="success"],
+#guestStatus[data-state="success"] { border-color: color-mix(in srgb, var(--ok) 32%, var(--line)); background: var(--ok-bg); color: var(--ok); }
 #studentFastStatus[data-state="error"],
-#status[data-state="error"] { border-color: color-mix(in srgb, var(--bad) 32%, var(--line)); background: var(--bad-bg); color: var(--bad); }
+#status[data-state="error"],
+#guestStatus[data-state="error"] { border-color: color-mix(in srgb, var(--bad) 32%, var(--line)); background: var(--bad-bg); color: var(--bad); }
 
 .filters {
   display: grid;
@@ -254,11 +268,90 @@ article button { min-width: 116px; min-height: 42px; }
 .empty { padding: 18px; color: var(--muted); text-align: center; }
 .fast-footer { padding: 4px 8px; color: var(--muted); font-size: 11px; text-align: center; }
 
+.student-dashboard { display: grid; gap: 22px; border-top: 1px solid var(--line); padding-top: 20px; }
+.student-welcome { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-radius: 16px; padding: 15px 17px; background: var(--surface-2); }
+.student-welcome h2 { margin-top: 3px; font-size: 20px; letter-spacing: -.025em; }
+.student-welcome p:last-child { margin-top: 3px; color: var(--muted); font-size: 12px; }
+.plan-pill { flex: 0 0 auto; border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line)); border-radius: 999px; padding: 7px 10px; background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 750; }
+
+.agenda-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr); gap: 18px; align-items: start; }
+.agenda-column,
+.calendar-card,
+.available-section { display: grid; gap: 13px; min-width: 0; }
+.calendar-card { position: sticky; top: 14px; border: 1px solid var(--line); border-radius: 17px; padding: 16px; background: var(--surface-2); }
+.compact-heading { gap: 3px; }
+.compact-heading h2 { font-size: 18px; }
+.compact-heading p:last-child { font-size: 12px; }
+
+.student-class-card { grid-template-columns: minmax(0, 1fr); gap: 13px; padding: 14px; }
+.class-main { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 12px; align-items: center; }
+.class-main time { display: grid; place-items: center; min-height: 58px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); color: var(--muted); font-size: 11px; font-weight: 700; }
+.class-main time strong { color: var(--text); font-size: 17px; }
+.class-copy { display: grid; gap: 3px; min-width: 0; }
+.class-copy > strong { font-size: 15px; }
+.class-copy small { text-transform: capitalize; }
+.class-response { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid var(--line); padding-top: 12px; }
+.response-question { color: var(--muted); font-size: 12px; font-weight: 650; }
+.class-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
+article .response-button { min-width: 0; min-height: 40px; padding: 0 12px; box-shadow: none; font-size: 12px; }
+article .response-button.yes { border-color: #137a3f; background: #137a3f; color: #fff; }
+article .response-button.yes:hover { border-color: #0f6233; background: #0f6233; }
+article .response-button.no { border-color: #be123c; background: #be123c; color: #fff; }
+article .response-button.no:hover { border-color: #a61f38; background: #a61f38; }
+article .response-button.secondary { border-color: var(--line-strong); background: var(--surface); color: var(--text); }
+article .response-button.secondary:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.response-pill { display: inline-flex; align-items: center; min-height: 30px; border-radius: 999px; padding: 5px 9px; font-size: 11px; font-weight: 750; }
+.response-pill.yes { background: var(--ok-bg); color: var(--ok); }
+.response-pill.no { background: var(--bad-bg); color: var(--bad); }
+.student-class-card.is-highlighted { border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 13%, transparent); }
+
+.available-section { border-top: 1px solid var(--line); padding-top: 20px; }
+.available-class-card { padding: 13px 14px; }
+.available-class-card > div { display: grid; gap: 3px; }
+.request-summary { display: grid; gap: 4px; border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line)); border-radius: 14px; padding: 13px 14px; background: var(--accent-soft); color: var(--text); }
+.request-summary strong { font-size: 12px; }
+.request-summary span { color: var(--muted); font-size: 11px; }
+.empty-state { border: 1px dashed var(--line-strong); border-radius: 14px; padding: 18px; background: var(--surface-2); color: var(--muted); text-align: center; }
+
+.calendar-legend { display: flex; flex-wrap: wrap; gap: 11px; color: var(--muted); font-size: 10px; font-weight: 650; }
+.calendar-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend-dot { width: 9px; height: 9px; border-radius: 50%; }
+.legend-dot.scheduled { background: var(--button-bg); }
+.legend-dot.available { border: 2px solid var(--ok); }
+.student-calendar { display: grid; gap: 16px; }
+.calendar-month { display: grid; gap: 8px; }
+.calendar-month h3 { margin: 0; color: var(--text); font-size: 13px; font-weight: 750; text-transform: capitalize; }
+.calendar-weekdays,
+.calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.calendar-weekdays span { color: var(--muted); font-size: 8px; font-weight: 750; text-align: center; text-transform: uppercase; }
+.calendar-day { position: relative; display: grid; place-items: center; aspect-ratio: 1; min-width: 0; min-height: 31px; border: 1px solid transparent; border-radius: 9px; padding: 0; background: transparent; color: var(--muted); box-shadow: none; font-size: 11px; font-weight: 650; }
+button.calendar-day { cursor: pointer; }
+button.calendar-day:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+.calendar-day.out-period { opacity: .25; }
+.calendar-day.has-available { border-color: color-mix(in srgb, var(--ok) 68%, var(--line)); color: var(--text); }
+.calendar-day.has-scheduled { border-color: var(--button-bg); background: var(--button-bg); color: #fff; }
+.calendar-day.has-request { border-style: dashed; }
+.calendar-day.has-scheduled.has-available { box-shadow: inset 0 0 0 2px var(--surface), inset 0 0 0 3px var(--ok); }
+.calendar-day.is-selected { outline: 3px solid color-mix(in srgb, var(--accent) 25%, transparent); outline-offset: 1px; }
+.calendar-day i { position: absolute; right: 4px; bottom: 3px; width: 4px; height: 4px; border-radius: 50%; background: currentColor; opacity: .72; }
+
+.guest-panel { max-width: 760px; width: 100%; justify-self: center; }
+.guest-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
+
+@media (max-width: 860px) {
+  .agenda-layout { grid-template-columns: 1fr; }
+  .calendar-card { position: static; }
+  .student-calendar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 @media (max-width: 540px) {
   body { padding-inline: 10px; }
   .fast-shell { gap: 10px; }
   .theme-switch span { display: none; }
   .theme-switch { width: 42px; padding: 0; }
+  .fast-nav { align-items: flex-start; }
+  .fast-nav-actions { align-items: stretch; }
+  .guest-entry { min-height: 42px; padding-inline: 10px; font-size: 12px; }
   .fast-hero { grid-template-columns: auto minmax(0, 1fr); gap: 12px; padding: 17px; border-radius: 18px; }
   .fast-logo { width: 52px; height: 52px; border-radius: 15px; }
   .fast-hero h1 { font-size: 24px; }
@@ -266,6 +359,11 @@ article button { min-width: 116px; min-height: 42px; }
   .filters { grid-template-columns: 1fr; }
   article { grid-template-columns: 1fr; align-items: stretch; }
   article button { width: 100%; }
+  .student-welcome { align-items: flex-start; flex-direction: column; }
+  .class-response { align-items: stretch; flex-direction: column; }
+  .class-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .student-calendar { grid-template-columns: 1fr; }
+  .guest-fields { grid-template-columns: 1fr; }
   .section-bar { align-items: flex-start; flex-direction: column; }
   .section-actions { width: 100%; }
   .section-actions > * { flex: 1; }

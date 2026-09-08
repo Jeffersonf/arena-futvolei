@@ -4,30 +4,131 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#f4f7fb" />
-    <title>Agenda do aluno</title>
+    <meta name="description" content="Consulte sua agenda, confirme presença ou solicite uma aula experimental no Team Lucão Futevôlei." />
+    <title>Agenda do aluno | Team Lucão</title>
     <script>try{document.documentElement.dataset.theme=String(localStorage.getItem('fv_theme')||'').toLowerCase().endsWith('dark')?'dark':'light'}catch{}</script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="public.css?v=20260908-ui2" />
+    <link rel="stylesheet" href="public.css?v=20260908-agenda3" />
   </head>
   <body>
-    <main class="fast-shell">
-      <nav class="fast-nav" aria-label="Navegação"><a class="back-link" href="/">← Página inicial</a><button class="theme-switch" type="button" data-theme-toggle aria-label="Usar modo escuro"></button></nav>
-      <header class="fast-hero"><span class="fast-logo"><img src="assets/team-lucao-logo.png" alt="" /></span><div><p class="eyebrow">acesso do aluno</p><h1>Minha agenda</h1><p>Consulte aulas e confirme sua presença em poucos segundos.</p></div></header>
-      <section class="fast-panel">
-        <div class="section-heading"><p class="eyebrow">consulta rápida</p><h2>Encontre suas aulas</h2><p>Digite o mesmo WhatsApp usado no seu cadastro.</p></div>
-        <form id="studentFastForm"><label>Seu WhatsApp<input id="studentFastPhone" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" maxlength="15" required /></label><button class="primary-button" type="submit">Ver minhas aulas</button><small class="privacy-note">Usamos o número somente para localizar sua agenda.</small></form>
-        <p id="studentFastStatus" role="status" aria-live="polite"></p>
-        <div class="filters" id="studentFastFilters" hidden>
-          <label>Data<select id="studentFastDate"><option value="">Todas as datas</option></select></label>
-          <label>Hora<select id="studentFastTime"><option value="">Todos os horários</option></select></label>
+    <main class="fast-shell student-shell">
+      <nav class="fast-nav" aria-label="Navegação principal">
+        <a class="back-link" href="/">← Página inicial</a>
+        <div class="fast-nav-actions">
+          <button class="secondary-button guest-entry" id="guestModeButton" type="button" aria-controls="guestPanel" aria-expanded="false">Não sou aluno</button>
+          <button class="theme-switch" type="button" data-theme-toggle aria-label="Usar modo escuro"></button>
         </div>
-        <div class="list" id="studentFastList" aria-live="polite"></div>
+      </nav>
+
+      <header class="fast-hero">
+        <span class="fast-logo"><img src="assets/team-lucao-logo.png" alt="" /></span>
+        <div>
+          <p class="eyebrow" id="heroEyebrow">acesso do aluno</p>
+          <h1 id="heroTitle">Minha agenda</h1>
+          <p id="heroDescription">Veja suas próximas aulas e informe se você vai participar.</p>
+        </div>
+      </header>
+
+      <section class="fast-panel" id="studentPanel">
+        <div class="section-heading">
+          <p class="eyebrow">consulta rápida</p>
+          <h2>Encontre suas aulas</h2>
+          <p>Digite o mesmo WhatsApp usado no seu cadastro.</p>
+        </div>
+
+        <form id="studentFastForm">
+          <label for="studentFastPhone">Seu WhatsApp
+            <input id="studentFastPhone" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" maxlength="15" required />
+          </label>
+          <button class="primary-button" type="submit">Ver minhas aulas</button>
+          <small class="privacy-note">Usamos o número somente para localizar sua agenda.</small>
+        </form>
+        <p id="studentFastStatus" role="status" aria-live="polite"></p>
+
+        <div class="student-dashboard" id="studentDashboard" hidden>
+          <section class="student-welcome" aria-label="Resumo da agenda">
+            <div>
+              <p class="eyebrow">agenda encontrada</p>
+              <h2 id="studentGreeting"></h2>
+              <p id="studentPeriod"></p>
+            </div>
+            <span class="plan-pill" id="studentPlan"></span>
+          </section>
+
+          <div class="agenda-layout">
+            <section class="agenda-column" aria-labelledby="upcomingTitle">
+              <div class="section-heading compact-heading">
+                <p class="eyebrow">até o vencimento</p>
+                <h2 id="upcomingTitle">Próximas aulas</h2>
+                <p>Você pode confirmar, informar que não vai ou remover sua resposta.</p>
+              </div>
+              <div class="list student-class-list" id="studentUpcomingList" aria-live="polite"></div>
+            </section>
+
+            <aside class="calendar-card" aria-labelledby="calendarTitle">
+              <div class="section-heading compact-heading">
+                <p class="eyebrow">visão do período</p>
+                <h2 id="calendarTitle">Calendário</h2>
+              </div>
+              <div class="calendar-legend" aria-label="Legenda do calendário">
+                <span><i class="legend-dot scheduled"></i>Suas aulas</span>
+                <span><i class="legend-dot available"></i>Com vaga</span>
+              </div>
+              <div class="student-calendar" id="studentCalendar"></div>
+            </aside>
+          </div>
+
+          <section class="available-section" aria-labelledby="availableTitle">
+            <div class="section-heading compact-heading">
+              <p class="eyebrow">outras opções</p>
+              <h2 id="availableTitle">Aulas disponíveis</h2>
+              <p>Escolha uma data e depois um horário com vaga.</p>
+            </div>
+            <div class="filters" id="studentFastFilters">
+              <label for="studentFastDate">Data
+                <select id="studentFastDate"><option value="">Todas as datas</option></select>
+              </label>
+              <label for="studentFastTime">Horário
+                <select id="studentFastTime"><option value="">Todos os horários</option></select>
+              </label>
+            </div>
+            <div class="list available-list" id="studentAvailableList" aria-live="polite"></div>
+          </section>
+        </div>
       </section>
+
+      <section class="fast-panel guest-panel" id="guestPanel" hidden>
+        <div class="section-heading">
+          <p class="eyebrow">primeira aula</p>
+          <h2>Agendar aula experimental</h2>
+          <p>Informe seus dados e escolha uma aula disponível. O professor confirmará pelo WhatsApp.</p>
+        </div>
+        <form id="guestBookingForm">
+          <div class="guest-fields">
+            <label for="guestName">Nome
+              <input id="guestName" autocomplete="name" placeholder="Seu nome" required />
+            </label>
+            <label for="guestPhone">WhatsApp
+              <input id="guestPhone" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" maxlength="15" required />
+            </label>
+            <label for="guestDate">Data disponível
+              <select id="guestDate" required><option value="">Selecione a data</option></select>
+            </label>
+            <label for="guestTime">Horário disponível
+              <select id="guestTime" required disabled><option value="">Escolha primeiro a data</option></select>
+            </label>
+          </div>
+          <button class="primary-button" id="guestSubmitButton" type="submit">Solicitar aula experimental</button>
+          <small class="privacy-note">O pedido será enviado ao professor, que confirmará a vaga pelo WhatsApp.</small>
+        </form>
+        <p id="guestStatus" role="status" aria-live="polite"></p>
+      </section>
+
       <footer class="fast-footer">Team Lucão Futevôlei · Agenda online</footer>
     </main>
-  <script src="public-theme.js?v=20260908-ui2"></script>
-  <script src="student-fast.js?v=20260908-ui2"></script>
+    <script src="public-theme.js?v=20260908-agenda3"></script>
+    <script src="student-fast.js?v=20260908-agenda3"></script>
   </body>
 </html>

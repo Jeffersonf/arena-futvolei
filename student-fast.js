@@ -1,20 +1,59 @@
 const phoneDigits = (value) => String(value || '').replace(/\D/g, '');
-const formatDate = (value) => { const [year, month, day] = String(value || '').slice(0, 10).split('-'); return `${day}/${month}/${year}`; };
-const escapeHTML = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
+const escapeHTML = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+}[char]));
+
 const form = document.getElementById('studentFastForm');
 const phoneInput = document.getElementById('studentFastPhone');
-const status = document.getElementById('studentFastStatus');
-const list = document.getElementById('studentFastList');
-const filters = document.getElementById('studentFastFilters');
+const searchButton = form.querySelector('button[type="submit"]');
+const studentStatus = document.getElementById('studentFastStatus');
+const dashboard = document.getElementById('studentDashboard');
+const greeting = document.getElementById('studentGreeting');
+const period = document.getElementById('studentPeriod');
+const plan = document.getElementById('studentPlan');
+const upcomingList = document.getElementById('studentUpcomingList');
+const availableList = document.getElementById('studentAvailableList');
+const calendar = document.getElementById('studentCalendar');
 const dateFilter = document.getElementById('studentFastDate');
 const timeFilter = document.getElementById('studentFastTime');
-const submitButton = form.querySelector('button[type="submit"]');
-let availableItems = [];
 
-function setStatus(message = '', state = '') {
-  status.textContent = message;
-  if (state) status.dataset.state = state;
-  else delete status.dataset.state;
+const guestModeButton = document.getElementById('guestModeButton');
+const studentPanel = document.getElementById('studentPanel');
+const guestPanel = document.getElementById('guestPanel');
+const heroEyebrow = document.getElementById('heroEyebrow');
+const heroTitle = document.getElementById('heroTitle');
+const heroDescription = document.getElementById('heroDescription');
+const guestForm = document.getElementById('guestBookingForm');
+const guestName = document.getElementById('guestName');
+const guestPhone = document.getElementById('guestPhone');
+const guestDate = document.getElementById('guestDate');
+const guestTime = document.getElementById('guestTime');
+const guestButton = document.getElementById('guestSubmitButton');
+const guestStatus = document.getElementById('guestStatus');
+
+let currentPhone = '';
+let agendaData = { items: [], available: [], requests: [] };
+let guestClasses = [];
+let guestClassesLoaded = false;
+
+function setStatus(target, message = '', state = '') {
+  target.textContent = message;
+  if (state) target.dataset.state = state;
+  else delete target.dataset.state;
+}
+
+function setButtonLoading(button, loading, text = 'Salvando...') {
+  if (loading) {
+    button.dataset.originalText = button.textContent;
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    button.textContent = text;
+    return;
+  }
+  button.disabled = false;
+  button.removeAttribute('aria-busy');
+  button.textContent = button.dataset.originalText || button.textContent;
+  delete button.dataset.originalText;
 }
 
 function formatPhone(value) {
@@ -25,113 +64,421 @@ function formatPhone(value) {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, split)}-${digits.slice(split)}`;
 }
 
-function dateLabel(value) {
-  return new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })
-    .format(new Date(String(value) + 'T12:00:00'));
+function parseDate(value) {
+  return new Date(`${String(value || '').slice(0, 10)}T12:00:00Z`);
 }
 
-function setupFilters(items) {
-  availableItems = items;
-  if (!items.length) { filters.hidden = true; return; }
+function formatDate(value) {
+  const date = parseDate(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit' }).format(date);
+}
+
+function formatDateLong(value) {
+  const date = parseDate(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).format(date);
+}
+
+function dateOptionLabel(value) {
+  const date = parseDate(value);
+  return new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }).format(date);
+}
+
+function openSlots(item) {
+  return Math.max(0, Number(item.capacidade || 8) - Number(item.inscritos || 0));
+}
+
+async function responseData(response, fallback) {
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.ok === false) throw new Error(data.error || fallback);
+  return data;
+}
+
+function responseMarkup(item) {
+  const answer = String(item.confirmado || '').toLowerCase();
+  const teacherApproved = item.confirmado_professor === 'sim';
+  if (answer === 'sim') {
+    return `
+      <div class="class-response">
+        <span class="response-pill yes">${teacherApproved ? 'Confirmada pelo professor' : 'Você informou que vai'}</span>
+        <button class="response-button secondary" type="button" data-confirm-class="${escapeHTML(item.id)}" data-confirm-value="remover">Remover confirmação</button>
+      </div>`;
+  }
+  if (answer === 'nao') {
+    return `
+      <div class="class-response">
+        <span class="response-pill no">Você informou que não vai</span>
+        <div class="class-actions">
+          <button class="response-button yes" type="button" data-confirm-class="${escapeHTML(item.id)}" data-confirm-value="sim">Agora eu vou</button>
+          <button class="response-button secondary" type="button" data-confirm-class="${escapeHTML(item.id)}" data-confirm-value="remover">Remover resposta</button>
+        </div>
+      </div>`;
+  }
+  return `
+    <div class="class-response">
+      <span class="response-question">Você vai participar?</span>
+      <div class="class-actions">
+        <button class="response-button yes" type="button" data-confirm-class="${escapeHTML(item.id)}" data-confirm-value="sim">Sim, eu vou</button>
+        <button class="response-button no" type="button" data-confirm-class="${escapeHTML(item.id)}" data-confirm-value="nao">Não vou</button>
+      </div>
+    </div>`;
+}
+
+function renderUpcoming() {
+  const items = agendaData.items || [];
+  upcomingList.innerHTML = items.length ? items.map((item) => `
+    <article class="student-class-card response-${escapeHTML(item.confirmado || 'pending')}" data-scheduled-date="${escapeHTML(item.data)}">
+      <div class="class-main">
+        <time datetime="${escapeHTML(item.data)}T${escapeHTML(item.horario)}">
+          <span>${escapeHTML(formatDate(item.data))}</span>
+          <strong>${escapeHTML(item.horario)}</strong>
+        </time>
+        <div class="class-copy">
+          <strong>${escapeHTML(item.turma || 'Turma')}</strong>
+          <small>${escapeHTML(formatDateLong(item.data))}${item.professor ? ` · ${escapeHTML(item.professor)}` : ''}</small>
+        </div>
+      </div>
+      ${responseMarkup(item)}
+    </article>
+  `).join('') : '<p class="empty-state">Não há aulas indicadas para você até a data de vencimento deste período.</p>';
+}
+
+function availableItems() {
+  const requestedIds = new Set((agendaData.requests || []).map((item) => String(item.aula_id)));
+  return (agendaData.available || []).filter((item) => !requestedIds.has(String(item.id)));
+}
+
+function setupAvailableFilters(preserveDate = false) {
+  const items = availableItems();
+  const previousDate = preserveDate ? dateFilter.value : '';
   const dates = [...new Set(items.map((item) => item.data))];
-  const times = [...new Set(items.map((item) => item.horario))].sort();
-  dateFilter.innerHTML = '<option value="">Todas as datas</option>' + dates.map((date) => '<option value="' + escapeHTML(date) + '">' + escapeHTML(dateLabel(date)) + '</option>').join('');
-  timeFilter.innerHTML = '<option value="">Todos os horários</option>' + times.map((time) => '<option value="' + escapeHTML(time) + '">' + escapeHTML(time) + '</option>').join('');
-  dateFilter.value = '';
-  timeFilter.value = '';
-  filters.hidden = false;
+  dateFilter.innerHTML = '<option value="">Todas as datas</option>' + dates.map((date) => (
+    `<option value="${escapeHTML(date)}">${escapeHTML(dateOptionLabel(date))}</option>`
+  )).join('');
+  dateFilter.value = dates.includes(previousDate) ? previousDate : '';
+  setupAvailableTimes();
 }
 
-function applyFilters() {
-  renderAvailable(availableItems.filter((item) =>
+function setupAvailableTimes() {
+  const previousTime = timeFilter.value;
+  const source = availableItems().filter((item) => !dateFilter.value || item.data === dateFilter.value);
+  const times = [...new Set(source.map((item) => item.horario))].sort();
+  timeFilter.innerHTML = '<option value="">Todos os horários</option>' + times.map((time) => (
+    `<option value="${escapeHTML(time)}">${escapeHTML(time)}</option>`
+  )).join('');
+  timeFilter.value = times.includes(previousTime) ? previousTime : '';
+  timeFilter.disabled = !source.length;
+  renderAvailable();
+}
+
+function renderAvailable() {
+  const items = availableItems().filter((item) => (
     (!dateFilter.value || item.data === dateFilter.value)
     && (!timeFilter.value || item.horario === timeFilter.value)
   ));
+  const requests = agendaData.requests || [];
+  const requestsMarkup = requests.length ? `
+    <div class="request-summary">
+      <strong>${requests.length === 1 ? '1 solicitação aguardando o professor' : `${requests.length} solicitações aguardando o professor`}</strong>
+      ${requests.map((item) => `<span>${escapeHTML(formatDate(item.data))} às ${escapeHTML(item.horario)} · ${escapeHTML(item.turma || 'Turma')}</span>`).join('')}
+    </div>` : '';
+  const listMarkup = items.length ? items.map((item) => `
+    <article class="available-class-card">
+      <div>
+        <strong>${escapeHTML(formatDateLong(item.data))} às ${escapeHTML(item.horario)}</strong>
+        <small>${escapeHTML(item.turma || 'Turma')} · ${openSlots(item)} ${openSlots(item) === 1 ? 'vaga disponível' : 'vagas disponíveis'}</small>
+      </div>
+      <button type="button" data-book-class="${escapeHTML(item.id)}">Solicitar vaga</button>
+    </article>
+  `).join('') : '<p class="empty-state">Nenhuma outra aula com vaga para os filtros escolhidos.</p>';
+  availableList.innerHTML = requestsMarkup + listMarkup;
 }
 
-function render(items) {
-  list.innerHTML = items.length ? items.map((item) => {
-    const approved = item.confirmado_professor === 'sim';
-    const indicated = item.confirmado === 'sim';
-    return `<article><div><strong>${formatDate(item.data)} às ${escapeHTML(item.horario)} - ${escapeHTML(item.turma || 'Turma')}</strong><br /><small>${escapeHTML(item.tipo || 'Regular')}</small></div>${approved ? '<span class="done">Confirmado pelo professor</span>' : `<button type="button" data-class-id="${escapeHTML(item.id)}" ${indicated ? 'disabled' : ''}>${indicated ? 'Indicação enviada' : 'Vou'}</button>`}</article>`;
-  }).join('') : '<p>Nenhuma aula futura encontrada para este WhatsApp.</p>';
+function monthKeys(start, end) {
+  const result = [];
+  const cursor = new Date(`${String(start).slice(0, 7)}-01T12:00:00Z`);
+  const finalKey = String(end).slice(0, 7);
+  while (cursor.toISOString().slice(0, 7) <= finalKey && result.length < 3) {
+    result.push(cursor.toISOString().slice(0, 7));
+    cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+  }
+  return result;
 }
 
-function renderAvailable(items) {
-  list.innerHTML = items.length ? `
-    <p>Você não tem aula agendada. Escolha um horário regular nesta semana:</p>
-    ${items.map((item) => `
-      <article>
-        <div><strong>${formatDate(item.data)} às ${escapeHTML(item.horario)}</strong><br /><small>${escapeHTML(item.turma || 'Turma')} · ${Math.max(0, Number(item.capacidade || 8) - Number(item.inscritos || 0))} vaga(s) livres</small></div>
-        <button type="button" data-book-class-id="${escapeHTML(item.id)}">Escolher horário</button>
-      </article>
-    `).join('')}
-  ` : '<p>Nenhum horário regular com vaga nesta semana.</p>';
+function renderCalendar() {
+  const scheduledDates = new Set((agendaData.items || []).map((item) => item.data));
+  const availableDates = new Set(availableItems().map((item) => item.data));
+  const requestedDates = new Set((agendaData.requests || []).map((item) => item.data));
+  const start = agendaData.period_start;
+  const end = agendaData.period_end;
+  if (!start || !end) {
+    calendar.innerHTML = '<p class="empty-state">Período indisponível.</p>';
+    return;
+  }
+
+  calendar.innerHTML = monthKeys(start, end).map((key) => {
+    const [year, month] = key.split('-').map(Number);
+    const firstDay = new Date(Date.UTC(year, month - 1, 1));
+    const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    const offset = (firstDay.getUTCDay() + 6) % 7;
+    const cells = Array.from({ length: offset }, () => '<span class="calendar-day blank" aria-hidden="true"></span>');
+    for (let day = 1; day <= lastDay; day += 1) {
+      const iso = `${key}-${String(day).padStart(2, '0')}`;
+      const scheduled = scheduledDates.has(iso);
+      const available = availableDates.has(iso);
+      const requested = requestedDates.has(iso);
+      const inPeriod = iso >= start && iso <= end;
+      const selected = dateFilter.value === iso;
+      const classes = ['calendar-day', scheduled ? 'has-scheduled' : '', available ? 'has-available' : '', requested ? 'has-request' : '', selected ? 'is-selected' : '', !inPeriod ? 'out-period' : ''].filter(Boolean).join(' ');
+      const labelParts = [formatDateLong(iso)];
+      if (scheduled) labelParts.push('sua aula');
+      if (available) labelParts.push('aula com vaga');
+      if (requested) labelParts.push('solicitação pendente');
+      cells.push((scheduled || available || requested) && inPeriod
+        ? `<button type="button" class="${classes}" data-calendar-date="${iso}" aria-label="${escapeHTML(labelParts.join(', '))}"><span>${day}</span><i></i></button>`
+        : `<span class="${classes}" aria-hidden="true"><span>${day}</span></span>`);
+    }
+    const title = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(firstDay);
+    return `
+      <section class="calendar-month">
+        <h3>${escapeHTML(title)}</h3>
+        <div class="calendar-weekdays" aria-hidden="true"><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span><span>Dom</span></div>
+        <div class="calendar-grid">${cells.join('')}</div>
+      </section>`;
+  }).join('');
+}
+
+function renderDashboard() {
+  const student = agendaData.student || {};
+  greeting.textContent = `Olá, ${student.nome || 'aluno'}!`;
+  period.textContent = `Aulas de hoje até ${formatDateLong(agendaData.period_end)}.`;
+  plan.textContent = student.plano_nome || 'Aluno ativo';
+  renderUpcoming();
+  setupAvailableFilters(true);
+  renderCalendar();
+  dashboard.hidden = false;
+}
+
+async function loadAgenda() {
+  const response = await fetch(`/api/public/student-classes?telefone=${encodeURIComponent(currentPhone)}`, { cache: 'no-store' });
+  agendaData = await responseData(response, 'Aluno não encontrado. Confira o WhatsApp informado.');
+  renderDashboard();
 }
 
 async function findClasses(event) {
   event.preventDefault();
-  const telefone = phoneInput.value.trim();
-  if (phoneDigits(telefone).length < 10) { setStatus('Informe um WhatsApp válido com DDD.', 'error'); phoneInput.focus(); return; }
-  submitButton.disabled = true;
-  submitButton.textContent = 'Buscando...';
-  setStatus('Buscando sua agenda...');
-  list.innerHTML = '';
-  list.setAttribute('aria-busy', 'true');
+  const phone = phoneInput.value.trim();
+  if (phoneDigits(phone).length < 10) {
+    setStatus(studentStatus, 'Informe um WhatsApp válido com DDD.', 'error');
+    phoneInput.focus();
+    return;
+  }
+  currentPhone = phone;
+  dashboard.hidden = true;
+  setButtonLoading(searchButton, true, 'Buscando...');
+  setStatus(studentStatus, 'Buscando sua agenda...');
   try {
-    const response = await fetch(`/api/public/student-classes?telefone=${encodeURIComponent(telefone)}`);
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || data.ok === false) throw new Error(data.error || 'Aluno não encontrado.');
-    phoneInput.dataset.phone = telefone;
-    const booked = data.items || [];
-    phoneInput.dataset.studentName = data.student?.nome || 'Aluno';
-    filters.hidden = true;
-    render(booked.length ? booked : []);
-    if (!booked.length) {
-      setupFilters(data.available || []);
-      renderAvailable(data.available || []);
-    }
-    setStatus(data.items?.length ? 'Toque em “Vou” para indicar presença.' : 'Escolha um horário regular com vaga nesta semana.');
-  } catch (error) { setStatus(error.message, 'error'); }
-  finally {
-    submitButton.disabled = false;
-    submitButton.textContent = 'Ver minhas aulas';
-    list.removeAttribute('aria-busy');
+    await loadAgenda();
+    const count = (agendaData.items || []).length;
+    setStatus(studentStatus, count
+      ? `${count} ${count === 1 ? 'aula encontrada' : 'aulas encontradas'} até o vencimento.`
+      : 'Agenda encontrada. Confira também as aulas disponíveis.', 'success');
+  } catch (error) {
+    setStatus(studentStatus, error.message, 'error');
+    dashboard.hidden = true;
+  } finally {
+    setButtonLoading(searchButton, false);
+  }
+}
+
+async function updateConfirmation(classId, value, button) {
+  setButtonLoading(button, true);
+  setStatus(studentStatus, value === 'remover' ? 'Removendo sua resposta...' : 'Salvando sua resposta...');
+  try {
+    const response = await fetch('/api/public/student-confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ telefone: currentPhone, aula_id: classId, confirmado: value })
+    });
+    const data = await responseData(response, 'Não foi possível salvar sua resposta.');
+    const item = (agendaData.items || []).find((entry) => String(entry.id) === String(classId));
+    if (item) Object.assign(item, data.item || {});
+    renderUpcoming();
+    renderCalendar();
+    setStatus(studentStatus, value === 'sim'
+      ? 'Presença informada. Agora é só aguardar a confirmação do professor.'
+      : value === 'nao'
+        ? 'Ausência informada ao professor.'
+        : 'Sua resposta foi removida.', 'success');
+  } catch (error) {
+    setButtonLoading(button, false);
+    setStatus(studentStatus, error.message, 'error');
   }
 }
 
 async function requestClass(classId, button) {
-  button.disabled = true; setStatus('Salvando solicitação...');
+  const classItem = availableItems().find((item) => String(item.id) === String(classId));
+  if (!classItem) return;
+  setButtonLoading(button, true, 'Solicitando...');
+  setStatus(studentStatus, 'Enviando sua solicitação...');
   try {
     const response = await fetch('/api/public/bookings', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome: phoneInput.dataset.studentName || 'Aluno', telefone: phoneInput.dataset.phone, aula_id: classId, observacao: 'Solicitação de horário regular pelo aluno.' })
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nome: agendaData.student?.nome || 'Aluno',
+        telefone: currentPhone,
+        aula_id: classId,
+        observacao: 'Solicitação de horário regular pelo aluno.'
+      })
     });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || data.ok === false) throw new Error(data.error || 'Não foi possível salvar.');
-    await findClasses({ preventDefault() {} });
-    setStatus('Solicitação salva. Aguarde a confirmação do professor.', 'success');
-  } catch (error) { button.disabled = false; setStatus(error.message, 'error'); }
+    const data = await responseData(response, 'Não foi possível enviar a solicitação.');
+    agendaData.requests = [...(agendaData.requests || []), {
+      ...data.item,
+      aula_id: classItem.id,
+      data: classItem.data,
+      horario: classItem.horario,
+      turma: classItem.turma,
+      tipo: classItem.tipo
+    }];
+    setupAvailableFilters(true);
+    renderCalendar();
+    setStatus(studentStatus, 'Solicitação enviada. O professor confirmará pelo WhatsApp.', 'success');
+  } catch (error) {
+    setButtonLoading(button, false);
+    setStatus(studentStatus, error.message, 'error');
+  }
 }
 
-async function indicate(classId, button) {
-  button.disabled = true; setStatus('Salvando indicação...');
+function selectCalendarDate(value) {
+  if (availableItems().some((item) => item.data === value)) {
+    dateFilter.value = value;
+    setupAvailableTimes();
+    renderCalendar();
+    document.getElementById('availableTitle').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  const scheduled = upcomingList.querySelector(`[data-scheduled-date="${CSS.escape(value)}"]`);
+  if (scheduled) {
+    scheduled.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    scheduled.classList.add('is-highlighted');
+    window.setTimeout(() => scheduled.classList.remove('is-highlighted'), 1300);
+  }
+}
+
+async function loadGuestClasses() {
+  setStatus(guestStatus, 'Carregando datas e horários disponíveis...');
+  guestDate.disabled = true;
   try {
-    const response = await fetch('/api/public/student-confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telefone: phoneInput.dataset.phone, aula_id: classId, confirmado: 'sim' }) });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || data.ok === false) throw new Error(data.error || 'Não foi possível salvar.');
-    await findClasses({ preventDefault() {} });
-    setStatus('Presença indicada. Aguarde a confirmação do professor.', 'success');
-  } catch (error) { button.disabled = false; setStatus(error.message, 'error'); }
+    const response = await fetch('/api/public/classes', { cache: 'no-store' });
+    const data = await responseData(response, 'Não foi possível carregar os horários.');
+    guestClasses = (data.items || []).filter((item) => openSlots(item) > 0);
+    setupGuestDates();
+    guestClassesLoaded = true;
+    setStatus(guestStatus, guestClasses.length ? 'Escolha uma data e um horário.' : 'Não há aulas com vaga neste momento.');
+  } catch (error) {
+    setStatus(guestStatus, error.message, 'error');
+  } finally {
+    guestDate.disabled = false;
+  }
+}
+
+function setupGuestDates() {
+  const dates = [...new Set(guestClasses.map((item) => item.data))];
+  guestDate.innerHTML = '<option value="">Selecione a data</option>' + dates.map((date) => (
+    `<option value="${escapeHTML(date)}">${escapeHTML(formatDateLong(date))}</option>`
+  )).join('');
+  setupGuestTimes();
+}
+
+function setupGuestTimes() {
+  const items = guestClasses.filter((item) => item.data === guestDate.value);
+  guestTime.innerHTML = guestDate.value
+    ? '<option value="">Selecione o horário</option>' + items.map((item) => (
+      `<option value="${escapeHTML(item.id)}">${escapeHTML(item.horario)} · ${escapeHTML(item.turma || 'Turma')} · ${openSlots(item)} ${openSlots(item) === 1 ? 'vaga' : 'vagas'}</option>`
+    )).join('')
+    : '<option value="">Escolha primeiro a data</option>';
+  guestTime.disabled = !guestDate.value || !items.length;
+}
+
+function switchMode(showGuest) {
+  studentPanel.hidden = showGuest;
+  guestPanel.hidden = !showGuest;
+  guestModeButton.textContent = showGuest ? 'Já sou aluno' : 'Não sou aluno';
+  guestModeButton.setAttribute('aria-expanded', String(showGuest));
+  heroEyebrow.textContent = showGuest ? 'primeira experiência' : 'acesso do aluno';
+  heroTitle.textContent = showGuest ? 'Conheça o Team Lucão' : 'Minha agenda';
+  heroDescription.textContent = showGuest
+    ? 'Escolha uma aula experimental e envie seu pedido em poucos segundos.'
+    : 'Veja suas próximas aulas e informe se você vai participar.';
+  if (showGuest) {
+    if (!guestClassesLoaded) loadGuestClasses();
+    window.setTimeout(() => guestName.focus(), 0);
+  } else {
+    window.setTimeout(() => phoneInput.focus(), 0);
+  }
+}
+
+async function submitGuestBooking(event) {
+  event.preventDefault();
+  const name = guestName.value.trim();
+  const phone = guestPhone.value.trim();
+  const classId = guestTime.value;
+  if (!name) {
+    setStatus(guestStatus, 'Informe seu nome.', 'error');
+    guestName.focus();
+    return;
+  }
+  if (phoneDigits(phone).length < 10) {
+    setStatus(guestStatus, 'Informe um WhatsApp válido com DDD.', 'error');
+    guestPhone.focus();
+    return;
+  }
+  if (!classId) {
+    setStatus(guestStatus, 'Escolha uma data e um horário disponível.', 'error');
+    return;
+  }
+  setButtonLoading(guestButton, true, 'Enviando pedido...');
+  setStatus(guestStatus, 'Enviando sua solicitação...');
+  try {
+    const response = await fetch('/api/public/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome: name, telefone: phone, aula_id: classId, observacao: 'Aula experimental solicitada.' })
+    });
+    await responseData(response, 'Não foi possível solicitar a aula experimental.');
+    guestClasses = guestClasses.filter((item) => String(item.id) !== String(classId));
+    guestDate.value = '';
+    setupGuestDates();
+    setStatus(guestStatus, 'Pedido enviado! O professor confirmará sua aula pelo WhatsApp.', 'success');
+  } catch (error) {
+    setStatus(guestStatus, error.message, 'error');
+  } finally {
+    setButtonLoading(guestButton, false);
+  }
 }
 
 form.addEventListener('submit', findClasses);
 phoneInput.addEventListener('input', () => { phoneInput.value = formatPhone(phoneInput.value); });
-dateFilter.addEventListener('change', applyFilters);
-timeFilter.addEventListener('change', applyFilters);
-list.addEventListener('click', (event) => {
-  const confirmButton = event.target.closest('[data-class-id]');
-  if (confirmButton) return indicate(confirmButton.dataset.classId, confirmButton);
-  const bookingButton = event.target.closest('[data-book-class-id]');
-  if (bookingButton) requestClass(bookingButton.dataset.bookClassId, bookingButton);
+guestPhone.addEventListener('input', () => { guestPhone.value = formatPhone(guestPhone.value); });
+dateFilter.addEventListener('change', () => { setupAvailableTimes(); renderCalendar(); });
+timeFilter.addEventListener('change', renderAvailable);
+guestDate.addEventListener('change', setupGuestTimes);
+guestModeButton.addEventListener('click', () => switchMode(guestPanel.hidden));
+guestForm.addEventListener('submit', submitGuestBooking);
+
+upcomingList.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-confirm-class]');
+  if (button) updateConfirmation(button.dataset.confirmClass, button.dataset.confirmValue, button);
+});
+
+availableList.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-book-class]');
+  if (button) requestClass(button.dataset.bookClass, button);
+});
+
+calendar.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-calendar-date]');
+  if (button) selectCalendarDate(button.dataset.calendarDate);
 });
