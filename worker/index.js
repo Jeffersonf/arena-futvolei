@@ -519,9 +519,9 @@ async function readBody(request) {
   try { return JSON.parse(text); } catch { throw new Error('JSON invalido'); }
 }
 
-function assetRequest(request) {
+function assetRequest(request, env) {
   const url = new URL(request.url);
-  const routes = { '/': '/index.html', '/aluno': '/aluno.html', '/autorizar': '/autorizar.html' };
+  const routes = env.PAGES_MODE === '1' ? {} : { '/': '/index.html', '/aluno': '/aluno.html', '/autorizar': '/autorizar.html' };
   if (routes[url.pathname]) url.pathname = routes[url.pathname];
   return new Request(url, request);
 }
@@ -533,6 +533,6 @@ export default {
     if (url.pathname.startsWith('/api/') || url.pathname === '/health') {
       try { return await apiHandler(request, env, await readBody(request)); } catch (error) { return errorResponse(error); }
     }
-    return env.ASSETS.fetch(assetRequest(request));
+    return env.ASSETS.fetch(assetRequest(request, env));
   }
 };

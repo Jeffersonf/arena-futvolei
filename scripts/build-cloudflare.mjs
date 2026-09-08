@@ -12,4 +12,9 @@ const files = [
 fs.mkdirSync(output, { recursive: true });
 for (const file of files) fs.copyFileSync(path.join(root, file), path.join(output, file));
 fs.cpSync(path.join(root, 'assets'), path.join(output, 'assets'), { recursive: true });
+fs.mkdirSync(path.join(output, 'aluno'), { recursive: true });
+fs.copyFileSync(path.join(root, 'aluno.html'), path.join(output, 'aluno', 'index.html'));
+fs.mkdirSync(path.join(output, 'autorizar'), { recursive: true });
+fs.copyFileSync(path.join(root, 'autorizar.html'), path.join(output, 'autorizar', 'index.html'));
+fs.copyFileSync(path.join(root, 'worker', 'index.js'), path.join(output, '_worker.js'));
 console.log(`Cloudflare assets ready: ${files.length} files`);
