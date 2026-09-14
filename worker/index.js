@@ -28,6 +28,35 @@ function errorResponse(error, fallback = 400) {
   return json({ ok: false, error: error?.message || String(error) }, error?.status || fallback);
 }
 
+function getWeekRange(dateIso = today()) {
+  const raw = String(dateIso || '').slice(0, 10) || today();
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+  const now = match
+    ? new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])))
+    : new Date();
+  const day = now.getUTCDay();
+  const diffToMon = day === 0 ? -6 : 1 - day;
+  now.setUTCDate(now.getUTCDate() + diffToMon);
+  const start = now.toISOString().slice(0, 10);
+  now.setUTCDate(now.getUTCDate() + 6);
+  const end = now.toISOString().slice(0, 10);
+  return { inicio: start, fim: end };
+}
+
+function getStudentWeeklyQuota(student, plan = null) {
+  if (plan && Number.isFinite(Number(plan.aulas_semana)) && Number(plan.aulas_semana) > 0) {
+    return Number(plan.aulas_semana);
+  }
+  const planName = String(student?.plano_nome || '').toLowerCase();
+  const match = planName.match(/(\d+)\s*x/);
+  if (match) {
+    const parsed = parseInt(match[1], 10);
+    if (parsed > 0) return parsed;
+  }
+  if (planName.includes('livre')) return 7;
+  return 2;
+}
+
 function today() {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit'
@@ -162,7 +191,7 @@ function normalizeStudent(body = {}) {
     mensalidade: money(body.mensalidade ?? body.fee),
     dia_vencimento: int(body.dia_vencimento || body.vencimento_dia || body.dueDay, 10, 1, 31),
     status: String(body.status || 'Ativo'),
-    nivel: String(body.nivel || body.level || 'Iniciante'),
+    nivel: String(body.nivel ?? body.level ?? '').trim(),
     dia_fixo: primarySchedule.dia || '',
     horario_fixo: primarySchedule.horario || '',
     turma_fixa: primarySchedule.turma || '',
@@ -280,6 +309,39 @@ async function studentClasses(db, request) {
   if (!student) throw new Error('Aluno nao encontrado para esse WhatsApp');
   const start = today();
   const periodEnd = studentPeriodEnd(student, start);
+
+  const week = getWeekRange(url.searchParams.get('semana') || url.searchParams.get('date') || start);
+  const plan = student.plano_id ? await first(db, 'SELECT * FROM planos WHERE id=?', [student.plano_id]) : null;
+  const weeklyQuota = getStudentWeeklyQuota(student, plan);
+
+  const weeklyConfirmedCount = (await scalar(db, `
+    SELECT COUNT(*) AS total
+    FROM aula_alunos aa
+    JOIN aulas a ON a.id=aa.aula_id
+    WHERE aa.aluno_id=? AND aa.confirmado='sim' AND a.status != 'Cancelada'
+      AND a.data BETWEEN ? AND ?
+  `, [student.id, week.inicio, week.fim])) || 0;
+
+  const rawWeekly = await all(db, `
+    SELECT a.id, a.data, a.horario, a.turma, a.tipo, a.professor, a.capacidade, a.status,
+      (SELECT COUNT(*) FROM aula_alunos aa WHERE aa.aula_id=a.id) AS inscritos,
+      (SELECT aa.confirmado FROM aula_alunos aa WHERE aa.aula_id=a.id AND aa.aluno_id=?) AS confirmado,
+      (SELECT aa.confirmado_em FROM aula_alunos aa WHERE aa.aula_id=a.id AND aa.aluno_id=?) AS confirmado_em,
+      (SELECT aa.confirmado_professor FROM aula_alunos aa WHERE aa.aula_id=a.id AND aa.aluno_id=?) AS confirmado_professor,
+      (SELECT aa.confirmado_professor_em FROM aula_alunos aa WHERE aa.aula_id=a.id AND aa.aluno_id=?) AS confirmado_professor_em,
+      (SELECT aa.presente FROM aula_alunos aa WHERE aa.aula_id=a.id AND aa.aluno_id=?) AS presente,
+      EXISTS(SELECT 1 FROM aula_alunos aa WHERE aa.aula_id=a.id AND aa.aluno_id=?) AS vinculado
+    FROM aulas a
+    WHERE a.status != 'Cancelada' AND a.data BETWEEN ? AND ?
+    ORDER BY a.data, a.horario, a.turma
+  `, [student.id, student.id, student.id, student.id, student.id, student.id, week.inicio, week.fim]);
+
+  const weeklyClasses = rawWeekly.map((cls) => ({
+    ...cls,
+    vagas_disponiveis: Math.max(0, Number(cls.capacidade || 8) - Number(cls.inscritos || 0)),
+    lotada: Number(cls.inscritos || 0) >= Number(cls.capacidade || 8) && !cls.vinculado
+  }));
+
   const items = await all(db, `
     SELECT a.id, a.data, a.horario, a.turma, a.tipo, a.professor, a.capacidade, a.status,
       aa.confirmado, aa.confirmado_em, aa.confirmado_professor, aa.confirmado_professor_em, aa.presente,
@@ -288,6 +350,7 @@ async function studentClasses(db, request) {
     WHERE aa.aluno_id=? AND a.status != 'Cancelada' AND a.data BETWEEN ? AND ?
     ORDER BY a.data, a.horario LIMIT 60
   `, [student.id, start, periodEnd]);
+
   const available = await all(db, `
     SELECT a.id, a.data, a.horario, a.turma, a.tipo, a.professor, a.capacidade, a.status,
       (SELECT COUNT(*) FROM aula_alunos WHERE aula_id=a.id) AS inscritos
@@ -299,6 +362,7 @@ async function studentClasses(db, request) {
       AND NOT EXISTS (SELECT 1 FROM aula_alunos linked WHERE linked.aula_id=a.id AND linked.aluno_id=?)
     ORDER BY a.data, a.horario, a.turma LIMIT 60
   `, [start, periodEnd, student.id]);
+
   const phone = digits(informedPhone);
   const requests = phone.length >= 8 ? await all(db, `
     SELECT ag.id, ag.aula_id, ag.status, ag.criado_em, a.data, a.horario, a.turma, a.tipo
@@ -308,17 +372,26 @@ async function studentClasses(db, request) {
       AND a.data BETWEEN ? AND ?
     ORDER BY a.data, a.horario
   `, [`%${phone.slice(-8)}`, start, periodEnd]) : [];
+
   return {
     ok: true,
     student: {
       id: student.id,
       nome: student.nome,
+      plano_id: student.plano_id,
       plano_nome: student.plano_nome,
       dia_vencimento: student.dia_vencimento,
       pago_ate: student.pago_ate
     },
     period_start: start,
     period_end: periodEnd,
+    semana: {
+      inicio: week.inicio,
+      fim: week.fim,
+      limite: weeklyQuota,
+      confirmadas: weeklyConfirmedCount
+    },
+    aulas_semana: weeklyClasses,
     items,
     available,
     requests
@@ -415,14 +488,16 @@ async function apiHandler(request, env, body) {
     return json({ ok: true, mode: 'server' });
   }
 
+  const expectedPin = String(env.ADMIN_PIN || '1209');
+
   if (url.pathname === '/api/login' && method === 'POST') {
-    if (String(body.pin || '') !== String(env.ADMIN_PIN || '')) return json({ ok: false, error: 'PIN invalido' }, 401);
+    if (String(body.pin || '') !== expectedPin) return json({ ok: false, error: 'PIN invalido' }, 401);
     return json({ ok: true });
   }
 
   const isPublic = url.pathname.startsWith('/api/public/');
   if (!isPublic && url.pathname !== '/api/login') {
-    if (String(request.headers.get('x-admin-pin') || '') !== String(env.ADMIN_PIN || '')) return json({ ok: false, error: 'PIN invalido' }, 401);
+    if (String(request.headers.get('x-admin-pin') || '') !== expectedPin) return json({ ok: false, error: 'PIN invalido' }, 401);
   }
 
   if (url.pathname === '/api/public/classes' && method === 'GET') return json({ ok: true, items: await publicClasses(db) });
@@ -452,18 +527,66 @@ async function apiHandler(request, env, body) {
     const student = await findStudent(db, body.telefone || body.phone);
     if (!student) throw new Error('Aluno nao encontrado para esse WhatsApp');
     const classId = Number(body.aula_id || body.class_id || 0);
+    const classItem = await first(db, 'SELECT * FROM aulas WHERE id=?', [classId]);
+    if (!classItem || classItem.status === 'Cancelada' || String(classItem.data || '') < today()) {
+      throw new Error('Essa aula nao esta mais disponivel para confirmacao');
+    }
+
     const responseValue = String(body.confirmado ?? body.confirmation ?? '').toLowerCase();
     const removeResponse = ['remover', 'remove', 'limpar'].includes(responseValue);
     const value = removeResponse ? '' : responseValue;
     if (!removeResponse && !['sim', 'nao'].includes(value)) throw new Error('Resposta invalida');
+
     const link = await first(db, 'SELECT * FROM aula_alunos WHERE aula_id=? AND aluno_id=?', [classId, student.id]);
-    const classItem = await first(db, 'SELECT * FROM aulas WHERE id=?', [classId]);
-    if (!link || !classItem) throw new Error('Essa aula nao esta vinculada a este aluno');
-    if (classItem.status === 'Cancelada' || classItem.data < today()) throw new Error('Essa aula nao esta mais disponivel para confirmacao');
-    await run(db, 'UPDATE aula_alunos SET confirmado=?, confirmado_em=?, confirmado_professor=?, confirmado_professor_em=? WHERE aula_id=? AND aluno_id=?', [value, value ? new Date().toISOString() : '', value === 'sim' ? link.confirmado_professor || '' : '', value === 'sim' ? link.confirmado_professor_em || '' : '', classId, student.id]);
+
+    if (value === 'sim') {
+      const alreadyConfirmedThis = link && link.confirmado === 'sim';
+      if (!alreadyConfirmedThis) {
+        const enrolled = await scalar(db, 'SELECT COUNT(*) AS total FROM aula_alunos WHERE aula_id=?', [classId]);
+        if (!link && enrolled >= Number(classItem.capacidade || 8)) {
+          throw new Error('Essa aula ja atingiu a capacidade maxima de alunos');
+        }
+
+        const classWeek = getWeekRange(classItem.data);
+        const plan = student.plano_id ? await first(db, 'SELECT * FROM planos WHERE id=?', [student.plano_id]) : null;
+        const quota = getStudentWeeklyQuota(student, plan);
+
+        const currentConfirmedInWeek = (await scalar(db, `
+          SELECT COUNT(*) AS total
+          FROM aula_alunos aa
+          JOIN aulas a ON a.id=aa.aula_id
+          WHERE aa.aluno_id=? AND aa.confirmado='sim' AND a.status != 'Cancelada'
+            AND a.data BETWEEN ? AND ?
+            AND a.id != ?
+        `, [student.id, classWeek.inicio, classWeek.fim, classId])) || 0;
+
+        if (currentConfirmedInWeek >= quota) {
+          throw new Error(`Limite do plano atingido: seu plano (${student.plano_nome || 'ativo'}) permite ${quota} ${quota === 1 ? 'aula' : 'aulas'} por semana. Voce ja confirmou ${currentConfirmedInWeek} aula(s) nesta semana. Desmarque uma aula para escolher este horario.`);
+        }
+      }
+    }
+
+    const now = new Date().toISOString();
+    if (!link) {
+      await run(db, `
+        INSERT INTO aula_alunos (aula_id, aluno_id, confirmado, confirmado_em, confirmado_professor, confirmado_professor_em, presente)
+        VALUES (?, ?, ?, ?, '', '', 0)
+      `, [classId, student.id, value, value ? now : '']);
+    } else {
+      await run(db, 'UPDATE aula_alunos SET confirmado=?, confirmado_em=?, confirmado_professor=?, confirmado_professor_em=? WHERE aula_id=? AND aluno_id=?', [
+        value,
+        value ? now : '',
+        value === 'sim' ? (link.confirmado_professor || '') : '',
+        value === 'sim' ? (link.confirmado_professor_em || '') : '',
+        classId,
+        student.id
+      ]);
+    }
+
     await logAction(db, removeResponse ? 'Resposta do aluno removida' : 'Confirmacao aluno', removeResponse
       ? `${student.nome} removeu a resposta da aula ${classItem.horario} - ${classItem.turma || 'Turma'} em ${classItem.data}.`
       : `${student.nome} respondeu ${value} na aula ${classItem.horario} - ${classItem.turma || 'Turma'} em ${classItem.data}.`, 'Aluno');
+
     return json({ ok: true, item: await first(db, 'SELECT * FROM aula_alunos WHERE aula_id=? AND aluno_id=?', [classId, student.id]) });
   }
   if (url.pathname === '/api/public/waitlist' && method === 'POST') {

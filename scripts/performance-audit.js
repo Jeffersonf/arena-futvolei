@@ -14,7 +14,7 @@ async function checkPage(page, name, loginRequired = false) {
   await page.waitForTimeout(350);
   if (loginRequired) {
     if (await page.locator('#bookingWall.open').count()) await page.locator('#adminAccessBtn').click();
-    await page.locator('#loginPin').fill('1234');
+    await page.locator('#loginPin').fill('1209');
     await page.getByRole('button', { name: 'Entrar' }).click();
     await page.waitForFunction(() => !document.getElementById('loginWall').classList.contains('open'));
     await page.waitForTimeout(350);

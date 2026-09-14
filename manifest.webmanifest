@@ -1,7 +1,7 @@
 {
-  "name": "Team Lucao Futevolei",
-  "short_name": "TLF Gestao",
-  "description": "Painel de alunos, aulas, presencas e mensalidades do Team Lucao Futevolei.",
+  "name": "Team Lucão",
+  "short_name": "Team Lucão",
+  "description": "Painel de alunos, aulas, presencas e mensalidades do Team Lucão.",
   "id": "/arena-futvolei/",
   "start_url": "./?source=pwa",
   "scope": "./",

@@ -6,7 +6,7 @@ const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined;
 async function login(page) {
   if (!(await page.locator('#loginWall.open').count())) return;
   if (await page.locator('#bookingWall.open').count()) await page.locator('#adminAccessBtn').click();
-  await page.locator('#loginPin').fill('1234');
+  await page.locator('#loginPin').fill('1209');
   await page.getByRole('button', { name: 'Entrar' }).click();
   await page.waitForFunction(() => !document.getElementById('loginWall').classList.contains('open'));
 }

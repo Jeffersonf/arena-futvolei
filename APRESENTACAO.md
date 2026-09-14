@@ -10,7 +10,7 @@ Um painel simples para tirar a escola do improviso: menos planilha solta, menos 
 
 ## Demonstracao em 5 minutos
 
-1. Entrar pelo iPhone ou notebook com o PIN `1234`.
+1. Entrar pelo iPhone ou notebook com o PIN `1209`.
 2. Abrir o Dashboard e mostrar aulas de hoje, alunos ativos, pendencias e acoes rapidas.
 3. Ir em Aulas, abrir Hoje, mostrar horarios, previstos, avulsos, presencas e botoes de Confirmar/Finalizar/Cancelar.
 4. Clicar no nome de um aluno e mostrar o relatorio individual: plano, presencas, frequencia da semana, proximas aulas e pagamentos.

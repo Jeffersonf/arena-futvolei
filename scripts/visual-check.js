@@ -53,7 +53,7 @@ const selectedCases = process.env.VISUAL_CASE
 async function login(page) {
   const bookingOpen = await page.locator('#bookingWall.open').count();
   if (bookingOpen) await page.locator('#adminAccessBtn').click();
-  await page.locator('#loginPin').fill('1234');
+  await page.locator('#loginPin').fill('1209');
   await page.getByRole('button', { name: 'Entrar' }).click();
   await page.waitForFunction(() => !document.getElementById('loginWall').classList.contains('open'), null, { timeout: 5000 });
 }

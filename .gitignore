@@ -9,5 +9,6 @@ arena.db-shm
 arena.db-wal
 backups/
 tmp-visual-check/
+tmp-*.db*
 .DS_Store
 Thumbs.db

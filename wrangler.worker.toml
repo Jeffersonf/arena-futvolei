@@ -1,4 +1,4 @@
-name = "team-lucao-futevolei"
+name = "teamlucao"
 main = "worker/index.js"
 compatibility_date = "2026-09-03"
 
@@ -13,4 +13,4 @@ database_id = "c05b81fb-a788-4c96-8b8b-233428e8f844"
 migrations_dir = "migrations"
 
 [vars]
-# Configure ADMIN_PIN as a secret with: npx wrangler secret put ADMIN_PIN
+# ADMIN_PIN configured as remote secret via: npx wrangler secret put ADMIN_PIN

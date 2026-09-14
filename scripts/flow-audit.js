@@ -5,7 +5,7 @@ const path = require('node:path');
 const ROOT = path.resolve(__dirname, '..');
 const PORT = Number(process.env.FLOW_AUDIT_PORT || 4322);
 const DB_PATH = path.join(ROOT, 'tmp-flow-audit.db');
-const PIN = process.env.ADMIN_PIN || '1234';
+const PIN = process.env.ADMIN_PIN || '1209';
 const BASE = `http://127.0.0.1:${PORT}`;
 const todayIso = () => new Intl.DateTimeFormat('en-CA', {
   timeZone: 'America/Sao_Paulo',

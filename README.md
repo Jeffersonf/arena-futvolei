@@ -82,7 +82,7 @@ npm start
 PIN padrao do piloto:
 
 ```text
-1234
+1209
 ```
 
 Para trocar o PIN no servidor:

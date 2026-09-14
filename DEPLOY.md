@@ -8,7 +8,7 @@ Rodar o sistema em um link acessivel pelo iPhone, com banco persistente e backup
 
 - Node 22+ com suporte a `node:sqlite`.
 - Disco persistente para o arquivo `arena.db`.
-- Variavel `ADMIN_PIN` diferente de `1234`.
+- Variavel `ADMIN_PIN` diferente de `1209`.
 
 ## Variaveis
 

@@ -5,7 +5,7 @@ Use este checklist quando a rodada local estiver aprovada e for hora de publicar
 ## Estado local esperado
 
 - Live local: `http://127.0.0.1:4280/`
-- PIN da demo: `1234`
+- PIN da demo: `1209`
 - Versao atual dos assets: `20260624-clean1`
 - Service worker atual: `team-lucao-v119`
 

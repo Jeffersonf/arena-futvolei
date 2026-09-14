@@ -4,7 +4,7 @@
 
 - URL: `https://jeffersonf.github.io/arena-futvolei/`
 - Live local para acompanhar antes de publicar: `http://127.0.0.1:4280/`
-- PIN: `1234`
+- PIN: `1209`
 - Melhor teste rapido: abrir no iPhone, entrar, tocar em `Dados` e carregar a demo ficticia se os dados estiverem vazios.
 
 ## Antes de mostrar

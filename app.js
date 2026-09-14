@@ -13,7 +13,7 @@ const STANDARD_CLASS_SLOTS = Object.freeze([
   { day: 5, label: 'Sexta', times: ['18:30', '19:30', '20:30'] },
   { day: 6, label: 'Sabado', times: ['09:00', '10:00', '14:00', '15:00'] }
 ]);
-const MOBILE_MORE_PAGES = ['actions', 'waitlist', 'plans', 'reports', 'settings'];
+const MOBILE_MORE_PAGES = ['bookings', 'actions', 'waitlist', 'plans', 'reports', 'settings'];
 const PAGE_TITLES = {
   dashboard: ['operação de hoje', 'Painel do dia'],
   actions: ['histórico', 'Central de ações'],
@@ -28,8 +28,8 @@ const PAGE_TITLES = {
   settings: ['administração', 'Configuração']
 };
 const DEFAULT_APP_CONFIG = Object.freeze({
-  brandName: 'Team Lucão Futevôlei',
-  brandShort: 'Team Lucao',
+  brandName: 'Team Lucão',
+  brandShort: 'Team Lucão',
   brandSubtitle: 'gestão da escola',
   dashboardEyebrow: 'operação de hoje',
   dashboardTitle: 'Painel do dia',
@@ -44,7 +44,7 @@ const DEFAULT_APP_CONFIG = Object.freeze({
   onlineModeLabel: 'Servidor online',
   localModeLabel: 'Modo local',
   publicEyebrow: 'agenda da escola',
-  publicTitle: 'Team Lucao Futevolei',
+  publicTitle: 'Team Lucão',
   publicDescription: 'Aluno? Informe seu WhatsApp para confirmar presença. Ainda não é aluno? Solicite uma aula experimental.',
   loginEyebrow: 'acesso restrito',
   loginDescription: 'Painel rápido para organizar alunos, aulas e cobranças.',
@@ -54,8 +54,8 @@ const DEFAULT_APP_CONFIG = Object.freeze({
   localNoticeText: 'Dados neste navegador. Para uso diário no iPhone, publique o servidor.'
 });
 const THEME_OPTIONS = Object.freeze([
-  { id: 'light', label: 'Modo claro', description: 'Fundo leve e leitura nítida durante o dia.', swatches: ['#2563eb', '#ffffff', '#eaf0f8'] },
-  { id: 'dark', label: 'Modo escuro', description: 'Menos brilho e contraste confortável à noite.', swatches: ['#60a5fa', '#111827', '#273449'] }
+  { id: 'light', label: 'Modo claro', description: 'Fundo leve e leitura nítida durante o dia.', swatches: ['#e11d48', '#ffffff', '#f8fafc'] },
+  { id: 'dark', label: 'Modo escuro', description: 'Menos brilho e contraste confortável à noite.', swatches: ['#e11d48', '#ffffff', '#0d1017'] }
 ]);
 
 function loadAppConfig() {
@@ -426,7 +426,7 @@ async function unlockApp(pin) {
   const hasServer = await detectServer();
   if (hasServer) {
     await api('/api/login', { method: 'POST', body: JSON.stringify({ pin: cleanPin }), headers: { 'X-Admin-Pin': cleanPin } });
-  } else if (cleanPin !== '1234') {
+  } else if (cleanPin !== '1209') {
     throw new Error('PIN invalido');
   }
   localStorage.setItem(PIN_KEY, cleanPin);
@@ -469,6 +469,7 @@ async function loadData({ serverKnown = false } = {}) {
     if (modeStatus) modeStatus.textContent = appConfig.localModeLabel;
     updateSystemNotice();
     restorePage();
+  initSetupGuideCard();
     return;
   }
   const modeStatus = document.getElementById('modeStatus');
@@ -1584,7 +1585,7 @@ function renderClassesTodayPlanner() {
           </div>
           <div class="class-main">
             <strong>${escapeHTML(item.turma || 'Turma')}</strong>
-            <span>${escapeHTML(item.professor || 'Professor nao informado')}</span>
+            <span>${escapeHTML(item.professor || 'Professor não informado')}</span>
             <div class="pill-row">
               <span class="pill ${operationTone}">${escapeHTML(operationLabel)}</span>
               <span class="pill">${enrolled.length}/${capacity} previstos</span>
@@ -1790,7 +1791,7 @@ function renderWaitlist() {
         ${item.observacao ? `<p class="meta">${escapeHTML(item.observacao)}</p>` : ''}
       </div>
       <div class="actions">
-        ${item.telefone ? `<a class="mini-btn" href="${whatsappUrl(item.telefone, `Oi ${item.nome}, tudo bem? Aqui é do Team Lucão Futevôlei. Ainda tem interesse em começar as aulas?`)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+        ${item.telefone ? `<a class="mini-btn" href="${whatsappUrl(item.telefone, `Oi ${item.nome}, tudo bem? Aqui é do Team Lucão. Ainda tem interesse em começar as aulas?`)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
         <button class="mini-btn" data-wait-status="${item.id}:Contatado">Contatado</button>
         <button class="mini-btn" data-wait-status="${item.id}:Experimental marcado">Experimental</button>
         <button class="mini-btn" data-edit-wait="${item.id}">Editar</button>
@@ -1906,7 +1907,7 @@ function renderReports() {
 }
 
 function studentCard(student) {
-  const message = `Oi ${student.nome}, tudo bem? Aqui e do Team Lucao Futevolei.`;
+  const message = `Oi ${student.nome}, tudo bem? Aqui é do Team Lucão.`;
   const weekly = weeklyAttendanceCount(student.id);
   const target = planWeeklyTarget(student);
   const paid = isPaid(student);
@@ -1919,7 +1920,7 @@ function studentCard(student) {
       </div>
       <div class="student-plan">
         <strong>${escapeHTML(student.plano_nome || 'Sem plano')}</strong>
-        <p class="meta">${money.format(Number(student.mensalidade || 0))}/mes - ${escapeHTML(student.nivel || 'Iniciante')}</p>
+        <p class="meta">${money.format(Number(student.mensalidade || 0))}/mês - ${escapeHTML(student.nivel || 'Iniciante')}</p>
         <span class="pill ${student.status === 'Ativo' ? 'ok' : student.status === 'Experimental' ? 'warn' : ''}">${escapeHTML(student.status || 'Ativo')}</span>
       </div>
       <div class="student-frequency">
@@ -1928,12 +1929,12 @@ function studentCard(student) {
       </div>
       <div class="student-payment">
         <span class="pill ${paid ? 'ok' : 'bad'}">${paid ? 'em dia' : 'pendente'}</span>
-        <p class="meta">${paid ? `pago ate ${formatDate(student.pago_ate)}` : 'sem registro do mes'}</p>
+        <p class="meta">${paid ? `pago até ${formatDate(student.pago_ate)}` : 'sem registro do mes'}</p>
       </div>
       <div class="actions student-actions">
         ${student.telefone ? `<a class="mini-btn" href="${whatsappUrl(student.telefone, message)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
         <button class="mini-btn" data-edit-student="${student.id}">Editar</button>
-        <button class="mini-btn" data-pay="${student.id}">${paid ? 'Nao pago' : 'Pago'}</button>
+        <button class="mini-btn" data-pay="${student.id}">${paid ? 'Não pago' : 'Pago'}</button>
       </div>
     </article>
   `;
@@ -1948,7 +1949,7 @@ function classRow(item) {
   return `
     <article class="row-card class-row class-${cssToken(item.status || 'Marcada')} type-${cssToken(classType(item))}">
       <div>
-        <h3>${formatDate(item.data)} as ${item.horario} - ${escapeHTML(item.turma || 'Turma')}</h3>
+        <h3>${formatDate(item.data)} às ${item.horario} - ${escapeHTML(item.turma || 'Turma')}</h3>
         <p class="meta">${escapeHTML(item.professor || 'Professor nao informado')} - ${enrolled.length}/${item.capacidade || 8} aluno(s) previstos</p>
         <div class="pill-row">
           <span class="pill ${operationTone}">${escapeHTML(operationLabel)}</span>
@@ -2155,7 +2156,7 @@ function openStudent(id = '') {
   renderPlanOptions(student.plano_id || '');
   document.getElementById('studentFee').value = student.mensalidade || '';
   document.getElementById('studentDueDay').value = student.dia_vencimento || student.vencimento_dia || 10;
-  document.getElementById('studentLevel').value = student.nivel || 'Iniciante';
+  document.getElementById('studentLevel').value = student.nivel || '';
   document.getElementById('studentStatus').value = student.status || 'Ativo';
   document.getElementById('studentNote').value = student.observacao || '';
   renderStudentFixedScheduleRows(fixedSchedules(student));
@@ -2196,7 +2197,7 @@ function openStudentReport(id) {
         </div>
       </div>
       <div class="actions">
-        ${student.telefone ? `<a class="mini-btn" href="${whatsappUrl(student.telefone, `Oi ${student.nome}, tudo bem? Aqui e do Team Lucao Futevolei.`)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+        ${student.telefone ? `<a class="mini-btn" href="${whatsappUrl(student.telefone, `Oi ${student.nome}, tudo bem? Aqui e do Team Lucão.`)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
         <button class="mini-btn" data-sync-student="${student.id}">Agenda fixa</button>
         <button class="mini-btn" data-edit-student="${student.id}">Editar</button>
         <button class="mini-btn" data-pay="${student.id}">${paid ? 'Nao pago' : 'Pago'}</button>
@@ -2443,7 +2444,7 @@ function studentChargeText(student, month = selectedPaymentMonth()) {
   const urgency = paymentUrgency(student, month);
   const due = dueDateForMonth(student, month);
   const status = urgency.days > 0 ? `esta em aberto desde ${formatDate(due)}` : urgency.days === 0 ? 'vence hoje' : `vence em ${formatDate(due)}`;
-  return `Oi ${student.nome}, tudo bem? Passando para lembrar da mensalidade do Team Lucao Futevolei referente a ${month}, no valor de ${money.format(Number(student.mensalidade || 0))}. Ela ${status}.`;
+  return `Oi ${student.nome}, tudo bem? Passando para lembrar da mensalidade do Team Lucão referente a ${month}, no valor de ${money.format(Number(student.mensalidade || 0))}. Ela ${status}.`;
 }
 
 function sortedPaymentStudents(month = selectedPaymentMonth()) {
@@ -2514,7 +2515,7 @@ async function copyStudentCharge(studentId) {
 function classShareText(item) {
   const enrolled = classStudents(item);
   const names = enrolled.length ? enrolled.map((student, index) => `${index + 1}. ${student.nome}`).join('\n') : 'Sem alunos previstos.';
-  return `Aula Team Lucao Futevolei\n${formatDate(item.data)} às ${item.horario} - ${item.turma || 'Turma'} (${classType(item)})\nProfessor: ${item.professor || 'não informado'}\n\nPrevistos:\n${names}`;
+  return `Aula Team Lucão\n${formatDate(item.data)} às ${item.horario} - ${item.turma || 'Turma'} (${classType(item)})\nProfessor: ${item.professor || 'não informado'}\n\nPrevistos:\n${names}`;
 }
 
 function classGroupMessageText(item, template = 'confirm') {
@@ -2578,7 +2579,7 @@ function classRosterText(item) {
   });
   const extraLines = extras.map((extra, index) => `${extraType(extra)} ${index + 1}: ${extra.nome || extra}`);
   return [
-    'Lista da aula - Team Lucao Futevolei',
+    'Lista da aula - Team Lucão',
     `${formatDate(item.data)} as ${item.horario} - ${item.turma || 'Turma'} (${classType(item)})`,
     `Professor: ${item.professor || 'nao informado'}`,
     '',
@@ -2604,7 +2605,7 @@ function attendanceSummaryText(item) {
   const declined = enrolled.filter((student) => (student.confirmado || student.confirmacao) === 'nao');
   const extras = classExtras(item);
   return [
-    'Resumo de presenca - Team Lucao Futevolei',
+    'Resumo de presenca - Team Lucão',
     `${formatDate(item.data)} as ${item.horario} - ${item.turma || 'Turma'} (${classType(item)})`,
     '',
     `Confirmaram que vao (${confirmed.length}):`,
@@ -2760,7 +2761,7 @@ function toggleClassStudent(studentId, checked) {
 
 function bookingReplyText(booking, item) {
   const classText = item ? `${formatDate(item.data)} as ${item.horario}` : 'a aula solicitada';
-  return `Oi ${booking.nome}, tudo bem? Aqui e do Team Lucao Futevolei. Recebi seu pedido para ${classText} e vou confirmar por aqui.`;
+  return `Oi ${booking.nome}, tudo bem? Aqui e do Team Lucão. Recebi seu pedido para ${classText} e vou confirmar por aqui.`;
 }
 
 function publicClassLabel(item) {
@@ -2855,7 +2856,7 @@ async function renderPublicBooking() {
     ? classes.map((item) => {
       const available = Number(item.inscritos ?? classStudentIds(item).length) < Number(item.capacidade || 8);
       const waiting = Number(item.espera || 0);
-      return `<option value="${escapeHTML(item.id)}" data-full="${available ? '0' : '1'}">${escapeHTML(publicClassLabel(item))}${available ? '' : ` - lotada; ${waiting} na espera`}</option>`;
+      return `<option value="${escapeHTML(item.id)}" ${available ? '' : 'disabled style="color: var(--muted);"'} data-full="${available ? '0' : '1'}">${escapeHTML(publicClassLabel(item))}${available ? ` (${capacity - used} vagas)` : ` - lotada (indisponível)`}</option>`;
     }).join('')
     : '<option value="">Sem horário disponível</option>';
   list.innerHTML = classes.length ? classes.map((item) => {
@@ -2864,7 +2865,7 @@ async function renderPublicBooking() {
     const available = Math.max(0, capacity - used);
     const waiting = Number(item.espera || 0);
     return `
-      <button class="booking-class-card ${available ? '' : 'is-full'}" type="button" aria-label="${escapeHTML(publicClassLabel(item))}" data-booking-class="${escapeHTML(item.id)}">
+      <button class="booking-class-card ${available ? '' : 'is-full'}" type="button" ${available ? '' : 'disabled'} aria-label="${escapeHTML(publicClassLabel(item))}" data-booking-class="${escapeHTML(item.id)}">
         <strong>${formatDate(item.data)} ${escapeHTML(item.horario)}</strong>
         <span>${escapeHTML(item.turma || 'Turma')} - ${escapeHTML(item.tipo || 'Regular')}</span>
         <small>${available ? `${available} vaga(s) livres` : `lotada - ${waiting} na espera; toque para entrar`}</small>
@@ -3537,7 +3538,7 @@ function openAttendance(classId) {
         <div class="pill-row">
           <span class="pill ${confirmClass}">${confirmText}</span>
           ${teacherConfirmed ? '<span class="pill ok">professor confirmou</span>' : student.confirmado === 'sim' ? `<button class="pill confirm-teacher-button" type="button" data-confirm-student="${item.id}:${id}">Confirmar indicacao</button>` : ''}
-          ${phone ? `<a class="pill" href="${whatsappUrl(phone, `Oi ${student.nome}, tudo bem? Aqui é do Team Lucao Futevolei. Você confirma a aula de hoje às ${item.horario}?`)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+          ${phone ? `<a class="pill" href="${whatsappUrl(phone, `Oi ${student.nome}, tudo bem? Aqui é do Team Lucão. Você confirma a aula de hoje às ${item.horario}?`)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
         </div>
       </div>
       <button class="mini-btn ${present ? 'present' : ''}" data-toggle-attendance="${item.id}:${id}">
@@ -4047,7 +4048,7 @@ function bindEvents() {
     renderStudentSchedulePreview();
   });
   document.getElementById('studentLevel')?.addEventListener('change', renderStudentSchedulePreview);
-  document.getElementById('themeBtn').addEventListener('click', toggleTheme);
+  document.getElementById('themeBtn')?.addEventListener('click', toggleTheme);
   document.getElementById('logoutBtn').addEventListener('click', logout);
   document.getElementById('classStudentChecklist')?.addEventListener('change', (event) => {
     const target = event.target.closest('[data-class-student-check]');

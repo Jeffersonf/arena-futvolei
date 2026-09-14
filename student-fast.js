@@ -13,6 +13,13 @@ const period = document.getElementById('studentPeriod');
 const plan = document.getElementById('studentPlan');
 const upcomingList = document.getElementById('studentUpcomingList');
 const availableList = document.getElementById('studentAvailableList');
+const weeklyList = document.getElementById('studentWeeklyList');
+const quotaCard = document.getElementById('studentQuotaCard');
+const quotaCounter = document.getElementById('studentQuotaCounter');
+const quotaSubtext = document.getElementById('studentQuotaHint');
+const quotaStatusPill = document.getElementById('studentQuotaStatusPill');
+const quotaProgressBar = document.getElementById('studentQuotaProgressBar');
+const weeklyDatesBadge = document.getElementById('weeklyDatesBadge');
 const calendar = document.getElementById('studentCalendar');
 const dateFilter = document.getElementById('studentFastDate');
 const timeFilter = document.getElementById('studentFastTime');
@@ -37,6 +44,7 @@ let guestClasses = [];
 let guestClassesLoaded = false;
 
 function setStatus(target, message = '', state = '') {
+  if (!target) return;
   target.textContent = message;
   if (state) target.dataset.state = state;
   else delete target.dataset.state;
@@ -249,12 +257,117 @@ function renderCalendar() {
   }).join('');
 }
 
+
+function renderWeeklyQuota() {
+  const semana = agendaData.semana || {};
+  const student = agendaData.student || {};
+  const limit = Number(semana.limite || 2);
+  const confirmed = Number(semana.confirmadas || 0);
+  const pct = Math.min(100, Math.round((confirmed / limit) * 100));
+
+  if (quotaCounter) {
+    quotaCounter.textContent = `${confirmed} de ${limit} ${limit === 1 ? 'aula confirmada' : 'aulas confirmadas'}`;
+  }
+
+  if (quotaProgressBar) {
+    quotaProgressBar.style.width = `${pct}%`;
+  }
+
+  const isFull = confirmed >= limit;
+  if (quotaStatusPill) {
+    quotaStatusPill.className = isFull ? 'quota-status-pill full' : 'quota-status-pill';
+    quotaStatusPill.textContent = isFull ? 'Limite atingido' : `${limit - confirmed} ${(limit - confirmed) === 1 ? 'vaga restante' : 'vagas restantes'}`;
+  }
+
+  if (quotaSubtext) {
+    const planName = student.plano_nome || 'ativo';
+    if (isFull) {
+      quotaSubtext.textContent = `Você já atingiu o limite do seu plano (${planName}: ${limit}x na semana). Para escolher outro horário, desmarque uma aula confirmada abaixo.`;
+    } else {
+      quotaSubtext.textContent = `Seu plano (${planName}) permite confirmar até ${limit} ${limit === 1 ? 'aula' : 'aulas'} por semana.`;
+    }
+  }
+
+  if (weeklyDatesBadge && semana.inicio && semana.fim) {
+    weeklyDatesBadge.textContent = `Semana de ${formatDate(semana.inicio)} a ${formatDate(semana.fim)}`;
+  }
+}
+
+function renderWeeklySchedule() {
+  if (!weeklyList) return;
+  const classes = agendaData.aulas_semana || [];
+  const semana = agendaData.semana || {};
+  const limit = Number(semana.limite || 2);
+  const confirmedCount = Number(semana.confirmadas || 0);
+  const quotaReached = confirmedCount >= limit;
+
+  if (!classes.length) {
+    weeklyList.innerHTML = '<p class="empty-state">Nenhuma aula cadastrada para esta semana no momento.</p>';
+    return;
+  }
+
+  weeklyList.innerHTML = classes.map((cls) => {
+    const isStudentConfirmed = String(cls.confirmado || '').toLowerCase() === 'sim';
+    const spotsLeft = Math.max(0, Number(cls.capacidade || 8) - Number(cls.inscritos || 0));
+    const isFull = spotsLeft <= 0 && !isStudentConfirmed;
+
+    let actionButtonMarkup = '';
+    if (isStudentConfirmed) {
+      actionButtonMarkup = `
+        <div class="weekly-class-action">
+          <span class="confirmed-badge">✓ Confirmado</span>
+          <button class="btn-unconfirm-slot" type="button" data-confirm-class="${escapeHTML(cls.id)}" data-confirm-value="remover">Desmarcar</button>
+        </div>
+      `;
+    } else if (isFull) {
+      actionButtonMarkup = `
+        <div class="weekly-class-action">
+          <button class="btn-confirm-slot" type="button" disabled>Aula lotada</button>
+        </div>
+      `;
+    } else if (quotaReached) {
+      actionButtonMarkup = `
+        <div class="weekly-class-action">
+          <button class="btn-confirm-slot" type="button" disabled title="Você já atingiu o limite do seu plano nesta semana">Limite atingido (${confirmedCount}/${limit})</button>
+        </div>
+      `;
+    } else {
+      actionButtonMarkup = `
+        <div class="weekly-class-action">
+          <button class="btn-confirm-slot" type="button" data-confirm-class="${escapeHTML(cls.id)}" data-confirm-value="sim">Confirmar presença</button>
+        </div>
+      `;
+    }
+
+    return `
+      <article class="weekly-class-card ${isStudentConfirmed ? 'is-confirmed' : ''} ${isFull ? 'is-full' : ''}">
+        <div class="weekly-timebox">
+          <span>${escapeHTML(dateOptionLabel(cls.data))}</span>
+          <strong>${escapeHTML(cls.horario)}</strong>
+        </div>
+        <div class="weekly-class-info">
+          <strong>${escapeHTML(cls.turma || 'Turma Geral')}</strong>
+          <div class="weekly-class-meta">
+            <span>${escapeHTML(formatDateLong(cls.data))}</span>
+            ${cls.professor ? `<span>· Prof. ${escapeHTML(cls.professor)}</span>` : ''}
+            <span>· ${spotsLeft} ${spotsLeft === 1 ? 'vaga disponível' : 'vagas disponíveis'}</span>
+          </div>
+        </div>
+        ${actionButtonMarkup}
+      </article>
+    `;
+  }).join('');
+}
+
 function renderDashboard() {
   const student = agendaData.student || {};
-  greeting.textContent = `Olá, ${student.nome || 'aluno'}!`;
+  const firstName = (student.nome || '').trim().split(/\s+/)[0] || 'aluno';
+  greeting.textContent = `Olá, ${firstName}! Seja bem-vindo(a).`;
   period.textContent = `Aulas de hoje até ${formatDateLong(agendaData.period_end)}.`;
   plan.textContent = student.plano_nome || 'Aluno ativo';
   renderUpcoming();
+  renderWeeklyQuota();
+  renderWeeklySchedule();
   setupAvailableFilters(true);
   renderCalendar();
   dashboard.hidden = false;
@@ -302,10 +415,7 @@ async function updateConfirmation(classId, value, button) {
       body: JSON.stringify({ telefone: currentPhone, aula_id: classId, confirmado: value })
     });
     const data = await responseData(response, 'Não foi possível salvar sua resposta.');
-    const item = (agendaData.items || []).find((entry) => String(entry.id) === String(classId));
-    if (item) Object.assign(item, data.item || {});
-    renderUpcoming();
-    renderCalendar();
+    await loadAgenda();
     setStatus(studentStatus, value === 'sim'
       ? 'Presença informada. Agora é só aguardar a confirmação do professor.'
       : value === 'nao'
@@ -368,15 +478,20 @@ function selectCalendarDate(value) {
 }
 
 async function loadGuestClasses() {
-  setStatus(guestStatus, 'Carregando datas e horários disponíveis...');
+  setStatus(guestStatus, 'Carregando todas as aulas disponíveis...');
   guestDate.disabled = true;
   try {
     const response = await fetch('/api/public/classes', { cache: 'no-store' });
     const data = await responseData(response, 'Não foi possível carregar os horários.');
-    guestClasses = (data.items || []).filter((item) => openSlots(item) > 0);
+    // Sempre mantem TODAS as aulas futuras cadastradas
+    guestClasses = data.items || [];
     setupGuestDates();
     guestClassesLoaded = true;
-    setStatus(guestStatus, guestClasses.length ? 'Escolha uma data e um horário.' : 'Não há aulas com vaga neste momento.');
+    const availableCount = guestClasses.filter((item) => openSlots(item) > 0).length;
+    setStatus(guestStatus, availableCount
+      ? 'Escolha uma data e selecione o horário desejado.'
+      : 'Todas as aulas cadastradas no momento estão lotadas.');
+    renderGuestClassList();
   } catch (error) {
     setStatus(guestStatus, error.message, 'error');
   } finally {
@@ -386,32 +501,108 @@ async function loadGuestClasses() {
 
 function setupGuestDates() {
   const dates = [...new Set(guestClasses.map((item) => item.data))];
-  guestDate.innerHTML = '<option value="">Selecione a data</option>' + dates.map((date) => (
-    `<option value="${escapeHTML(date)}">${escapeHTML(formatDateLong(date))}</option>`
-  )).join('');
+  guestDate.innerHTML = '<option value="">Selecione a data</option>' + dates.map((date) => {
+    const forDate = guestClasses.filter((item) => item.data === date);
+    const hasSpots = forDate.some((item) => openSlots(item) > 0);
+    return `<option value="${escapeHTML(date)}">${escapeHTML(formatDateLong(date))}${hasSpots ? '' : ' (Lotada)'}</option>`;
+  }).join('');
   setupGuestTimes();
 }
 
 function setupGuestTimes() {
   const items = guestClasses.filter((item) => item.data === guestDate.value);
-  guestTime.innerHTML = guestDate.value
-    ? '<option value="">Selecione o horário</option>' + items.map((item) => (
-      `<option value="${escapeHTML(item.id)}">${escapeHTML(item.horario)} · ${escapeHTML(item.turma || 'Turma')} · ${openSlots(item)} ${openSlots(item) === 1 ? 'vaga' : 'vagas'}</option>`
-    )).join('')
-    : '<option value="">Escolha primeiro a data</option>';
-  guestTime.disabled = !guestDate.value || !items.length;
+  if (!guestDate.value) {
+    guestTime.innerHTML = '<option value="">Escolha primeiro a data</option>';
+    guestTime.disabled = true;
+    renderGuestClassList();
+    return;
+  }
+
+  guestTime.innerHTML = '<option value="">Selecione o horário</option>' + items.map((item) => {
+    const slots = openSlots(item);
+    const available = slots > 0;
+    if (available) {
+      return `<option value="${escapeHTML(item.id)}">${escapeHTML(item.horario)} · ${escapeHTML(item.turma || 'Turma')} · ${slots} ${slots === 1 ? 'vaga livre' : 'vagas livres'}</option>`;
+    } else {
+      return `<option value="${escapeHTML(item.id)}" disabled style="color: var(--muted); opacity: 0.5;">${escapeHTML(item.horario)} · ${escapeHTML(item.turma || 'Turma')} · (Lotada / Indisponível)</option>`;
+    }
+  }).join('');
+
+  guestTime.disabled = !items.length;
+  renderGuestClassList();
+}
+
+function renderGuestClassList() {
+  const container = document.getElementById('guestClassesList');
+  if (!container) return;
+  const source = guestDate.value
+    ? guestClasses.filter((item) => item.data === guestDate.value)
+    : guestClasses;
+
+  if (!source.length) {
+    container.innerHTML = '<p class="empty-state">Nenhuma aula programada no momento.</p>';
+    return;
+  }
+
+  container.innerHTML = source.map((item) => {
+    const slots = openSlots(item);
+    const available = slots > 0;
+    const isSelected = String(guestTime.value) === String(item.id);
+
+    return `
+      <article class="guest-slot-card ${available ? '' : 'is-full'} ${isSelected ? 'is-selected' : ''}">
+        <div class="guest-slot-timebox">
+          <span>${escapeHTML(dateOptionLabel(item.data))}</span>
+          <strong>${escapeHTML(item.horario)}</strong>
+        </div>
+        <div class="guest-slot-info">
+          <strong>${escapeHTML(item.turma || 'Turma Geral')}</strong>
+          <div class="guest-slot-meta">
+            <span>${escapeHTML(formatDateLong(item.data))}</span>
+            ${item.professor ? `<span>· Prof. ${escapeHTML(item.professor)}</span>` : ''}
+            <span>· ${available ? `${slots} ${slots === 1 ? 'vaga livre' : 'vagas livres'}` : 'Lotada'}</span>
+          </div>
+        </div>
+        ${available ? `
+          <button class="btn-pick-guest-slot" type="button" data-pick-guest="${escapeHTML(item.id)}" data-pick-date="${escapeHTML(item.data)}">
+            ${isSelected ? '✓ Selecionado' : 'Escolher este horário'}
+          </button>
+        ` : `
+          <button class="btn-pick-guest-slot" type="button" disabled title="Esta aula já está com capacidade máxima">
+            Sem vagas (Lotada)
+          </button>
+        `}
+      </article>
+    `;
+  }).join('');
 }
 
 function switchMode(showGuest) {
   studentPanel.hidden = showGuest;
   guestPanel.hidden = !showGuest;
-  guestModeButton.textContent = showGuest ? 'Já sou aluno' : 'Não sou aluno';
-  guestModeButton.setAttribute('aria-expanded', String(showGuest));
-  heroEyebrow.textContent = showGuest ? 'primeira experiência' : 'acesso do aluno';
-  heroTitle.textContent = showGuest ? 'Conheça o Team Lucão' : 'Minha agenda';
-  heroDescription.textContent = showGuest
-    ? 'Escolha uma aula experimental e envie seu pedido em poucos segundos.'
-    : 'Veja suas próximas aulas e informe se você vai participar.';
+
+  if (guestModeButton) {
+    guestModeButton.textContent = showGuest ? '← Voltar para Sou Aluno' : '⭐ Não sou aluno (Experimental)';
+    guestModeButton.setAttribute('aria-expanded', String(showGuest));
+  }
+
+  const tabStudent = document.getElementById('tabStudentPortal');
+  const tabGuest = document.getElementById('tabGuestPortal');
+  if (tabStudent && tabGuest) {
+    tabStudent.classList.toggle('active', !showGuest);
+    tabStudent.setAttribute('aria-selected', String(!showGuest));
+    tabGuest.classList.toggle('active', showGuest);
+    tabGuest.setAttribute('aria-selected', String(showGuest));
+  }
+
+  if (heroEyebrow) heroEyebrow.textContent = showGuest ? 'primeira aula experimental' : 'acesso do aluno';
+  if (heroTitle) heroTitle.textContent = 'Team Lucão';
+  if (heroDescription) {
+    heroDescription.textContent = showGuest
+      ? 'Escolha uma aula disponível na grade e solicite seu agendamento em poucos segundos.'
+      : 'Consulte seus horários ou informe se você vai participar.';
+  }
+
   if (showGuest) {
     if (!guestClassesLoaded) loadGuestClasses();
     window.setTimeout(() => guestName.focus(), 0);
@@ -465,7 +656,33 @@ guestPhone.addEventListener('input', () => { guestPhone.value = formatPhone(gues
 dateFilter.addEventListener('change', () => { setupAvailableTimes(); renderCalendar(); });
 timeFilter.addEventListener('change', renderAvailable);
 guestDate.addEventListener('change', setupGuestTimes);
-guestModeButton.addEventListener('click', () => switchMode(guestPanel.hidden));
+
+if (guestModeButton) {
+  guestModeButton.addEventListener('click', () => switchMode(guestPanel.hidden));
+}
+
+const tabStudent = document.getElementById('tabStudentPortal');
+const tabGuest = document.getElementById('tabGuestPortal');
+if (tabStudent) tabStudent.addEventListener('click', () => switchMode(false));
+if (tabGuest) tabGuest.addEventListener('click', () => switchMode(true));
+
+const guestListContainer = document.getElementById('guestClassesList');
+if (guestListContainer) {
+  guestListContainer.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-pick-guest]');
+    if (!button || button.disabled) return;
+    const classId = button.dataset.pickGuest;
+    const date = button.dataset.pickDate;
+    if (date) {
+      guestDate.value = date;
+      setupGuestTimes();
+      guestTime.value = classId;
+      renderGuestClassList();
+      guestForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+}
+
 guestForm.addEventListener('submit', submitGuestBooking);
 
 upcomingList.addEventListener('click', (event) => {

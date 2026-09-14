@@ -10,7 +10,7 @@ Use o servidor Node para operacao real. Sem servidor, os dados ficam no navegado
 
 ## Antes de colocar em uso
 
-1. Definir um PIN de professor que nao seja `1234`.
+1. Definir um PIN de professor que nao seja `1209`.
 2. Publicar o backend Node em um ambiente com disco persistente.
 3. Configurar banco e backups fora da pasta temporaria do servidor.
 4. Abrir o link final no iPhone do professor.
