@@ -270,7 +270,8 @@ function normalizeStudentPayload(body = {}) {
     turma_fixa: primarySchedule.turma || '',
     agendas_fixas: JSON.stringify(schedules),
     observacao: String(body.observacao || body.note || ''),
-    pago_ate: String(body.pago_ate || body.paidUntil || '')
+    pago_ate: String(body.pago_ate || body.paidUntil || ''),
+    indicado_por: String(body.indicado_por || body.referredBy || body.indicacao || '').trim()
   };
 }
 
@@ -386,7 +387,8 @@ app.post('/api/public/bookings', (req, res) => {
       telefone: String(req.body.telefone || '').trim(),
       aula_id: Number(classItem.id),
       status: 'Pendente',
-      observacao: String(req.body.observacao || '').trim()
+      observacao: String(req.body.observacao || '').trim(),
+      indicado_por: String(req.body.indicado_por || req.body.referral || req.body.indicacao || '').trim()
     };
     if (!payload.nome) throw new Error('Informe seu nome');
     const result = insertRow('agendamentos', payload);
@@ -528,15 +530,28 @@ app.get('/api/public/student-classes', (req, res) => {
       ORDER BY a.data, a.horario
     `, [`%${phone.slice(-8)}`, start, periodEnd]) : [];
 
+    const todayDate = today();
+    let planDueDate = '';
+    if (student.pago_ate) {
+      planDueDate = student.pago_ate;
+    } else {
+      planDueDate = dueDateForMonth(student, currentMonth());
+    }
+    const isExpired = todayDate > planDueDate;
+
     res.json({
       ok: true,
       student: {
         id: student.id,
         nome: student.nome,
+        telefone: student.telefone,
         plano_id: student.plano_id,
         plano_nome: student.plano_nome,
+        mensalidade: student.mensalidade,
         dia_vencimento: student.dia_vencimento,
-        pago_ate: student.pago_ate
+        pago_ate: student.pago_ate,
+        plano_vencido: isExpired,
+        plano_vencimento: planDueDate
       },
       period_start: start,
       period_end: periodEnd,
@@ -551,6 +566,21 @@ app.get('/api/public/student-classes', (req, res) => {
       available,
       requests
     });
+  } catch (err) {
+    jsonError(res, err);
+  }
+});
+
+app.post('/api/public/simulate-pix', (req, res) => {
+  try {
+    const informedPhone = req.body.telefone || req.body.phone || '';
+    const student = findStudentByPhone(informedPhone);
+    if (!student) throw new Error('Aluno não encontrado para esse WhatsApp');
+    const nextMonth = nextMonthKey(currentMonth());
+    const nextDueDate = dueDateForMonth(student, nextMonth);
+    run('UPDATE alunos SET pago_ate=? WHERE id=?', [nextDueDate, student.id]);
+    logAction('Pagamento PIX', `${student.nome} realizou pagamento simulado via PIX. Plano liberado até ${nextDueDate}.`, 'PIX');
+    res.json({ ok: true, pago_ate: nextDueDate, student: { ...student, pago_ate: nextDueDate } });
   } catch (err) {
     jsonError(res, err);
   }
@@ -574,6 +604,11 @@ app.post('/api/public/student-confirm', (req, res) => {
     const link = row('SELECT * FROM aula_alunos WHERE aula_id=? AND aluno_id=?', [classId, student.id]);
 
     if (confirmValue === 'sim') {
+      const todayDate = today();
+      const planDueDate = student.pago_ate || dueDateForMonth(student, currentMonth());
+      if (todayDate > planDueDate) {
+        throw new Error(`Seu plano está vencido (${planDueDate.slice(8, 10)}/${planDueDate.slice(5, 7)}/${planDueDate.slice(0, 4)}). Regularize sua mensalidade via PIX para confirmar presença nas aulas.`);
+      }
       const alreadyConfirmedThis = link && link.confirmado === 'sim';
       if (!alreadyConfirmedThis) {
         const enrolled = scalar('SELECT COUNT(*) FROM aula_alunos WHERE aula_id=?', [classId]);
@@ -646,7 +681,12 @@ app.get('/api/bootstrap', (_req, res) => {
   res.json({
     ok: true,
     items: {
-      students: rows('SELECT * FROM alunos ORDER BY nome'),
+      students: rows(`
+        SELECT a.*,
+          (SELECT COUNT(*) FROM alunos ind WHERE ind.indicado_por IS NOT NULL AND ind.indicado_por != '' AND LOWER(TRIM(ind.indicado_por)) = LOWER(TRIM(a.nome))) AS total_indicados
+        FROM alunos a
+        ORDER BY a.nome
+      `),
       classes: rows('SELECT * FROM aulas ORDER BY data, horario, turma').map(classWithStudents),
       plans: rows('SELECT * FROM planos ORDER BY ativo DESC, preco, nome'),
       waitlist: rows(`
@@ -741,19 +781,101 @@ app.get('/api/dashboard', (req, res) => {
 app.get('/api/students', (req, res) => {
   const search = String(req.query.search || '').trim();
   const params = [];
-  let sql = 'SELECT * FROM alunos';
+  let sql = `
+    SELECT a.*,
+      (SELECT COUNT(*) FROM alunos ind WHERE LOWER(TRIM(ind.indicado_por)) = LOWER(TRIM(a.nome))) AS total_indicados
+    FROM alunos a
+  `;
   if (search) {
-    sql += ' WHERE nome LIKE ? OR telefone LIKE ? OR plano_nome LIKE ? OR nivel LIKE ?';
-    params.push(...Array(4).fill(`%${search}%`));
+    sql += ' WHERE a.nome LIKE ? OR a.telefone LIKE ? OR a.plano_nome LIKE ? OR a.nivel LIKE ? OR a.indicado_por LIKE ?';
+    params.push(...Array(5).fill(`%${search}%`));
   }
-  sql += ' ORDER BY nome';
+  sql += ' ORDER BY a.nome';
   res.json({ ok: true, items: rows(sql, params) });
 });
 
 app.get('/api/students/:id', (req, res) => {
-  const student = row('SELECT * FROM alunos WHERE id=?', [req.params.id]);
+  const student = row(`
+    SELECT a.*,
+      (SELECT COUNT(*) FROM alunos ind WHERE LOWER(TRIM(ind.indicado_por)) = LOWER(TRIM(a.nome))) AS total_indicados
+    FROM alunos a
+    WHERE a.id=?
+  `, [req.params.id]);
   if (!student) return jsonError(res, new Error('Aluno não encontrado'), 404);
-  return res.json({ ok: true, item: student });
+  const indicados = rows(`
+    SELECT id, nome, telefone, plano_nome, data_cadastro
+    FROM alunos
+    WHERE LOWER(TRIM(indicado_por)) = LOWER(TRIM(?))
+    ORDER BY nome
+  `, [student.nome]);
+  return res.json({ ok: true, item: student, indicados });
+});
+
+app.post('/api/students/batch-import', (req, res) => {
+  try {
+    const items = Array.isArray(req.body.items) ? req.body.items : (Array.isArray(req.body.students) ? req.body.students : []);
+    const updateExisting = Boolean(req.body.update_existing);
+    let created = 0;
+    let updated = 0;
+    let ignored = 0;
+
+    for (const raw of items) {
+      const nome = String(raw.nome || raw.name || '').trim();
+      if (!nome) {
+        ignored++;
+        continue;
+      }
+      const rawPhone = String(raw.telefone || raw.phone || '').trim();
+      let digits = phoneDigits(rawPhone);
+      if (digits.startsWith('55') && (digits.length === 12 || digits.length === 13)) {
+        digits = digits.slice(2);
+      }
+      if (digits.length === 8 || digits.length === 9) {
+        digits = '15' + digits;
+      }
+
+      let existing = null;
+      if (digits.length >= 8) {
+        existing = row(`
+          SELECT * FROM alunos
+          WHERE ${phoneSql()} LIKE ?
+          LIMIT 1
+        `, [`%${digits.slice(-8)}`]);
+      } else {
+        existing = row('SELECT * FROM alunos WHERE LOWER(TRIM(nome)) = ? LIMIT 1', [nome.toLowerCase()]);
+      }
+
+      const payload = normalizeStudentPayload({
+        ...raw,
+        nome,
+        telefone: rawPhone || (digits ? formatPhone(digits) : ''),
+        indicado_por: String(raw.indicado_por || raw.referral || '').trim()
+      });
+
+      if (existing) {
+        if (updateExisting) {
+          updateRow('alunos', existing.id, {
+            ...payload,
+            plano_id: payload.plano_id || existing.plano_id,
+            plano_nome: payload.plano_nome || existing.plano_nome,
+            mensalidade: payload.mensalidade > 0 ? payload.mensalidade : existing.mensalidade,
+            indicado_por: payload.indicado_por || existing.indicado_por
+          });
+          updated++;
+        } else {
+          ignored++;
+        }
+      } else {
+        insertRow('alunos', payload);
+        created++;
+      }
+    }
+
+    logAction('Importação de alunos', `Importação: ${created} criados, ${updated} atualizados, ${ignored} ignorados.`, 'Professor');
+    res.json({ ok: true, total: items.length, created, updated, ignored });
+  } catch (err) {
+    jsonError(res, err);
+  }
 });
 
 app.post('/api/students', (req, res) => {

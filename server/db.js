@@ -256,6 +256,14 @@ function ensureSchema() {
   if (!studentColumns.includes('agendas_fixas')) {
     run("ALTER TABLE alunos ADD COLUMN agendas_fixas TEXT DEFAULT '[]'");
   }
+  if (!studentColumns.includes('indicado_por')) {
+    run("ALTER TABLE alunos ADD COLUMN indicado_por TEXT DEFAULT ''");
+  }
+
+  const agendamentoColumns = tableColumns('agendamentos');
+  if (!agendamentoColumns.includes('indicado_por')) {
+    run("ALTER TABLE agendamentos ADD COLUMN indicado_por TEXT DEFAULT ''");
+  }
 
   const classColumns = tableColumns('aulas');
   if (!classColumns.includes('tipo')) {

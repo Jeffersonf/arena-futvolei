@@ -1470,6 +1470,7 @@ function renderBookings() {
           <p class="booking-class-meta">${item ? `${formatDate(item.data)} as ${item.horario} - ${escapeHTML(item.turma || 'Turma')}` : 'aula removida'}</p>
           <div class="pill-row">
             ${item ? `<span class="pill ${full ? 'bad' : 'ok'}">${classStudentIds(item).length}/${item.capacidade || 8} vagas</span>` : ''}
+            ${booking.indicado_por ? `<span class="pill ok" title="Indicado por">⭐ Ind: ${escapeHTML(booking.indicado_por)}</span>` : ''}
             ${booking.criado_em ? `<span class="pill">${formatDate(booking.criado_em)}</span>` : ''}
           </div>
           ${booking.observacao ? `<p class="meta">${escapeHTML(booking.observacao)}</p>` : ''}
@@ -1912,11 +1913,22 @@ function studentCard(student) {
   const target = planWeeklyTarget(student);
   const paid = isPaid(student);
   const schedule = fixedScheduleText(student);
+  const totalIndicados = Number(student.total_indicados || 0);
+  const referralBadge = totalIndicados > 0
+    ? `<span class="badge-referral-count" title="${totalIndicados} aluno(s) indicado(s)">⭐ ${totalIndicados} ind.</span>`
+    : '';
+  const referralByText = student.indicado_por
+    ? `<span class="meta" style="font-size:11px;color:var(--muted);display:block;">Ind. por: ${escapeHTML(student.indicado_por)}</span>`
+    : '';
   return `
     <article class="student-row status-${cssToken(student.status || 'Ativo')} payment-${paid ? 'paid' : 'pending'}">
       <div class="student-main">
-        <button class="link-title compact-title" type="button" data-report-student="${student.id}">${escapeHTML(student.nome)}</button>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <button class="link-title compact-title" type="button" data-report-student="${student.id}">${escapeHTML(student.nome)}</button>
+          ${referralBadge}
+        </div>
         <p class="meta">${escapeHTML(student.telefone || 'sem telefone')} - vence dia ${dueDay(student)}</p>
+        ${referralByText}
       </div>
       <div class="student-plan">
         <strong>${escapeHTML(student.plano_nome || 'Sem plano')}</strong>
@@ -2153,6 +2165,43 @@ function openStudent(id = '') {
   document.getElementById('studentName').value = student.nome || '';
   document.getElementById('studentPhone').value = student.telefone || '';
   document.getElementById('studentEmail').value = student.email || '';
+  if (document.getElementById('studentReferral')) {
+    document.getElementById('studentReferral').value = student.indicado_por || '';
+  }
+  const datalist = document.getElementById('studentsReferralList');
+  if (datalist) {
+    datalist.innerHTML = (state.students || [])
+      .filter((s) => String(s.id) !== String(id))
+      .map((s) => `<option value="${escapeHTML(s.nome)}">`)
+      .join('');
+  }
+  const referralsBox = document.getElementById('studentReferralsBox');
+  const referralsCount = document.getElementById('studentReferralsCount');
+  const referralsList = document.getElementById('studentReferralsList');
+  if (referralsBox && referralsCount && referralsList) {
+    if (id && student.nome) {
+      const nameLower = student.nome.trim().toLowerCase();
+      const indicados = (state.students || []).filter((s) =>
+        String(s.id) !== String(id) &&
+        s.indicado_por &&
+        s.indicado_por.trim().toLowerCase() === nameLower
+      );
+      referralsBox.style.display = 'block';
+      referralsCount.textContent = `${indicados.length} ${indicados.length === 1 ? 'indicado' : 'indicados'}`;
+      if (indicados.length > 0) {
+        referralsList.innerHTML = indicados.map((s) => `
+          <span class="referral-pill">
+            <span>👤 ${escapeHTML(s.nome)}</span>
+            <small class="muted">(${escapeHTML(s.status || 'Ativo')})</small>
+          </span>
+        `).join('');
+      } else {
+        referralsList.innerHTML = '<span class="referral-empty">Nenhum aluno indicado ainda.</span>';
+      }
+    } else {
+      referralsBox.style.display = 'none';
+    }
+  }
   renderPlanOptions(student.plano_id || '');
   document.getElementById('studentFee').value = student.mensalidade || '';
   document.getElementById('studentDueDay').value = student.dia_vencimento || student.vencimento_dia || 10;
@@ -2174,7 +2223,7 @@ function openStudentReport(id) {
   const recentClasses = [...summary.history].filter((item) => item.data < todayISO()).reverse().slice(0, 6);
   const payments = (state.payments || [])
     .filter((item) => String(item.aluno_id) === String(id))
-    .sort((a, b) => String(b.pago_em || b.vencimento || '').localeCompare(String(a.pago_em || a.vencimento || '')))
+    .sort((a, b) => String(b.pago_em || b.vencimento || '').localeCompare(String(a.pago_em || b.vencimento || '')))
     .slice(0, 6);
   const paid = isPaid(student);
   const plan = `${escapeHTML(student.plano_nome || 'sem plano')} - ${money.format(Number(student.mensalidade || 0))}/mes`;
@@ -2194,6 +2243,8 @@ function openStudentReport(id) {
           <span class="pill">${escapeHTML(student.nivel || 'sem nivel')}</span>
           <span class="pill ${paid ? 'ok' : 'bad'}">${paid ? 'pagamento em dia' : 'pagamento pendente'}</span>
           <span class="pill">${weekly}/${target || '-'} na semana</span>
+          ${student.indicado_por ? `<span class="pill" title="Indicado por">⭐ Ind. por: ${escapeHTML(student.indicado_por)}</span>` : ''}
+          ${Number(student.total_indicados || 0) > 0 ? `<span class="pill ok">⭐ ${student.total_indicados} ind.</span>` : ''}
         </div>
       </div>
       <div class="actions">
@@ -3379,6 +3430,7 @@ async function saveStudent(event) {
     turma_fixa: scheduleDraft.turma_fixa,
     agendas_fixas: scheduleDraft.agendas_fixas,
     observacao: document.getElementById('studentNote').value.trim(),
+    indicado_por: document.getElementById('studentReferral')?.value.trim() || '',
     pago_ate: studentById(id)?.pago_ate || ''
   };
   if (apiMode) {
@@ -3846,12 +3898,433 @@ async function createServerBackup() {
   toast(`Backup criado: ${res.filename}`);
 }
 
+/* ==========================================================================
+   Importador de Alunos em Lote (WhatsApp & Excel) com Anti-Duplicação
+   ========================================================================== */
+
+let importCandidates = [];
+let excelRawData = [];
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[src="${src}"]`);
+    if (existing) {
+      if (existing.dataset.loaded === 'true') return resolve();
+      existing.addEventListener('load', () => resolve());
+      existing.addEventListener('error', (err) => reject(err));
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = () => {
+      script.dataset.loaded = 'true';
+      resolve();
+    };
+    script.onerror = (err) => reject(err);
+    document.head.appendChild(script);
+  });
+}
+
+function normalizePhoneDigits(raw) {
+  let dig = String(raw || '').replace(/\D/g, '');
+  if (dig.length >= 12 && dig.startsWith('55')) {
+    dig = dig.slice(2);
+  }
+  if (dig.length === 8 || dig.length === 9) {
+    dig = '15' + dig;
+  }
+  return dig;
+}
+
+function formatPhoneDisplay(dig) {
+  if (!dig) return '';
+  if (dig.length === 11) {
+    return `(${dig.slice(0, 2)}) ${dig.slice(2, 7)}-${dig.slice(7)}`;
+  }
+  if (dig.length === 10) {
+    return `(${dig.slice(0, 2)}) ${dig.slice(2, 6)}-${dig.slice(6)}`;
+  }
+  return dig;
+}
+
+function findExistingStudent(digits) {
+  if (!digits || digits.length < 8) return null;
+  const last8 = digits.slice(-8);
+  return (state.students || []).find((s) => {
+    const sDig = normalizePhoneDigits(s.telefone);
+    return sDig.endsWith(last8);
+  }) || null;
+}
+
+function parseWhatsAppLines(rawText) {
+  if (!rawText || !rawText.trim()) return [];
+  const lines = rawText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const parsed = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const match = line.match(/(?:\+?55\s*)?(?:\(?([1-9]{2})\)?\s*)?(?:9?\d{4})[\s.-]?(\d{4})/);
+    if (match) {
+      const phoneDigits = normalizePhoneDigits(match[0]);
+      let name = line.replace(match[0], '').replace(/[~:\-–|()]/g, ' ').replace(/\s+/g, ' ').trim();
+      
+      // If name is empty on this line, check if the previous line looked like a name
+      if (!name && i > 0 && !lines[i - 1].match(/\d{4}/)) {
+        name = lines[i - 1].replace(/[~:\-–|()]/g, ' ').replace(/\s+/g, ' ').trim();
+      }
+      
+      // If still empty, check if next line is a name
+      if (!name && i + 1 < lines.length && !lines[i + 1].match(/\d{4}/)) {
+        name = lines[i + 1].replace(/[~:\-–|()]/g, ' ').replace(/\s+/g, ' ').trim();
+      }
+      
+      if (!name) name = `Aluno ${formatPhoneDisplay(phoneDigits)}`;
+
+      parsed.push({
+        nome: name,
+        telefone: formatPhoneDisplay(phoneDigits),
+        plano_nome: '',
+        mensalidade: 0,
+        dia_vencimento: 10,
+        indicado_por: '',
+        status: 'Ativo'
+      });
+    }
+  }
+
+  // De-duplicate within the imported list itself by phone
+  const seen = new Set();
+  const deduped = [];
+  for (const item of parsed) {
+    const d = normalizePhoneDigits(item.telefone);
+    if (!seen.has(d)) {
+      seen.add(d);
+      deduped.push(item);
+    }
+  }
+  return deduped;
+}
+
+function openImportModal() {
+  importCandidates = [];
+  excelRawData = [];
+  const txt = document.getElementById('importWhatsappText');
+  if (txt) txt.value = '';
+  const fileImg = document.getElementById('importPrintFile');
+  if (fileImg) fileImg.value = '';
+  const ocrStatus = document.getElementById('ocrStatus');
+  if (ocrStatus) ocrStatus.textContent = '';
+  const fileExcel = document.getElementById('importExcelFile');
+  if (fileExcel) fileExcel.value = '';
+  const excelName = document.getElementById('excelFileName');
+  if (excelName) excelName.textContent = 'Nenhum arquivo selecionado';
+  const mappingBox = document.getElementById('columnMappingBox');
+  if (mappingBox) mappingBox.style.display = 'none';
+  const previewBox = document.getElementById('importPreviewBox');
+  if (previewBox) previewBox.style.display = 'none';
+  switchImportTab('whatsapp');
+  openModal('importModal');
+}
+
+function switchImportTab(tab) {
+  const tabWa = document.getElementById('tabImportWhatsapp');
+  const tabEx = document.getElementById('tabImportExcel');
+  const paneWa = document.getElementById('paneImportWhatsapp');
+  const paneEx = document.getElementById('paneImportExcel');
+  if (tab === 'whatsapp') {
+    tabWa?.classList.add('active');
+    tabWa?.setAttribute('aria-selected', 'true');
+    tabEx?.classList.remove('active');
+    tabEx?.setAttribute('aria-selected', 'false');
+    if (paneWa) { paneWa.classList.add('active'); paneWa.removeAttribute('hidden'); }
+    if (paneEx) { paneEx.classList.remove('active'); paneEx.setAttribute('hidden', ''); }
+  } else {
+    tabEx?.classList.add('active');
+    tabEx?.setAttribute('aria-selected', 'true');
+    tabWa?.classList.remove('active');
+    tabWa?.setAttribute('aria-selected', 'false');
+    if (paneEx) { paneEx.classList.add('active'); paneEx.removeAttribute('hidden'); }
+    if (paneWa) { paneWa.classList.remove('active'); paneWa.setAttribute('hidden', ''); }
+  }
+}
+
+function renderImportPreviewTable() {
+  const previewBox = document.getElementById('importPreviewBox');
+  const tbody = document.getElementById('importTableBody');
+  const totalCountEl = document.getElementById('importTotalCount');
+  const badgesEl = document.getElementById('importStatsBadges');
+  if (!previewBox || !tbody) return;
+
+  if (!importCandidates.length) {
+    previewBox.style.display = 'none';
+    return;
+  }
+
+  let countNew = 0;
+  let countExisting = 0;
+  let countWarn = 0;
+
+  const rowsHtml = importCandidates.map((cand, idx) => {
+    const digits = normalizePhoneDigits(cand.telefone);
+    const existing = digits ? findExistingStudent(digits) : null;
+    let statusBadge = '';
+    if (existing) {
+      countExisting++;
+      statusBadge = `<span class="stat-tag update">🟡 Já cadastrado (${escapeHTML(existing.nome)})</span>`;
+    } else if (digits.length >= 10) {
+      countNew++;
+      statusBadge = `<span class="stat-tag novo">🟢 Novo aluno</span>`;
+    } else {
+      countWarn++;
+      statusBadge = `<span class="stat-tag warn">🔴 Sem telefone válido</span>`;
+    }
+
+    return `
+      <tr>
+        <td><input type="checkbox" class="import-row-check" data-idx="${idx}" checked /></td>
+        <td><strong>${escapeHTML(cand.nome || 'Sem nome')}</strong></td>
+        <td>${escapeHTML(cand.telefone || '-')}</td>
+        <td>${escapeHTML(cand.plano_nome || 'Padrão')}</td>
+        <td>${escapeHTML(cand.indicado_por || '-')}</td>
+        <td>${statusBadge}</td>
+      </tr>
+    `;
+  }).join('');
+
+  tbody.innerHTML = rowsHtml;
+  if (totalCountEl) totalCountEl.textContent = String(importCandidates.length);
+  if (badgesEl) {
+    badgesEl.innerHTML = `
+      <span class="stat-tag novo">🟢 ${countNew} novos</span>
+      <span class="stat-tag update">🟡 ${countExisting} já existem</span>
+      ${countWarn ? `<span class="stat-tag warn">🔴 ${countWarn} sem WhatsApp</span>` : ''}
+    `;
+  }
+  previewBox.style.display = 'block';
+}
+
+function processWhatsappInput() {
+  const text = document.getElementById('importWhatsappText')?.value || '';
+  const parsed = parseWhatsAppLines(text);
+  if (!parsed.length) {
+    toast('Nenhum número de WhatsApp válido identificado no texto.');
+    return;
+  }
+  importCandidates = parsed;
+  renderImportPreviewTable();
+  toast(`${parsed.length} contato(s) identificado(s)!`);
+}
+
+async function handleOcrImageUpload(file) {
+  const statusEl = document.getElementById('ocrStatus');
+  if (!statusEl) return;
+  statusEl.textContent = 'Carregando leitor de imagem (OCR)...';
+  try {
+    await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
+    statusEl.textContent = 'Lendo imagem do print...';
+    const worker = await Tesseract.createWorker('por+eng');
+    const ret = await worker.recognize(file);
+    await worker.terminate();
+    const text = ret.data.text;
+    statusEl.textContent = 'Concluído!';
+    const txtArea = document.getElementById('importWhatsappText');
+    if (txtArea) {
+      txtArea.value = (txtArea.value ? txtArea.value + '\n\n' : '') + text;
+    }
+    processWhatsappInput();
+  } catch (err) {
+    statusEl.textContent = 'Erro ao ler imagem. Cole o texto manualmente.';
+    toast('Não foi possível ler a imagem via OCR: ' + err.message);
+  }
+}
+
+async function handleExcelFileUpload(file) {
+  const nameEl = document.getElementById('excelFileName');
+  if (nameEl) nameEl.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+  toast('Carregando planilha...');
+
+  try {
+    await loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data, { type: 'array' });
+    const firstSheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheetName];
+    const rows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+    if (!rows.length) {
+      toast('A planilha selecionada está vazia.');
+      return;
+    }
+
+    excelRawData = rows;
+    const headers = Object.keys(rows[0] || {});
+    populateExcelColumnSelectors(headers);
+    document.getElementById('columnMappingBox').style.display = 'block';
+    applyExcelColumnMapping();
+    toast(`${rows.length} linha(s) encontrada(s) na planilha!`);
+  } catch (err) {
+    toast('Erro ao abrir planilha: ' + err.message);
+  }
+}
+
+function populateExcelColumnSelectors(headers) {
+  const createOptions = (selectedPattern) => {
+    return ['<option value="">-- Não mapear --</option>'].concat(
+      headers.map((h) => {
+        const isMatch = selectedPattern && new RegExp(selectedPattern, 'i').test(h);
+        return `<option value="${escapeHTML(h)}" ${isMatch ? 'selected' : ''}>${escapeHTML(h)}</option>`;
+      })
+    ).join('');
+  };
+
+  document.getElementById('mapColName').innerHTML = createOptions('nome|aluno|atleta|cliente|name|estudante');
+  document.getElementById('mapColPhone').innerHTML = createOptions('telefone|celular|whatsapp|fone|contato|tel|phone');
+  document.getElementById('mapColPlan').innerHTML = createOptions('plano|turma|frequencia|modalidade');
+  document.getElementById('mapColFee').innerHTML = createOptions('valor|mensalidade|preco|preço|r\\$');
+  document.getElementById('mapColDue').innerHTML = createOptions('vencimento|dia');
+  document.getElementById('mapColReferral').innerHTML = createOptions('indicad|indica');
+}
+
+function applyExcelColumnMapping() {
+  const colName = document.getElementById('mapColName')?.value;
+  const colPhone = document.getElementById('mapColPhone')?.value;
+  const colPlan = document.getElementById('mapColPlan')?.value;
+  const colFee = document.getElementById('mapColFee')?.value;
+  const colDue = document.getElementById('mapColDue')?.value;
+  const colReferral = document.getElementById('mapColReferral')?.value;
+
+  if (!colName && !colPhone) {
+    toast('Selecione pelo menos a coluna de Nome ou Telefone.');
+    return;
+  }
+
+  const candidates = [];
+  for (const row of excelRawData) {
+    const rawName = colName ? String(row[colName] || '').trim() : '';
+    const rawPhone = colPhone ? String(row[colPhone] || '').trim() : '';
+    const rawPlan = colPlan ? String(row[colPlan] || '').trim() : '';
+    const rawFee = colFee ? Number(String(row[colFee] || '').replace(/[^\d.,]/g, '').replace(',', '.')) || 0 : 0;
+    const rawDue = colDue ? parseInt(String(row[colDue] || '').replace(/\D/g, ''), 10) || 10 : 10;
+    const rawReferral = colReferral ? String(row[colReferral] || '').trim() : '';
+
+    const digits = normalizePhoneDigits(rawPhone);
+    const phoneDisplay = digits ? formatPhoneDisplay(digits) : rawPhone;
+    const studentName = rawName || (digits ? `Aluno ${phoneDisplay}` : '');
+
+    if (studentName || digits) {
+      candidates.push({
+        nome: studentName || 'Aluno Importado',
+        telefone: phoneDisplay,
+        plano_nome: rawPlan,
+        mensalidade: rawFee,
+        dia_vencimento: rawDue > 0 && rawDue <= 31 ? rawDue : 10,
+        indicado_por: rawReferral,
+        status: 'Ativo'
+      });
+    }
+  }
+
+  importCandidates = candidates;
+  renderImportPreviewTable();
+}
+
+async function confirmBatchImport() {
+  const checkedBoxes = Array.from(document.querySelectorAll('.import-row-check:checked'));
+  if (!checkedBoxes.length) {
+    toast('Nenhum aluno marcado para importar.');
+    return;
+  }
+
+  const selectedStudents = checkedBoxes.map((chk) => {
+    const idx = parseInt(chk.dataset.idx, 10);
+    return importCandidates[idx];
+  }).filter(Boolean);
+
+  const updateExisting = Boolean(document.getElementById('chkUpdateExisting')?.checked);
+
+  if (apiMode) {
+    const res = await api('/api/students/batch-import', {
+      method: 'POST',
+      body: JSON.stringify({
+        items: selectedStudents,
+        students: selectedStudents,
+        update_existing: updateExisting
+      })
+    });
+    await loadData();
+    closeModal('importModal');
+    toast(`${res.imported_count || selectedStudents.length} aluno(s) processados com sucesso!`);
+  } else {
+    let count = 0;
+    for (const cand of selectedStudents) {
+      const dig = normalizePhoneDigits(cand.telefone);
+      const existing = dig ? findExistingStudent(dig) : null;
+      if (existing) {
+        if (updateExisting) {
+          existing.nome = cand.nome || existing.nome;
+          existing.telefone = cand.telefone || existing.telefone;
+          if (cand.plano_nome) existing.plano_nome = cand.plano_nome;
+          if (cand.mensalidade) existing.mensalidade = cand.mensalidade;
+          if (cand.dia_vencimento) existing.dia_vencimento = cand.dia_vencimento;
+          if (cand.indicado_por) existing.indicado_por = cand.indicado_por;
+          count++;
+        }
+      } else {
+        state.students.push({
+          ...cand,
+          id: uid()
+        });
+        count++;
+      }
+    }
+    recordAction('Professor', 'Importação em lote', `Importados ${count} alunos.`);
+    saveAndRender();
+    closeModal('importModal');
+    toast(`${count} aluno(s) importados no modo local!`);
+  }
+}
+
 function bindEvents() {
   const renderStudentsLater = () => scheduleUiWork('students', renderStudents, 120);
   const renderPaymentsLater = () => scheduleUiWork('payments', renderPayments, 120);
   const renderActionsLater = () => scheduleUiWork('actions', renderActions, 120);
   const renderGlobalResultsLater = () => scheduleUiWork('global-results', renderGlobalResults, 40);
   const renderClassChecklistLater = () => scheduleUiWork('class-checklist', renderClassStudentChecklist, 80);
+
+  // Importer event listeners
+  document.getElementById('openImportBtn')?.addEventListener('click', openImportModal);
+  document.getElementById('tabImportWhatsapp')?.addEventListener('click', () => switchImportTab('whatsapp'));
+  document.getElementById('tabImportExcel')?.addEventListener('click', () => switchImportTab('excel'));
+  document.getElementById('btnProcessWhatsapp')?.addEventListener('click', processWhatsappInput);
+  document.getElementById('importPrintFile')?.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (file) handleOcrImageUpload(file);
+  });
+  const dropzone = document.getElementById('excelDropzone');
+  const excelInput = document.getElementById('importExcelFile');
+  if (dropzone && excelInput) {
+    dropzone.addEventListener('click', () => excelInput.click());
+    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      const file = e.dataTransfer?.files?.[0];
+      if (file) handleExcelFileUpload(file);
+    });
+    excelInput.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (file) handleExcelFileUpload(file);
+    });
+  }
+  document.getElementById('btnApplyMapping')?.addEventListener('click', applyExcelColumnMapping);
+  document.getElementById('chkSelectAllImport')?.addEventListener('change', (e) => {
+    const checked = e.target.checked;
+    document.querySelectorAll('.import-row-check').forEach((chk) => { chk.checked = checked; });
+  });
+  document.getElementById('btnConfirmImport')?.addEventListener('click', () => {
+    confirmBatchImport().catch((err) => toast(err.message));
+  });
 
   document.getElementById('bookingForm')?.addEventListener('submit', (event) => submitBooking(event).catch((err) => toast(err.message)));
   document.getElementById('bookingClass')?.addEventListener('change', updateBookingClassAction);

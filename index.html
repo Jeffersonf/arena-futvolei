@@ -41,6 +41,7 @@
               <label>Nome<input id="bookingName" autocomplete="name" placeholder="Seu nome" required /></label>
               <label>WhatsApp<input id="bookingPhone" inputmode="tel" autocomplete="tel" placeholder="(15) 99999-9999" required /></label>
               <label>Horário da aula experimental<select id="bookingClass" required></select></label>
+              <label>Quem te indicou? (Opcional)<input id="bookingReferral" placeholder="Nome de quem te indicou" /></label>
               <label>Observação (opcional)<input id="bookingNote" placeholder="Nível, objetivo ou dúvida" /></label>
               <button class="primary-btn" id="bookingSubmitButton" type="submit">Solicitar aula experimental</button>
               <p class="booking-status" id="bookingStatus" role="status" aria-live="polite"></p>
@@ -238,7 +239,10 @@
               <span>cadastro</span>
               <h2 data-config-page-title="studentsTitle">Alunos</h2>
             </div>
-            <button class="soft-btn" type="button" data-open-student>+ Novo aluno</button>
+            <div class="actions">
+              <button class="soft-btn" type="button" id="openImportBtn">📥 Importar alunos</button>
+              <button class="primary-btn" type="button" data-open-student>+ Novo aluno</button>
+            </div>
           </div>
           <input class="search" id="studentSearch" aria-label="Buscar aluno, telefone ou plano" placeholder="Buscar aluno, telefone ou plano..." />
           <div class="filters student-filters">
@@ -601,6 +605,10 @@
             <label>Telefone<input id="studentPhone" placeholder="(15) 99999-9999" /></label>
             <label>Email<input id="studentEmail" type="email" placeholder="aluno@email.com" /></label>
           </div>
+          <label>Indicado por (Opcional)
+            <input id="studentReferral" placeholder="Nome de quem indicou este aluno" list="studentsReferralList" />
+            <datalist id="studentsReferralList"></datalist>
+          </label>
         </fieldset>
         <fieldset class="form-group schedule-group">
           <legend>Agenda fixa</legend>
@@ -636,6 +644,15 @@
           </select>
         </label>
         <label>Observação<input id="studentNote" placeholder="Restrições, objetivo, responsável..." /></label>
+
+        <!-- Bloco de Fidelidade e Indicações -->
+        <div class="student-referrals-box" id="studentReferralsBox" style="display:none;">
+          <div class="referrals-header">
+            <strong>⭐ Alunos indicados por este perfil</strong>
+            <span class="badge referrals-badge" id="studentReferralsCount">0 indicados</span>
+          </div>
+          <div class="referrals-list" id="studentReferralsList"></div>
+        </div>
         </fieldset>
         <button class="primary-btn modal-save-btn" type="submit">Salvar aluno</button>
       </form>
@@ -646,6 +663,122 @@
         <button class="close" type="button" aria-label="Fechar relatório do aluno" data-close="studentReportModal">x</button>
         <h2 id="studentReportModalTitle" class="sr-only">Relatório do aluno</h2>
         <div id="studentReport"></div>
+      </section>
+    </div>
+
+    <!-- Modal de Importação de Alunos (WhatsApp & Excel) -->
+    <div class="modal-wrap" id="importModal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle" aria-hidden="true">
+      <section class="modal wide-modal import-modal">
+        <button class="close" type="button" aria-label="Fechar importador" data-close="importModal">x</button>
+        <div class="modal-header">
+          <h2 id="importModalTitle">📥 Importar Alunos</h2>
+          <p class="muted">Adicione múltiplos alunos de forma rápida a partir do WhatsApp ou da planilha Excel do professor.</p>
+        </div>
+
+        <div class="import-tabs" role="tablist">
+          <button class="import-tab active" id="tabImportWhatsapp" type="button" role="tab" aria-selected="true">📱 WhatsApp (Texto ou Print)</button>
+          <button class="import-tab" id="tabImportExcel" type="button" role="tab" aria-selected="false">📊 Planilha Excel / CSV</button>
+        </div>
+
+        <!-- Painel WhatsApp -->
+        <div class="import-pane active" id="paneImportWhatsapp">
+          <div class="import-hint-card">
+            <strong>💡 Dica do WhatsApp Web:</strong>
+            <span>Abra o grupo da escola/turma no WhatsApp Web, clique nos dados do grupo e copie a lista de participantes. Ou cole mensagens com telefones e nomes. Também é possível carregar um print da tela de membros.</span>
+          </div>
+
+          <label class="import-label">Cole a lista de contatos do WhatsApp:
+            <textarea id="importWhatsappText" class="import-textarea" rows="6" placeholder="Cole aqui o texto copiado do WhatsApp... Exemplo:
++55 15 99123-4567 Carlos Silva
++55 15 98888-4321 Mariana
+(15) 99777-1122 - Pedro"></textarea>
+          </label>
+
+          <div class="import-actions-bar">
+            <button class="primary-btn" type="button" id="btnProcessWhatsapp">Processar contatos</button>
+            <span class="muted">ou</span>
+            <label class="soft-btn file-trigger">
+              📷 Carregar print de imagem
+              <input type="file" id="importPrintFile" accept="image/*" style="display:none;" />
+            </label>
+            <span class="ocr-status muted" id="ocrStatus"></span>
+          </div>
+        </div>
+
+        <!-- Painel Excel -->
+        <div class="import-pane" id="paneImportExcel" hidden>
+          <div class="import-hint-card">
+            <strong>📊 Planilha do Professor:</strong>
+            <span>Selecione qualquer planilha em Excel (.xlsx, .xls) ou .csv. O sistema identificará os cabeçalhos automaticamente e permitirá ajustar o mapeamento das colunas.</span>
+          </div>
+
+          <div class="dropzone" id="excelDropzone">
+            <input type="file" id="importExcelFile" accept=".xlsx, .xls, .csv" style="display:none;" />
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            <p><strong>Clique para selecionar a planilha</strong> ou arraste o arquivo aqui (.xlsx, .xls, .csv)</p>
+            <span class="muted" id="excelFileName">Nenhum arquivo selecionado</span>
+          </div>
+
+          <!-- Mapeador De -> Para -->
+          <div class="column-mapping-box" id="columnMappingBox" style="display:none;">
+            <div class="mapping-head">
+              <strong>Mapeamento das Colunas da Planilha</strong>
+              <small class="muted">Confira as colunas que o sistema detectou automaticamente</small>
+            </div>
+            <div class="mapping-grid">
+              <label>Nome do Aluno *<select id="mapColName"></select></label>
+              <label>WhatsApp / Telefone<select id="mapColPhone"></select></label>
+              <label>Plano<select id="mapColPlan"></select></label>
+              <label>Mensalidade (R$)<select id="mapColFee"></select></label>
+              <label>Dia Vencimento<select id="mapColDue"></select></label>
+              <label>Indicado Por<select id="mapColReferral"></select></label>
+            </div>
+            <button class="primary-btn" type="button" id="btnApplyMapping" style="margin-top:10px;">Aplicar mapeamento na prévia</button>
+          </div>
+        </div>
+
+        <!-- Área de Prévia e Anti-Duplicação -->
+        <div class="import-preview-box" id="importPreviewBox" style="display:none;">
+          <div class="preview-header">
+            <div>
+              <h3>Prévia de Importação (<span id="importTotalCount">0</span> contatos identificados)</h3>
+              <p class="muted">Revise os dados antes de gravar. Alunos com mesmo WhatsApp serão sinalizados.</p>
+            </div>
+            <div class="preview-stats" id="importStatsBadges"></div>
+          </div>
+
+          <div class="preview-options">
+            <label class="checkbox-label">
+              <input type="checkbox" id="chkUpdateExisting" checked />
+              <span>Atualizar dados dos alunos que já existem (mesmo WhatsApp)</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="chkSelectAllImport" checked />
+              <span>Selecionar todos</span>
+            </label>
+          </div>
+
+          <div class="import-table-wrap">
+            <table class="import-table" id="importTable">
+              <thead>
+                <tr>
+                  <th width="40"></th>
+                  <th>Nome</th>
+                  <th>WhatsApp</th>
+                  <th>Plano</th>
+                  <th>Indicado por</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="importTableBody"></tbody>
+            </table>
+          </div>
+
+          <div class="preview-footer">
+            <button class="primary-btn" type="button" id="btnConfirmImport">Confirmar e Importar Alunos</button>
+            <button class="ghost-btn" type="button" data-close="importModal">Cancelar</button>
+          </div>
+        </div>
       </section>
     </div>
 
